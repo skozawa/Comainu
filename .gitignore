@@ -1,0 +1,11 @@
+Makefile
+config.log
+pkg/comainu.iss
+pkg/comainu_model.iss
+script/comainu.pl
+script/comainu_setup.pl
+script/wincomainu.pl
+wincomainu_org.conf
+tmp/
+train/
+*~
