@@ -1,5 +1,5 @@
 
-	Comainu version 0.60
+	Comainu version 0.70
 
 ０．動作環境
 MS-Windows:

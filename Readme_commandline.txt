@@ -1,5 +1,5 @@
 
-                    Comainu 0.60
+                    Comainu 0.70
 
 0. Requirements
   Common:
