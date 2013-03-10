@@ -1,0 +1,7 @@
+#!/bin/sh
+# sets MST environment variables
+MST_LIB=$MSTPARSER_DIR/lib
+DIRLIBS=$MST_LIB/trove.jar
+CP=${MSTPARSER_DIR}/output/classes:${DIRLIBS}
+JAVA=$JAVA_HOME/bin/java
+JAVA_CMD="$JAVA -Xmx1800m -classpath $CP "

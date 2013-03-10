@@ -1,0 +1,840 @@
+# -*- mode: perl; coding: utf-8; -*-
+
+# BIのみから成る長単位を処理する
+
+package BIProcessor;
+
+use strict;
+use utf8;
+
+my $DEFAULT_VALUES =
+{
+    "model_type" => 0,
+    "h_label" => {},
+    "k1_label" => {},
+    "k2_label" => {},
+};
+
+sub new {
+    my $proto = shift;
+    my $class = ref($proto) || $proto;
+    my $self = {%$DEFAULT_VALUES, @_};
+    bless $self, $class;
+    return $self;
+}
+
+## 学習用KCファイルから学習データを取得
+sub extract_from_train {
+    my ($self, $fh_ref,$fh_svmin,$train_dir,$NAME) = @_;
+
+    my @long_units;
+    my @BI_units;
+    my %line;
+
+    my $svmin = <$fh_svmin>;
+    $svmin = Encode::decode("utf-8", $svmin);
+    $svmin =~ s/\r?\n//mg;
+
+    while ( my $ref = <$fh_ref> ) {
+        $ref = Encode::decode("utf-8", $ref);
+        $ref =~ s/\r?\n//mg;
+        if ( $ref =~ /^\*B|^EOS/ ) {
+            if ( $svmin eq "" ) {
+                $svmin = <$fh_svmin>;
+                $svmin = Encode::decode("utf-8", $svmin);
+                $svmin =~ s/\r?\n//mg;
+                push @long_units, [("* * * * * * * * * * * * * * * * * * * *")];
+            }
+            next;
+        }
+
+        my $short = "";
+        my $BI = "";
+        my @first = split(/ /, $ref);
+
+        if ( $svmin =~ / B/ ) {
+            $short = $ref;
+            $BI = $svmin;
+        } else {
+            $svmin = <$fh_svmin>;
+            $svmin = Encode::decode("utf-8", $svmin);
+            $svmin =~ s/\r?\n//mg;
+            next;
+        }
+
+        $svmin = <$fh_svmin>;
+        $svmin = Encode::decode("utf-8", $svmin);
+        $svmin =~ s/\r?\n//mg;
+        while ( $svmin =~ / I/ ) {
+            $ref = <$fh_ref>;
+            $ref = Encode::decode("utf-8", $ref);
+            $ref =~ s/\r?\n//mg;
+            last $ref =~ /^\*B|^EOS/;
+
+            $short .= "\n".$ref;
+            $BI .= "\t".$svmin;
+            $svmin = <$fh_svmin>;
+            $svmin = Encode::decode("utf-8", $svmin);
+            $svmin =~ s/\r?\n//mg;
+        }
+        next if $short eq "";
+
+        my @shorts = split(/\n/,$short);
+        push @long_units,\@shorts;
+        if ( $BI !~ /a/ ) {
+            push @BI_units,$#long_units;
+            $line{$short} //= 1
+        }
+        if ( $svmin eq "" ) {
+            $svmin = <$fh_svmin>;
+            $svmin = Encode::decode("utf-8", $svmin);
+            $svmin =~ s/\r?\n//mg;
+            push @long_units, [("* * * * * * * * * * * * * * * * * * * *")];
+        }
+    }
+
+    $self->extract_BI_data(\@long_units,\@BI_units,$train_dir,$NAME,0);
+    undef @long_units;
+    undef @BI_units;
+}
+
+## 解析用データからテストデータを作成
+sub execute_test {
+    my ($self, $COM, $TRAINNAME, $TESTNAME, $lout_data,
+        $temp_dir, $model_dir, $out_dir, $CompFile) = @_;
+
+    my $kc2file = $temp_dir."/".$TESTNAME."2";
+    my ($long_units, $BI_units) = $self->make_long_unit($lout_data, $kc2file);
+    undef $lout_data;
+
+    my $comp = $self->load_comp_file($CompFile);
+
+    $self->extract_BI_data($long_units, $BI_units, $temp_dir, $TESTNAME, 1, $comp);
+    undef $comp;
+
+    $self->exec_test($COM, $TRAINNAME, $TESTNAME, $model_dir, $temp_dir);
+
+    $self->merge_data($TESTNAME, $temp_dir, $long_units, $BI_units);
+
+    my $res = "";
+    foreach (@$long_units) {
+        if ( $$_[0] =~ /^\* \*/ ) {
+            $res .= "EOS\n";
+            next;
+        }
+        $res .= join("\n",@$_)."\n";
+    }
+    undef $long_units;
+    undef $BI_units;
+
+    return $res."\n";
+}
+
+sub make_long_unit {
+    my ($self, $lout_data, $kc2file) = @_;
+
+    open(my $fh_kc2, "<", $kc2file) or die "Cannot open '$kc2file'";
+
+    my $long_units = [];
+    my $BI_units = [];
+
+    my $kc2 = <$fh_kc2>;
+    $kc2 = Encode::decode("utf-8", $kc2);
+    $kc2 =~ s/\r?\n//mg;
+    my @lout = split(/\r?\n/, $lout_data);
+    undef $lout_data;
+
+    for ( my $i=0; $i<=$#lout; $i++ ) {
+        my $short = "";
+        my $BI = "";
+        my @first = split(/ /,$lout[$i]);
+
+        $short = $lout[$i] if $lout[$i] =~ /^B/;
+
+        while ( $lout[$i+1] =~ /^I/ ) {
+            $short .= "\n".$lout[++$i];
+            $kc2 = <$fh_kc2>;
+        }
+        next if $short eq "";
+
+        my @shorts = split(/\n/,$short);
+        push @$long_units, \@shorts;
+
+        push @$BI_units, $#{$long_units} if $short !~ /a/m;
+
+        $kc2 = <$fh_kc2>;
+        $kc2 = Encode::decode("utf-8", $kc2);
+        $kc2 =~ s/\r?\n//mg;
+        if ( $kc2 =~ /^EOS/ || $kc2 eq "" ) {
+            $kc2 = <$fh_kc2>;
+            $kc2 = Encode::decode("utf-8", $kc2);
+            $kc2 =~ s/\r?\n//mg;
+            push @$long_units, [("* * * * * * * * * * * * * * * * * * * *")];
+        }
+    }
+    undef @lout;
+
+    return ($long_units, $BI_units);
+}
+
+sub extract_BI_data {
+    my ($self, $long_units, $BI_units, $dir, $NAME, $LOT, $comp) = @_;
+
+    $self->create_label();
+
+    my $pos_feature = "";
+    my $cType_feature = "";
+    my $cForm_feature = "";
+
+    foreach my $i ( @$BI_units ) {
+        my $long_unit = $$long_units[$i];
+
+        ## 長単位の先頭の短単位
+        my @first = split(/ /,$$long_unit[0]);
+        # my $long_lemma = $first[$#first];
+        my $long_lemma = $first[17+$LOT];
+        my $feature = $long_lemma;
+
+        if ( $i <= 0 ) {
+            $feature .= " *" x 64;
+        } else {
+            my $pre_long_unit = $$long_units[$i-1];
+            $feature .= $self->long2feature($pre_long_unit, $LOT);
+        }
+        $feature .= $self->long2feature($long_unit, $LOT);
+
+        if ( $i >= $#{$long_units} ) {
+            $feature .= " *" x 64;
+        } else {
+            my $post_long_unit = $$long_units[$i+1];
+            $feature .= $self->long2feature($post_long_unit, $LOT);
+        }
+
+        ## 長単位の品詞、活用型、活用形
+        my $f_pos = $first[13+$LOT];
+        my $f_cType = $first[14+$LOT];
+        my $f_cForm = $first[15+$LOT];
+
+        if ( $LOT == 0 ) {
+            $pos_feature .= $feature." ".$self->{h_label}->{$f_pos}."\n";
+            $cType_feature .= $feature." ".$self->{h_label}->{$f_pos}." ".$self->{k1_label}->{$f_cType}."\n";
+            $cForm_feature .= $feature." ".$self->{h_label}->{$f_pos}." ".$self->{k1_label}->{$f_cType}." ".$self->{k2_label}->{$f_cForm}."\n" ;
+        } elsif ( $LOT == 1 ) {
+            # my $long_yomi = $first[$#first-1];
+            my $long_yomi = $first[16+$LOT];
+            $pos_feature .= $feature;
+            #$pos_feature .= " H000 H001 H002 H003 H004 H005 H006 H007 H008 H009 H010 H011 H012 H013 H020";
+            #$pos_feature .= " H030 H031 H032 H040 H050 H060 H070 H071 H080 H081 H090 H091";
+            #$pos_feature .= " H120 H130 H131 H132 H133 H134 H135 H136 H137 H138";
+            #$pos_feature .= " H140 H141 H150 H151 H152 H153 H154 H155 H160 H170 H180 H190 H200 H210";
+            $pos_feature .= " H000 H005 H006 H007 H008 H009 H010 H011 H012 H013 H020";
+            $pos_feature .= " H030 H031 H032 H040 H050 H060 H070 H071 H080 H090";
+            $pos_feature .= " H120 H130 H135 H136 H137 H138 H140 H141 H150 H151 H152 H153 H154 H155";
+            $pos_feature .= " H160 H170 H180 H190 H200 H210 H220 H230 H240";
+            if ( defined $$comp{$long_yomi."_".$long_lemma} ) {
+                $pos_feature .= " ".$self->{h_label}->{$$comp{$long_yomi."_".$long_lemma}};
+            }
+            $pos_feature .= "\n";
+            #$pos_feature .= " H100 H110 H111 H112 H113 H114 H115\n";
+        }
+    }
+    if ( $self->{model_type} == 1 ) {
+        $pos_feature =~ s/\n/\n\n/g;
+        $cType_feature =~ s/\n/\n\n/g;
+        $cForm_feature =~ s/\n/\n\n/g;
+    } elsif ( $self->{model_type} == 2 ) {
+        $pos_feature =~ s/\n/\n\n/g;
+        $pos_feature =~ s/ /\t/g;
+        $cType_feature =~ s/\n/\n\n/g;
+        $cType_feature =~ s/ /\t/g;
+        $cForm_feature =~ s/\n/\n\n/g;
+        $cForm_feature =~ s/ /\t/g;
+    }
+
+    my $outputFileName1 = $dir."/pos/".$NAME.".BI_pos.dat";
+    mkdir $dir."/pos" unless -d $dir."/pos";
+    $self->write_to_file($outputFileName1, $pos_feature."\n");
+    undef $pos_feature;
+
+    my $outputFileName2 = $dir."/cType/".$NAME.".BI_cType.dat";
+    mkdir $dir."/cType" unless -d $dir."/cType";
+    $self->write_to_file($outputFileName2, $cType_feature."\n");
+    undef $cType_feature;
+
+    my $outputFileName3 = $dir."/cForm/".$NAME.".BI_cForm.dat";
+    mkdir $dir."/cForm" unless -d $dir."/cForm";
+    $self->write_to_file($outputFileName3, $cForm_feature."\n");
+    undef $cForm_feature;
+}
+
+sub long2feature {
+    my ($self, $long_unit, $LOT) = @_;
+
+    my $feature = "";
+    if ( $#{$long_unit} >= 1 ) {
+        for my $i ( 0 .. 1 ) {
+            $feature .= $self->short2feature($$long_unit[$i],$LOT);
+        }
+        for my $i ( 0 .. 1 ) {
+            $feature .= $self->short2feature($$long_unit[$#{$long_unit}+$i-1], $LOT);
+        }
+    } else {
+        $feature .= $self->short2feature($$long_unit[0],$LOT);
+        $feature .= " * * * * * * * * * * * * * * * *" .
+            " * * * * * * * * * * * * * * * *" . $feature;
+    }
+    return $feature;
+}
+
+sub short2feature {
+    my ($self, $short_unit, $LOT) = @_;
+
+    my $feature = "";
+    my @short = split(/ /, $short_unit);
+
+    ## 見出し、読み、語彙素
+    for my $i ( 0 .. 2 ) {
+        $feature .= " ".$short[$i+$LOT];
+    }
+    ## 品詞
+    $feature .= " ".$short[3+$LOT];
+    my @pos = split(/\-/,$short[3+$LOT]);
+    for my $i ( 0 .. 3 ) {
+        $feature .= " " . ($pos[$i] // '*');
+    }
+    ## 活用型
+    $feature .= " ".$short[4+$LOT];
+    my @cType = split(/\-/,$short[4+$LOT]);
+    for my $i ( 0 .. 2 ) {
+        $feature .= " " . ($cType[$i] // '*');
+    }
+    ## 活用形
+    $feature .= " ".$short[5+$LOT];
+    my @cForm = split(/\-/,$short[5+$LOT]);
+    for my $i ( 0 .. 2 ) {
+        $feature .= " " . ($cForm[$i] // '*');
+    }
+    undef @short;
+    return $feature;
+}
+
+sub exec_test {
+    my ($self, $COM, $TRAINNAME, $TESTNAME, $model_dir, $temp_dir) = @_;
+
+    # print STDERR "# test pos\n";
+    my $pos = $temp_dir."/pos/".$TESTNAME.".BI_pos.dat";
+    my $pos_out = $temp_dir."/pos/".$TESTNAME.".BI_pos.out";
+    my $com1 = sprintf("%s -m \"%s\" < \"%s\" > \"%s\"",
+		       $COM, $model_dir."/pos/".$TRAINNAME.".BI_pos.model",
+		       $pos, $pos_out);
+    if ( $self->{model_type} == 2 ) {
+        $com1 = sprintf("%s -m \"%s\" < \"%s\" > \"%s\"",
+                        $COM, $model_dir."/pos",$pos,$pos_out);
+    }
+    print STDERR "# $com1\n";
+    system($com1);
+
+    # print STDERR "# test cType\n";
+    my $cType = $temp_dir."/cType/".$TESTNAME.".BI_cType.dat";
+    my $cType_out = $temp_dir."/cType/".$TESTNAME.".BI_cType.out";
+    $self->create_cType_dat($pos_out, $cType);
+    my $com2 = sprintf("%s -m \"%s\" < \"%s\" > \"%s\"",
+		       $COM, $model_dir."/cType/".$TRAINNAME.".BI_cType.model",
+		       $cType, $cType_out);
+    if ( $self->{model_type} == 2 ) {
+        $com2 = sprintf("%s -m \"%s\" < \"%s\" > \"%s\"",
+                        $COM, $model_dir."/cType",$cType,$cType_out);
+    }
+    print STDERR "# $com2\n";
+    system($com2);
+
+    # print STDERR "# test cForm\n";
+    my $cForm = $temp_dir."/cForm/".$TESTNAME.".BI_cForm.dat";
+    my $cForm_out = $temp_dir."/cForm/".$TESTNAME.".BI_cForm.out";
+    $self->create_cForm_dat($cType_out, $cForm);
+    my $com3 = sprintf("%s -m \"%s\" < \"%s\" > \"%s\"",
+		       $COM, $model_dir."/cForm/".$TRAINNAME.".BI_cForm.model",
+		       $cForm, $cForm_out);
+    if ( $self->{model_type} == 2 ) {
+        $com3 = sprintf("%s -m \"%s\" < \"%s\" > \"%s\"",
+                        $COM, $model_dir."/cForm",$cForm,$cForm_out);
+    }
+    print STDERR "# $com3\n";
+    system($com3);
+}
+
+
+sub merge_data {
+    my ($self, $TESTNAME, $temp_dir, $long_units, $BI_units, $label) = @_;
+
+    my $pos_file = $temp_dir."/pos/".$TESTNAME.".BI_pos.out";
+    my $cType_file = $temp_dir."/cType/".$TESTNAME.".BI_cType.out";
+    my $cForm_file = $temp_dir."/cForm/".$TESTNAME.".BI_cForm.out";
+
+    my @pos = split(/ /,$self->read_from_out($pos_file));
+    my @cType = split(/ /,$self->read_from_out($cType_file));
+    my @cForm = split(/ /,$self->read_from_out($cForm_file));
+    my %h_label = reverse %{$self->{h_label}};
+    my %k1_label = reverse %{$self->{k1_label}};
+    my %k2_label = reverse %{$self->{k2_label}};
+    for my $i ( 0..$#{$BI_units} ) {
+        my $l_term = $$long_units[$$BI_units[$i]];
+        my @first = split(/ /,$$l_term[0]);
+        $first[14] = $h_label{$pos[$i]};
+        if ( $pos[$i] ~~ ["H080", "H081", "H090", "H091", "H100"] ) {
+            for my $j ( 0..$#{$l_term} ) {
+                my @items = split(/ /,$$l_term[$#{$l_term}-$j]);
+                $first[15] = $items[5];
+                $first[16] = $items[6];
+                last if $first[15] ne "*" && $first[16] ne "*";
+            }
+            if ( $first[15] eq "*" && $first[16] eq "*" ) {
+                $first[15] = $k1_label{$cType[$i]};
+                $first[16] = $k2_label{$cForm[$i]};
+            }
+        }else{
+            $first[15] = "*";
+            $first[16] = "*";
+        }
+        $$long_units[$$BI_units[$i]]->[0] = join(" ",@first);
+    }
+    undef @pos;
+    undef @cType;
+    undef @cForm;
+    undef %h_label;
+    undef %k1_label;
+    undef %k2_label;
+}
+
+sub create_cType_dat {
+    my ($self, $out, $file) = @_;
+
+    my $buff = "";
+    open(my $fh, $out) or die "Cannot open '$out'";
+    binmode($fh);
+    while ( my $line = <$fh> ) {
+        $line = Encode::decode("utf-8", $line);
+        $line =~ s/\r?\n//g;
+        $line =~ s/^EOS//g if $self->{model_type} == 2;
+
+        my @items = split(/\t/,$line);
+        $buff .= join(" ",@items);
+        if ( $items[$#items] eq "H080" || $items[$#items] eq "H081" ) {
+            $buff .= " K1000 K1001 K1002 K1003 K1004 K1005 K1006 K1007 K1008 K1009 K1010 K1011 K1012 K1013 K1014 K1015";
+            $buff .= " K1020 K1021 K1022 K1023 K1024 K1025 K1026 K1027 K1028 K1029 K1030 K1031 K1032 K1033";
+            $buff .= " K1034 K1035 K1036 K1037 K1038 K1039 K1040 K1041 K1042 K1043 K1050 K1051 K1052";
+            $buff .= " K1060 K1061 K1062 K1063 K1064 K1065 K1066 K1067 K1068 K1070 K1071 K1072 K1073 K1074 K1075 K1076 K1077 K1078";
+            $buff .= " K1080 K1081 K1082 K1083 K1084 K1085 K1086 K1087 K1088 K1089 K1090 K1091 K1092";
+            $buff .= " K1100 K1101 K1102 K1103 K1104 K1105 K1110 K1120 K1121 K1122 K1123 K1124 K1200\n";
+        } elsif ( $items[$#items] eq "H090" || $items[$#items] eq "H091" ) {
+            $buff .= " K1130 K1140 K1141 K1142\n";
+        } elsif ( $items[$#items] eq "H100" ) {
+            $buff .= " K1000 K1001 K1002 K1003 K1004 K1005 K1006 K1007 K1008 K1009 K1010 K1011 K1012 K1013 K1014 K1015";
+            $buff .= " K1020 K1021 K1022 K1023 K1024 K1025 K1026 K1027 K1028 K1029 K1030 K1031 K1032 K1033";
+            $buff .= " K1034 K1035 K1036 K1037 K1038 K1039 K1040 K1041 K1042 K1043 K1050 K1051 K1052";
+            $buff .= " K1060 K1061 K1062 K1063 K1064 K1065 K1066 K1067 K1068 K1070 K1071 K1072 K1073 K1074 K1075 K1076 K1077 K1078";
+            $buff .= " K1080 K1081 K1082 K1083 K1084 K1085 K1086 K1087 K1088 K1089 K1090 K1091 K1092";
+            $buff .= " K1100 K1101 K1102 K1103 K1104 K1105 K1110 K1120 K1121 K1122 K1123 K1124 K1200";
+
+            $buff .= " K1130 K1140 K1141 K1142";
+
+            $buff .= " K1150 K1151 K1152 K1153 K1154 K1155 K1156 K1157 K1158 K1159 K1160 K1161 K1162 K1163 K1164";
+            $buff .= " K1170 K1171 K1172 K1173 K1174 K1175 K1176 K1177 K1178 K1179 K1180 K1181 K1182 K1183 K1184 K1185 K1186 K1187 K1188 K1189 K1190 K1191\n";
+        } else {
+            $buff .= " K1999\n";
+        }
+    }
+    close($fh);
+
+    if ( $self->{model_type} == 1 ) {
+        $buff =~ s/\n/\n\n/mg;
+    } elsif ( $self->{model_type} == 2 ) {
+        $buff =~ s/\n/\n\n/mg;
+        $buff =~ s/ /\t/mg;
+    }
+    $buff .= "\n";
+    $self->write_to_file($file, $buff);
+    undef $buff;
+}
+
+sub create_cForm_dat {
+    my ($self, $out, $file) = @_;
+
+    my $buff = "";
+    open(my $fh, $out) or die "Cannot open '$file'";
+    binmode($fh);
+    while ( my $line = <$fh> ) {
+        $line = Encode::decode("utf-8", $line);
+        $line =~ s/\r?\n//g;
+        $line =~ s/^EOS//g if $self->{model_type} == 2;
+
+        my @items = split(/\t/, $line);
+        $buff .= join(" ",@items);
+        if ( $items[$#items - 1] ~~ ["H080", "H081", "H090", "H091", "H100"] ) {
+            $buff .= " K2000 K2001 K2010 K2011 K2012 K2013 K2014 K2015 K2020";
+            $buff .= " K2030 K2031 K2032 K2033 K2034 K2035 K2036 K2037 K2038 K2039 K2040 K2041";
+            $buff .= " K2050 K2051 K2052 K2053 K2054 K2055 K2056 K2060 K2061 K2062 K2063 K2064";
+            $buff .= " K2070 K2071 K2072 K2073 K2080 K2081 K2090 K2100\n";
+        } else {
+            $buff .= " K2999\n";
+        }
+    }
+    if ( $self->{model_type} == 1 ) {
+        $buff =~ s/\n/\n\n/mg;
+    } elsif ( $self->{model_type} == 2 ) {
+        $buff =~ s/\n/\n\n/mg;
+        $buff =~ s/ /\t/mg;
+    }
+    $buff .= "\n";
+    $self->write_to_file($file, $buff);
+    undef $buff;
+}
+
+sub merge_data_and_out {
+    my $self = shift;
+    my ($out, $file) = @_;
+    my $data = "";
+    open(my $fh1, $out) or die "Cannot open '$file'";
+    binmode($fh1);
+    open(my $fh2, $file) or die "Cannot open '$file'";
+    binmode($fh2);
+    my $data1 = Encode::decode("utf-8", <$fh1>);
+    my $data2 = Encode::decode("utf-8", <$fh2>);
+    while ( $data1 && $data2 ) {
+        $data1 =~ s/\r?\n//g;
+        $data1 =~ s/^EOS//g if($self->{model_type} == 2);
+        $data2 =~ s/\r?\n//g;
+        my @items = split(/\t/,$data1);
+        if ( $self->{model_type} == 2 ) {
+            $data .= join("\t",@items)."\t".$data2."\n";
+        } else {
+            $data .= join(" ",@items)." ".$data2."\n";
+        }
+
+        $data1 = Encode::decode("utf-8", <$fh1>);
+        $data2 = Encode::decode("utf-8", <$fh2>);
+    }
+    $data .= "\n";
+    $self->write_to_file($file, $data);
+    undef $data;
+}
+
+sub read_from_out {
+    my $self = shift;
+    my ($file) = @_;
+    my $data = "";
+    open(my $fh, $file) or die "Cannot open '$file'";
+    binmode($fh);
+    while ( my $line = <$fh> ) {
+        $line = Encode::decode("utf-8", $line);
+        $line =~ s/\r?\n//g;
+        next if($line eq "" || $line eq "EOS");
+        my @items = split(/\t/,$line);
+        $data .= $items[$#items]." ";
+    }
+    close($fh);
+    #$data = Encode::decode("utf-8", $data);
+    return $data;
+}
+
+sub load_comp_file {
+    my $self = shift;
+    my ($file) = @_;
+
+    my %comp;
+    open(my $fh, $file) or die "Cannot open '$file'";;
+    binmode($fh);
+    while ( my $line = <$fh> ) {
+        $line = Encode::decode("utf-8", $line);
+        $line =~ s/\r?\n//g;
+
+        my @items = split(/\t/, $line);
+        next if($items[0] !~ /助詞|助動詞/);
+        $comp{join("_",@items[1..2])} = $items[0];
+    }
+    close($fh);
+
+    return \%comp;
+}
+
+sub create_label {
+    my $self = shift;
+
+    $self->{h_label} = {
+        "名詞-普通名詞-一般" => "H000",
+        # "名詞-普通名詞-サ変可能" => "H001",
+        # "名詞-普通名詞-形状詞可能" => "H002",
+        # "名詞-普通名詞-サ変形状詞可能" => "H003",
+        # "名詞-普通名詞-副詞可能" => "H004",
+        "名詞-固有名詞-一般" => "H005",
+        "名詞-固有名詞-人名-一般" => "H006",
+        "名詞-固有名詞-人名-姓" => "H007",
+        "名詞-固有名詞-人名-名" => "H008",
+        "名詞-固有名詞-組織名" => "H009",
+        "名詞-固有名詞-地名-一般" => "H010",
+        "名詞-固有名詞-地名-国" => "H011",
+        "名詞-数詞" => "H012",
+        "名詞-助動詞語幹" => "H013",
+        "代名詞" => "H020",
+        "形状詞-一般" => "H030",
+        "形状詞-タリ" => "H031",
+        "形状詞-助動詞語幹" => "H032",
+        "連体詞" => "H040",
+        "副詞" => "H050",
+        "接続詞" => "H060",
+        "感動詞-一般" => "H070",
+        "感動詞-フィラー" => "H071",
+        "動詞-一般" => "H080",
+        # "動詞-非自立可能" => "H081",
+        "形容詞-一般" => "H090",
+        # "形容詞-非自立可能" => "H091",
+        "助動詞" => "H100",
+        "助詞-格助詞" => "H110",
+        "助詞-副助詞" => "H111",
+        "助詞-係助詞" => "H112",
+        "助詞-接続助詞" => "H113",
+        "助詞-終助詞" => "H114",
+        "助詞-準体助詞" => "H115",
+        "接頭辞" => "H120",
+        "接尾辞-名詞的-一般" => "H130",
+        # "接尾辞-名詞的-サ変可能" => "H131",
+        # "接尾辞-名詞的-形状詞可能" => "H132",
+        # "接尾辞-名詞的-サ変形状詞可能" => "H133",
+        # "接尾辞-名詞的-副詞可能" => "H134",
+        "接尾辞-名詞的-助数詞" => "H135",
+        "接尾辞-形状詞的" => "H136",
+        "接尾辞-動詞的" => "H137",
+        "接尾辞-形容詞的" => "H138",
+        "記号-一般" => "H140",
+        "記号-文字" => "H141",
+        "補助記号-一般" => "H150",
+        "補助記号-句点" => "H151",
+        "補助記号-読点" => "H152",
+        "補助記号-括弧開" => "H153",
+        "補助記号-括弧閉" => "H154",
+        "補助記号-ＡＡ-顔文字" => "H155",
+        "補助記号-ＡＡ-一般" => "H156",
+        "空白" => "H160",
+        "英単語" => "H170",
+        "URL" => "H180",
+        "言いよどみ" => "H190",
+        "新規未知語" => "H200",
+        "web誤脱" => "H210",
+        "ローマ字文" => "H220",
+        "当て字・誤変換" => "H230",
+        "漢文" => "H240",
+    };
+
+    $self->{k1_label} = {
+        "五段-ガ行" => "K1000",
+        "五段-カ行-一般" => "K1001",
+        "五段-カ行-イク" => "K1002",
+        "五段-カ行-ユク" => "K1003",
+        "五段-サ行" => "K1004",
+        "五段-タ行" => "K1005",
+        "五段-ナ行" => "K1006",
+        "五段-バ行" => "K1007",
+        "五段-マ行" => "K1008",
+        "五段-ラ行" => "K1009",
+        # "五段-ラ行-一般" => "K1009",
+        # "五段-ラ行-アル" => "K1010",
+        "五段-ワア行-一般" => "K1011",
+        "五段-ワア行-イウ" => "K1012",
+        "五段-ワア行-ャウ+一般" => "K1013",
+        "五段-カ行" => "K1014",
+        "五段-ワア行" => "K1015",
+        "上一段-ア行" => "K1020",
+        "上一段-カ行" => "K1021",
+        "上一段-ガ行" => "K1022",
+        "上一段-ザ行" => "K1023",
+        "上一段-タ行" => "K1024",
+        "上一段-ナ行" => "K1025",
+        "上一段-ハ行" => "K1026",
+        "上一段-バ行" => "K1027",
+        "上一段-マ行" => "K1028",
+        "上一段-ラ行" => "K1029",
+        "下一段-ア行" => "K1030",
+        "下一段-カ行" => "K1031",
+        "下一段-ガ行" => "K1032",
+        "下一段-ザ行" => "K1033",
+        "下一段-サ行" => "K1034",
+        "下一段-タ行" => "K1035",
+        "下一段-ダ行" => "K1036",
+        "下一段-ナ行" => "K1037",
+        "下一段-ハ行" => "K1038",
+        "下一段-バ行" => "K1039",
+        "下一段-マ行" => "K1040",
+        "下一段-ラ行-一般" => "K1041",
+        "下一段-ラ行-呉レル" => "K1042",
+        "下一段-ラ行" => "K1043",
+        "カ行変格" => "K1050",
+        "サ行変格" => "K1051",
+        "ザ行変格" => "K1052",
+        "文語四段-カ行" => "K1060",
+        "文語四段-ガ行" => "K1061",
+        "文語四段-サ行" => "K1062",
+        "文語四段-タ行" => "K1063",
+        "文語四段-バ行" => "K1064",
+        "文語四段-ハ行" => "K1065",
+        "文語四段-ハ行-イウ" => "K1066",
+        "文語四段-マ行" => "K1067",
+        "文語四段-ラ行" => "K1068",
+        "文語上二段-カ行" => "K1070",
+        "文語上二段-ガ行" => "K1071",
+        "文語上二段-タ行" => "K1072",
+        "文語上二段-ダ行" => "K1073",
+        "文語上二段-ハ行" => "K1074",
+        "文語上二段-バ行" => "K1075",
+        "文語上二段-マ行" => "K1076",
+        "文語上二段-ヤ行" => "K1077",
+        "文語上二段-ラ行" => "K1078",
+        "文語下二段-ア行" => "K1080",
+        "文語下二段-カ行" => "K1081",
+        "文語下二段-ガ行" => "K1082",
+        "文語下二段-サ行" => "K1083",
+        "文語下二段-タ行" => "K1084",
+        "文語下二段-ダ行" => "K1085",
+        "文語下二段-ナ行" => "K1086",
+        "文語下二段-ハ行" => "K1087",
+        "文語下二段-バ行" => "K1088",
+        "文語下二段-マ行" => "K1089",
+        "文語下二段-ヤ行" => "K1090",
+        "文語下二段-ラ行" => "K1091",
+        "文語下二段-ワ行" => "K1092",
+        "文語上一段-カ行" => "K1100",
+        "文語上一段-ナ行" => "K1101",
+        "文語上一段-ハ行" => "K1102",
+        "文語上一段-マ行" => "K1103",
+        "文語上一段-ヤ行" => "K1104",
+        "文語上一段-ワ行" => "K1105",
+        "文語下一段-カ行" => "K1110",
+        "文語カ行変格" => "K1120",
+        "文語サ行変格" => "K1121",
+        "文語ザ行変格" => "K1122",
+        "文語ナ行変格" => "K1123",
+        "文語ラ行変格" => "K1124",
+        "形容詞" => "K1130",
+        "文語形容詞-ク" => "K1140",
+        "文語形容詞-シク" => "K1141",
+        "文語形容詞-多シ" => "K1142",
+        "助動詞-ジャ" => "K1150",
+        "助動詞-タ" => "K1151",
+        "助動詞-タイ" => "K1152",
+        "助動詞-ダ" => "K1153",
+        "助動詞-デス" => "K1154",
+        "助動詞-ナイ" => "K1155",
+        "助動詞-ヌ" => "K1156",
+        "助動詞-ヘン" => "K1157",
+        "助動詞-マス" => "K1158",
+        "助動詞-ヤ" => "K1159",
+        "助動詞-ヤス" => "K1160",
+        "助動詞-ラシイ" => "K1161",
+        "助動詞-レル" => "K1162",
+        "助動詞-ナンダ" => "K1163",
+        "助動詞-マイ" => "K1164",
+        "助動詞-ドス" => "K1165",
+        "文語助動詞-キ" => "K1170",
+        "文語助動詞-ケム" => "K1171",
+        "文語助動詞-ゴトシ" => "K1173",
+        "文語助動詞-ザマス" => "K1174",
+        "文語助動詞-ザンス" => "K1175",
+        "文語助動詞-ズ" => "K1176",
+        "文語助動詞-タリ-完了" => "K1177",
+        "文語助動詞-タリ-断定" => "K1178",
+        "文語助動詞-ツ" => "K1179",
+        "文語助動詞-テフ" => "K1180",
+        "文語助動詞-ナリ-伝聞" => "K1181",
+        "文語助動詞-ナリ-断定" => "K1182",
+        "文語助動詞-ヌ" => "K1183",
+        "文語助動詞-ベシ" => "K1184",
+        "文語助動詞-マシ" => "K1185",
+        "文語助動詞-マジ" => "K1186",
+        "文語助動詞-ム" => "K1187",
+        "文語助動詞-ラシ" => "K1188",
+        "文語助動詞-ラム" => "K1189",
+        "文語助動詞-リ" => "K1190",
+        "文語助動詞-ンス" => "K1191",
+        "文語助動詞-ケリ" => "K1192",
+        "文語助動詞-ジ" => "K1193",
+        "文語助動詞-コス" => "K1194",
+        "文語助動詞-ムズ" => "K1195",
+        "文語助動詞-メリ" => "K1196",
+        "無変形" => "K1200",
+        "*" => "K1999",
+    };
+
+    $self->{k2_label} = {
+        "語幹-一般" => "K2000",
+        "語幹-サ" => "K2001",
+        "未然形-一般" => "K2010",
+        "未然形-サ" => "K2011",
+        "未然形-セ" => "K2012",
+        "未然形-撥音便" => "K2013",
+        "未然形-ヘ" => "K2014",
+        "未然形-補助" => "K2015",
+        "意志推量形" => "K2020",
+        "連用形-一般" => "K2030",
+        "連用形-イ音便" => "K2031",
+        "連用形-ウ音便" => "K2032",
+        "連用形-促音便" => "K2033",
+        "連用形-撥音便" => "K2034",
+        "連用形-融合" => "K2035",
+        "連用形-チャ" => "K2036",
+        "連用形-シ" => "K2037",
+        "連用形-スッ" => "K2038",
+        "連用形-ト" => "K2039",
+        "連用形-ニ" => "K2040",
+        "連用形-補助" => "K2041",
+        "連用形-省略" => "K2042",
+        "終止形-一般" => "K2050",
+        "終止形-ウ音便" => "K2051",
+        "終止形-促音便" => "K2052",
+        "終止形-撥音便" => "K2053",
+        "終止形-エ" => "K2054",
+        "終止形-チャ" => "K2055",
+        "終止形-補助" => "K2056",
+        "終止形-融合" => "K2057",
+        "連体形-一般" => "K2060",
+        "連体形-エ短縮" => "K2061",
+        "連体形-撥音便" => "K2062",
+        "連体形-省略" => "K2063",
+        "連体形-補助" => "K2064",
+        "仮定形-一般" => "K2070",
+        "仮定形-融合" => "K2071",
+        "仮定形-キャ" => "K2072",
+        "仮定形-ニャ" => "K2073",
+        "已然形-一般" => "K2080",
+        "已然形-補助" => "K2081",
+        "命令形" => "K2090",
+        "ク語法" => "K2100",
+        "*" => "K2999",
+    };
+}
+
+sub read_from_file {
+    my $self = shift;
+    my ($file) = @_;
+    my $data = "";
+    open(my $fh, $file) or die "Cannot open '$file'";
+    binmode($fh);
+    while ( my $line = <$fh> ) {
+        $data .= $line;
+    }
+    close($fh);
+    $data = Encode::decode("utf-8", $data);
+    return $data;
+}
+
+sub write_to_file {
+    my $self = shift;
+    my ($file, $data) = @_;
+    $data = Encode::encode("utf-8", $data);
+    open(my $fh, ">", $file) or die "Cannot open '$file'";
+    binmode($fh);
+    print $fh $data;
+    close($fh);
+    undef $data;
+}
+
+1;
+#################### END OF FILE ####################

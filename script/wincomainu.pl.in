@@ -1,0 +1,85 @@
+#!@PERL@
+# -*- mode: perl; coding: utf-8 -*-
+
+use strict;
+use utf8;
+use Encode;
+use FindBin qw($Bin);
+use lib "$Bin/../lib";
+use lib "$Bin/lib";
+use Getopt::Long;
+use File::Basename;
+
+use Tk;
+use WinComainu;
+
+my $APP_NAME = "WinComainu";
+my $APP_VERSION = "@APP_VERSION@";
+my $APP_COPYRIGHT = "@APP_COPYRIGHT@\n(@APP_AUTHORS@).\nAll rights reserved.";
+my $APP_NAME_VERSION = $APP_NAME."-".$APP_VERSION;
+my $APP_ICON_FILE = "$Bin/../img/wincomainu.ico";
+my $APP_GIF_FILE = "$Bin/../img/wincomainu.gif";
+my $APP_CONF_FILE = "$Bin/../wincomainu.conf";
+my $APP_CONF_ORG_FILE = "$Bin/../wincomainu_org.conf";
+
+my $DEFAULT_VALUES =
+{
+    "debug"         => 0,
+    "perl"          => "@PERL@",
+    "app-name"      => $APP_NAME,
+    "app-version"   => $APP_VERSION,
+    "title"         => $APP_NAME_VERSION,
+    "copyright"     => $APP_COPYRIGHT,
+    "icon-file"     => $APP_ICON_FILE,
+    "gif-file"      => $APP_GIF_FILE,
+    "conf-file"     => $APP_CONF_FILE,
+    "conf-org-file" => $APP_CONF_ORG_FILE,
+    "conf-geometry" => "600x400",
+    "msg-file"      => "$Bin/../msg/ja.txt",
+    "help-file"     => "$Bin/../Readme.txt",
+};
+
+sub usage {
+    my ($curr) = @_;
+    printf("%s [options]\n", $0);
+    printf("  This script executes Comainu on GUI.\n");
+    printf("options:\n");
+    printf("  --help                                show this message\n");
+    printf("  --debug     level                     specify the debug lebel\n");
+    printf("                                        (current: '%s')\n",
+           $curr->{"debug"});
+}
+
+sub main {
+    chdir("$Bin/..");
+    my $opts = {%$DEFAULT_VALUES};
+    GetOptions($opts, "help", "debug=i");
+    if (defined($opts->{"help"})) {
+        usage($opts);
+        exit(0);
+    }
+    my $appdata = ($ENV{"APPDATA"} || "");
+    my $allusersprofile = ($ENV{"ALLUSERSPROFILE"} || "");
+    my $conf_dir = $appdata."/Comainu";
+    my $conf_file = $conf_dir."/wincomainu.conf";
+    if (-d $conf_dir) {
+        $opts->{"conf-file"} = $conf_file;
+    } else {
+        $conf_dir = $allusersprofile."/".File::Basename::basename($appdata)."/Comainu";
+        $conf_file = $conf_dir."/wincomainu.conf";
+        if (-d $conf_dir) {
+            $opts->{"conf-file"} = $conf_file;
+        } else {
+            $conf_dir = $Bin."/..";
+            $conf_file = $conf_dir."/wincomainu.conf";
+            $opts->{"conf-file"} = $conf_file;
+        }
+    }
+    my $mw = MainWindow->new();
+    my $wc = $mw->WinComainu("opts"=>$opts);
+    MainLoop();
+}
+
+main();
+
+#################### END OF FILE ####################

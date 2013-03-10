@@ -1,0 +1,495 @@
+#!@PERL@
+# -*- mode: perl; coding: utf-8; -*-
+
+# Comainu Executable Script for Unix-Compatible Platforms.
+
+use strict;
+
+our $Bin;
+my $VERSION = "@APP_VERSION@";
+
+BEGIN {
+    # Must not use FindBin here. It should be reserved the real script.
+    use File::Basename;
+    use File::Spec;
+    $Bin = File::Spec->rel2abs(File::Basename::dirname($0));
+    push(@INC, "$Bin/../lib");
+}
+
+use utf8;
+use Config;
+use Getopt::Long;
+
+use Comainu;
+
+my $DEFAULT_VALUES =
+{
+    "debug"                 => "0",
+    "perl"                  => "@PERL@",
+    "java"                  => "@JAVA@",
+    "comainu-home"          => "@COMAINU_HOME@",
+    # "ofilter"               => "",
+    "yamcha-dir"            => "@YAMCHA_DIR@",
+    "chasen-dir"            => "@CHASEN_DIR@",
+    "mecab-dir"             => "@MECAB_DIR@",
+    "unidic-dir"            => "@UNIDIC_DIR@",
+    "unidic2-dir"           => "@UNIDIC2_DIR@",
+    "unidic-db"             => "@UNIDIC_DB@",
+    "svm-tool-dir"          => "@SVM_TOOL_DIR@",
+    "crf-dir"               => "@CRF_DIR@",
+    "mira-dir"              => "@MIRA_DIR@",
+    "mstparser-dir"         => "@MSTPARSER_DIR@",
+    "model-name"            => "@MODEL_NAME@",
+    "comainu-svm-bip-model" => "train/BI_process_model",
+    "comainu-output"        => "out",
+    "comainu-temp"          => "tmp/temp",
+    "boundary"              => "sentence",
+    "luwmrph"               => "with",
+    "suwmodel"              => "mecab",
+    "luwmodel"              => "CRF",
+    # "luwmrphmodel"          => "SVM",
+    # "muwmodel"              => "MST",
+    # "bnstmodel"             => "SVM",
+};
+
+my $OPT_NAME_LIST = ["perl", "java",
+		     "comainu-home",
+		     # "poscreate",
+		     # "ofilter",
+		     "yamcha-dir", "chasen-dir", "mecab-dir",
+		     "unidic-dir", "unidic2-dir", "unidic-db",
+		     "svm-tool-dir", "crf-dir", "mira-dir",
+		     "mstparser-dir",
+		     "comainu-svm-bip-model",
+		     "comainu-output", "comainu-temp",
+		     ];
+
+sub comainu_usage {
+    my ($curr) = @_;
+    printf("Usage : %s [options] <COMAINU-METHOD>  [<arg> ...]\n", $0);
+    printf("  This script is front end of COMAINU.\n");
+    printf("\n");
+    printf("option:\n");
+    printf("    --help                              show this message and exit\n");
+    printf("    --debug             LEVEL           specify the debug level\n");
+    printf("                                          (curr: '%s')\n",
+	   $curr->{"debug"});
+    printf("    --version                           show version string\n");
+    printf("    --help-method                       show the help of COMAINU-METHOD\n");
+    printf("    --list-method                       show the list of COMAINU-METHOD\n");
+    printf("    --force                             ignore cheking path of sub tools\n");
+    printf("    --boundary          BOUNDARY        specify the type of boundary\n");
+    printf("                                          BOUNDARY:=sentence|word\n");
+    printf("                                          (curr: '%s')\n", $curr->{"boundary"});
+    printf("    --luwmrph           LUWMRPH         whether to output morphology of long-unit-word\n");
+    printf("                                          LUWMRPH:=with|without\n");
+    printf("                                          (curr: '%s')\n", $curr->{"luwmrph"});
+    printf("    --suwmodel          SUWMODEL        specify the type of the short-unit-word model\n");
+    printf("                                          SUWMODEL:=mecab|chasen\n");
+    printf("                                          (curr: '%s')\n", $curr->{"suwmodel"});
+    printf("    --luwmodel          LUWMODEL        specify the type of the model for boundary of long-unit-word\n");
+    printf("                                          LUWMODEL:=SVM|CRF|MIRA\n");
+    printf("                                          (curr: '%s')\n", $curr->{"luwmodel"});
+    # printf("    --luwmrphmodel      LUWMRPHMODEL    specify the type of the long-unit-word model\n");
+    # printf("                                          LUWMRPHMODEL:=SVM\n");
+    # printf("                                          (curr: '%s')\n", $curr->{"luwmrphmodel"});
+    # printf("    --muwmodel          MUWMODEL        specify the type of the middle-unit-word model\n");
+    # printf("                                          MUWMODEL:=MST\n");
+    # printf("                                          (curr: '%s')\n", $curr->{"muwmodel"});
+    # printf("    --bnstmodel         BNSTMODEL       specify the type of the bnst model\n");
+    # printf("                                          BNSTMODEL:=SVM\n");
+    # printf("                                          (curr: '%s')\n", $curr->{"bnstmodel"});
+
+    foreach my $var_name (@$OPT_NAME_LIST) {
+        my $var_name_env = uc($var_name);
+        $var_name_env =~ s/\-/_/gs;
+        my $pad1 = " "x(32 - (length($var_name) + 6));
+        my $pad2 = " "x(24 - length($var_name_env));
+        printf("    --%s%s%s%sspecify %s\n",
+               $var_name, $pad1, $var_name_env, $pad2, $var_name_env);
+    }
+    printf("\n");
+    printf("Preset Environments :\n");
+    foreach my $var_name (@$OPT_NAME_LIST) {
+        my $var_name_env = uc($var_name);
+        $var_name_env =~ s/\-/_/gs;
+        printf("  %s=%s\n", $var_name_env, $ENV{$var_name_env});
+    }
+    print "\n";
+}
+
+sub comainu_version {
+    my ($curr) = @_;
+    printf("Comainu %s (perl:%s, osname:%s)\n",
+           $VERSION, $Config{"version"}, $Config{"osname"});
+}
+
+sub comainu {
+    # ---------- Common Path Environments ----------
+
+    if($ENV{"COMAINU_HOME"} eq "") {
+        $ENV{"COMAINU_HOME"} = $DEFAULT_VALUES->{"comainu-home"};
+    }
+    # if ($ENV{"POSCREATE"} eq "") {
+    #     $ENV{"POSCREATE"} = $ENV{"COMAINU_HOME"}."/poscreate";
+    # } else {
+    #     print "POSCREATE:".$ENV{"POSCREATE"}."\n";
+    # }
+    if($ENV{"PERL"} eq "") {
+        $ENV{"PERL"} = $DEFAULT_VALUES->{"perl"};
+    } else {
+        print "PERL:".$ENV{"PERL"}."\n";
+    }
+    if ($ENV{"JAVA"} eq "") {
+        $ENV{"JAVA"} = $DEFAULT_VALUES->{"java"};
+    } else {
+        print "JAVA:".$ENV{"JAVA"}."\n";
+    }
+    # if ($ENV{"OFILTER"} eq "") {
+    #     $ENV{"OFILTER"} = $DEFAULT_VALUES->{"ofilter"};
+    # } else {
+    #     print "OFILTER:".$ENV{"OFILTER"}."\n";
+    # }
+    if ($ENV{"YAMCHA_DIR"} eq "") {
+        $ENV{"YAMCHA_DIR"} = $DEFAULT_VALUES->{"yamcha-dir"};
+    } else {
+        print "YAMCHA_DIR:".$ENV{"YAMCHA_DIR"}."\n";
+    }
+    if ($ENV{"CHASEN_DIR"} eq "") {
+        $ENV{"CHASEN_DIR"} = $DEFAULT_VALUES->{"chasen-dir"};
+    } else {
+        print "CHASEN_DIR:".$ENV{"CHASEN_DIR"}."\n";
+    }
+    if ($ENV{"MECAB_DIR"} eq "") {
+        $ENV{"MECAB_DIR"} = $DEFAULT_VALUES->{"mecab-dir"};
+    } else {
+        print "MECAB_DIR:".$ENV{"MECAB_DIR"}."\n";
+    }
+    if ($ENV{"UNIDIC_DIR"} eq "") {
+        $ENV{"UNIDIC_DIR"} = $DEFAULT_VALUES->{"unidic-dir"};
+    } else {
+        print "UNIDIC_DIR:".$ENV{"UNIDIC_DIR"}."\n";
+    }
+    if ($ENV{"UNIDIC2_DIR"} eq "") {
+        $ENV{"UNIDIC2_DIR"} = $DEFAULT_VALUES->{"unidic2-dir"};
+    } else {
+        print "UNIDIC2_DIR:".$ENV{"UNIDIC2_DIR"}."\n";
+    }
+    if ($ENV{"UNIDIC_DB"} eq "") {
+        $ENV{"UNIDIC_DB"} = $DEFAULT_VALUES->{"unidic-db"};
+    } else {
+        print "UNIDIC_DB:".$ENV{"UNIDIC_DB"}."\n";
+    }
+    if ($ENV{"SVM_TOOL_DIR"} eq "") {
+        $ENV{"SVM_TOOL_DIR"} = $DEFAULT_VALUES->{"svm-tool-dir"};
+    } else {
+        print "SVM_TOOL_DIR:".$ENV{"SVM_TOOL_DIR"}."\n";
+    }
+    if ($ENV{"CRF_DIR"} eq "") {
+        $ENV{"CRF_DIR"} = $DEFAULT_VALUES->{"crf-dir"};
+    } else {
+        print "CRF_DIR:".$ENV{"CRF_DIR"}."\n";
+    }
+    if ($ENV{"MIRA_DIR"} eq "") {
+        $ENV{"MIRA_DIR"} = $DEFAULT_VALUES->{"mira-dir"};
+    } else {
+        print "MIRA_DIR:".$ENV{"MIRA_DIR"}."\n";
+    }
+    if ($ENV{"MSTPARSER_DIR"} eq "") {
+        $ENV{"MSTPARSER_DIR"} = $DEFAULT_VALUES->{"mstparser-dir"};
+    } else {
+        print "MSTPARSER_DIR:".$ENV{"MSTPARSER_DIR"}."\n";
+    }
+    if ($ENV{"COMAINU_SVM_BIP_MODEL"} eq "") {
+        $ENV{"COMAINU_SVM_BIP_MODEL"} = $DEFAULT_VALUES->{"comainu-output"};
+    } else {
+        print "COMAINU_SVM_BIP_MODEL:".$ENV{"COMAINU_SVM_BIP_MODEL"}."\n";
+    }
+    if ($ENV{"COMAINU_OUTPUT"} eq "") {
+        $ENV{"COMAINU_OUTPUT"} = $DEFAULT_VALUES->{"comainu-output"};
+    } else {
+        print "COMAINU_OUTPUT:".$ENV{"COMAINU_OUTPUT"}."\n";
+    }
+
+    # ---------- Default Environments ----------
+
+    my $COMAINU_TEMP_DEFAULT = $DEFAULT_VALUES->{"comainu-temp"};
+
+    # ---------- Default Environments ----------
+
+    print "\n";
+
+    if ($ENV{"COMAINU_TEMP"} eq "") {
+        $ENV{"COMAINU_TEMP"} = $COMAINU_TEMP_DEFAULT;
+    } else {
+        print "COMAINU_TEMP:".$ENV{"COMAINU_TEMP"}."\n";
+    }
+
+    my $opts = {
+        %$DEFAULT_VALUES,
+        "comainu-home"   => $ENV{"COMAINU_HOME"},
+        "perl"           => $ENV{"PERL"},
+        "java"           => $ENV{"JAVA"},
+        # "poscreate"      => $ENV{"POSCREATE"},
+        # "ofilter"        => $ENV{"OFILTER"},
+        "yamcha-dir"     => $ENV{"YAMCHA_DIR"},
+        "chasen-dir"     => $ENV{"CHASEN_DIR"},
+        "mecab-dir"      => $ENV{"MECAB_DIR"},
+        "unidic-dir"     => $ENV{"UNIDIC_DIR"},
+        "unidic2-dir"    => $ENV{"UNIDIC2_DIR"},
+        "unidic-db"      => $ENV{"UNIDIC_DB"},
+        "svm-tool-dir"   => $ENV{"SVM_TOOL_DIR"},
+        "crf-dir"        => $ENV{"CRF_DIR"},
+        "mira-dir"       => $ENV{"MIRA_DIR"},
+        "mstparser-dir"  => $ENV{"MSTPARSER_DIR"},
+        "comainu-output" => $ENV{"COMAINU_OUTPUT"},
+        "comainu-temp"   => $ENV{"COMAINU_TEMP"},
+    };
+    GetOptions(
+        $opts, "help", "debug=i", "version",
+        "help-method", "list-method", "force",
+	       "comainu-home=s", "perl=s", "java=s",
+        # "poscreate=s",
+        # "ofilter=s",
+        "yamcha-dir=s", "chasen-dir=s", "mecab-dir=s",
+        "unidic-dir=s", "unidic2-dir=s", "unidic-db=s",
+        "svm-tool-dir=s", "crf-dir=s", "mira-dir=s",
+        "mstparser-dir=s",
+        "comainu-svm-bip-model=s",
+        "comainu-output=s", "comainu-temp=s",
+        "boundary=s",
+        "luwmrph=s", "suwmodel=s", "luwmodel=s",
+    );
+
+    if($Config{"osname"} =~ /MSWin32|cygwin|msys/i) {
+        require ComainuGetPath;
+        my $cgp = ComainuGetPath->new();
+        foreach my $var_name (@$OPT_NAME_LIST) {
+            my $value = $opts->{$var_name};
+            $value = $cgp->adjust_winpath($value);
+            $opts->{$var_name} = $value;
+        }
+    }
+
+    foreach my $var_name (@$OPT_NAME_LIST) {
+        my $var_name_env = uc($var_name);
+        $var_name_env =~ s/\-/_/gs;
+        $ENV{$var_name_env} = $opts->{$var_name};
+    }
+
+    if (defined($opts->{"help"})) {
+        comainu_usage($opts);
+        exit 0;
+    }
+
+    if (defined($opts->{"version"})) {
+        comainu_version($opts);
+        exit 0;
+    }
+
+    if (defined($opts->{"help-method"})) {
+        my $flag = 0;
+        foreach my $method_name (sort keys %Comainu::) {
+            if ($method_name =~ /^METHOD_/) {
+                $method_name =~ s/^METHOD_//;
+                my $usage_name = "USAGE_".$method_name;
+                if ($ARGV[0] eq "" or $method_name eq $ARGV[0]) {
+                    Comainu->$usage_name();
+                    ++$flag;
+                }
+            }
+        }
+        if ($ARGV[0] ne "" and $flag == 0) {
+            printf(STDERR "# Error: Not found the method: '%s'\n", $ARGV[0]);
+        }
+        exit 0;
+    }
+
+    if (defined($opts->{"list-method"})) {
+        print "--- list of methods ---\n";
+        foreach my $method_name (sort keys %Comainu::) {
+            if ($method_name =~ /^METHOD_/) {
+                $method_name =~ s/^METHOD_//;
+                printf("  %s\n", $method_name);
+            }
+        }
+        exit 0;
+    }
+
+    if (!defined($opts->{"force"}) and
+            !check_sub_tool_path($ARGV[0], $opts)) {
+        exit 4;
+    }
+
+    $ENV{"DBG"} = "ON";
+
+    my $comainu_method = "METHOD_".$ARGV[0];
+    my $comainu = Comainu->new(%$opts);
+    if (!$comainu->can($comainu_method)) {
+        printf(STDERR "Not found method : %s\n", $ARGV[0]);
+        printf(STDERR "Supported methods are:\n");
+        foreach my $method_name (sort keys %Comainu::) {
+            if ($method_name =~ /^METHOD_/) {
+                $method_name =~ s/^METHOD_//;
+                printf(STDERR "  %s\n", $method_name);
+            }
+        }
+        exit 3;
+    }
+
+    $ENV{"PRCCHARCODE"} = "utf8";
+
+    # if (! -d $ENV{"COMAINU_HOME"}."/tmp") {
+    #     mkdir $ENV{"COMAINU_HOME"}."/tmp";
+    # }
+    if (! -d $ENV{"COMAINU_TEMP"}) {
+        mkdir $ENV{"COMAINU_TEMP"};
+    }
+    unlink($ENV{"COMAINU_TEMP"}."/*");
+
+    $ENV{"TEMP_FILELIST"} = $ENV{"COMAINU_TEMP"}."/filelist";
+
+    if (! -d $ENV{"TEMP_FILELIST"}) {
+        unlink($ENV{"TEMP_FILELIST"});
+    }
+
+    if ($opts->{"debug"}) {
+        printf(STDERR "# method: %s->%s(%s)\n", $comainu, $comainu_method,
+               join(", ", map {
+                   my $x = "\"".$_."\"";
+                   $x =~ s/\\/\\\\/gs;
+                   $x;
+               } @ARGV[1..$#ARGV]));
+    }
+    my $ret_code = $comainu->$comainu_method(@ARGV[1..$#ARGV]);
+
+    print "\n";
+    if ($ret_code == 0) {
+        print "Finish.\n";
+    }
+}
+
+sub check_sub_tool_path {
+    my ($method, $opts) = @_;
+
+    # check yamcha
+    if ($method =~ /longmodel$/ and
+            $opts->{"luwmodel"} eq "SVM" and
+                (!-f $opts->{"yamcha-dir"}."/yamcha" and
+                     !-f $opts->{"yamcha-dir"}."/yamcha.exe")) {
+        printf(STDERR "# Error: Not found yamcha command: '%s'\n",
+               $opts->{"yamcha-dir"}."/yamcha");
+        printf(STDERR "#   You might set wrong path or it was installed.\n");
+        return 0;
+    }
+
+    # check svm_tool
+    if ($method =~ /longmodel$/ and
+            $opts->{"luwmodel"} eq "SVM" and
+                $opts->{"svm-tool-dir"} ne "" and
+                    (!-f $opts->{"svm-tool-dir"}."/svm_learn" and
+                         !-f $opts->{"svm-tool-dir"}."/svm_learn.exe")) {
+        printf(STDERR "# Error: Not found svm_learn command: '%s'\n",
+               $opts->{"svm-tool-dir"}."/svm_learn");
+        printf(STDERR "#   You might set wrong path or it was installed.\n");
+        return 0;
+    }
+
+    # check crf++
+    if ($method =~ /longmodel$/ and
+            $opts->{"luwmodel"} eq "CRF" and
+                (!-f $opts->{"crf-dir"}."/crf_learn" and
+                     !-f $opts->{"crf-dir"}."/crf_learn.exe")) {
+        printf(STDERR "# Error: Not found crf_learn command: '%s'\n",
+               $opts->{"crf-dir"}."/crf_learn");
+        printf(STDERR "#   You might set wrong path or it was installed.\n");
+        return 0;
+    }
+
+    # check mira
+    if ($method =~ /longmodel$/ and
+            $opts->{"luwmodel"} eq "MIRA" and
+                (!-f $opts->{"mira-dir"}."/mira-train" and
+                     !-f $opts->{"mira-dir"}."/mira-train.exe")) {
+        printf(STDERR "# Error: Not found mira-train command: '%s'\n",
+               $opts->{"mira-dir"}."/mira-train");
+        printf(STDERR "#   You might set wrong path or it was installed.\n");
+        return 0;
+    }
+
+    # check mstparser
+    if ($method =~ /midmodel$/ and
+            (!-d $opts->{"mstparser-dir"}."/output/classes" or
+                 !-f $opts->{"mstparser-dir"}."/lib/trove.jar")) {
+        printf(STDERR "# Error: Not found mstparser class dir: '%s'\n",
+               $opts->{"mstparser-dir"}."/output/classes");
+        printf(STDERR "# Error: Not found mstparser jar file: '%s'\n",
+               $opts->{"mstparser-dir"}."/lib/trove.jar");
+        printf(STDERR "#   You might set wrong path or it was installed.\n");
+        return 0;
+    }
+
+    # check poscreate
+    # if ($method =~ /longoutSVM$/ and
+    #         (!-f $opts->{"poscreate"}."/poscreate" and
+    #              !-f $opts->{"poscreate"}."/poscreate.exe")) {
+    #     printf(STDERR "# Error: Not found poscreate command: '%s'\n",
+    #            $opts->{"poscreate"}."/poscreate");
+    #     printf(STDERR "#    The installation is incomplete. Type 'make' command to build it.\n");
+    #     return 0;
+    # }
+
+    # check mecab
+    if ($method =~ /plain2/ and
+            $opts->{"suwmodel"} eq "mecab" and
+                (!-f $opts->{"mecab-dir"}."/mecab" and
+                     !-f $opts->{"mecab-dir"}."/mecab.exe")) {
+        printf(STDERR "# Error: Not found mecab command: '%s'\n",
+               $opts->{"mecab-dir"}."/mecab");
+        printf(STDERR "#   You might set wrong path or it was installed.\n");
+        return 0;
+    }
+
+    # check chasen
+    if ($method =~ /plain2/ and
+            $opts->{"suwmodel"} eq "chasen" and
+                (!-f $opts->{"chasen-dir"}."/chasen" and
+                     !-f $opts->{"chasen-dir"}."/chasen.exe")) {
+        printf(STDERR "# Error: Not found chasen command: '%s'\n",
+               $opts->{"chasen-dir"}."/chasen");
+        printf(STDERR "#   You might set wrong path or it was installed.\n");
+        return 0;
+    }
+
+    # check unidic
+    if ($method =~ /plain2/ and
+            !-d $opts->{"unidic-dir"}) {
+        printf(STDERR "# Error: Not found Unidic directory: '%s'\n",
+               $opts->{"unidic-dir"});
+        printf(STDERR "#   You might set wrong path or it was installed.\n");
+        return 0;
+    }
+
+    # check unidic2
+    if ($method =~ /plain2/ and
+            !-d $opts->{"unidic2-dir"}) {
+        printf(STDERR "# Error: Not found Unidic2 directory: '%s'\n",
+               $opts->{"unidic2-dir"});
+        printf(STDERR "#   You might set wrong path or it was installed.\n");
+        return 0;
+    }
+
+    # check unidic-db
+    if ($method =~ /plain2/ and
+            !-f $opts->{"unidic-db"}) {
+        printf(STDERR "# Error: Not found Unidic database: '%s'\n",
+               $opts->{"unidic-db"});
+        printf(STDERR "#   You might set wrong path or it was installed.\n");
+        return 0;
+    }
+    return 1;
+}
+
+comainu();
+
+#################### end of file ####################

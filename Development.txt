@@ -1,0 +1,54 @@
+# -*- coding: utf-8; -*-
+
+                    Environment for development of Comainu
+
+(1) Requirements
+  MS-Windows:
+    OS: MS-Windows NT5.0 or lator(Windows XP)
+        MSYS/MinGW
+        Cygwin(optional)
+    Packager: Inno Setup 5.0 or lator
+    Active Perl: 5.8.8 or lator
+      Perl/Tk: 804.028 or lator
+      Win32::Exe, PAR, PAR::Packer: 0.982 or lator
+
+  UNIX:
+    OS: Linux
+    Perl: 5.8.8 or lator
+    Perl/Tk: 804.028 or lator
+
+  Common:
+    ChaSen: 2.4.0 or lator
+    Mecab:  0.96 or lator
+    UniDic: 1.3.12 or lator
+    UniDic2: 2.1.0 or lator
+    YamCha: 0.33 or lator
+    TinySVM: 0.09 or lator
+    CRF++: 0.54 or lator
+    MIRA: 0.10 or lator
+
+(2) Configuration and make
+  From terminal of Linux/MinGW/Cygwin, Type "./configure" command.
+  And type "make".
+  See "Readme_commandline.txt".
+
+(3) How to make distributions
+  Type next commands from terminal to build distributions.
+
+    make dist                # build all packages
+    make dist-src            # build a program tar ball for Unix
+    make dist-model          # build a model tar ball for Unix
+    make dist-win32          # build a program installer for Windows
+    make dist-model-win32    # build a model installer for Windows
+
+  They will be made under the "pkg/dist" directory.
+
+    pkg/dist/
+      Comainu-X_XX-src.tgz
+      Comainu-X_XX-model.tgz
+      Comainu-X_XX-win32.exe
+      Comainu-X_XX-model-win32.exe
+
+  Type 'make distclean' from terminal to clean the distributions.
+
+END

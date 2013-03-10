@@ -1,0 +1,329 @@
+# -*- mode: makefile; coding: utf-8; -*-
+
+PERL=@PERL@
+# PERL=c:/Perl/bin/perl
+# PP=pp
+# PP=$(PERL) c:/Perl/site/bin/pp
+PP=@PP@
+COMPIL32=@COMPIL32@
+# COMPIL32=c:/Program\ Files/Inno\ Setup\ 5/compil32
+WIN32_TYPICAL_PATH=/c/Program\ Files/Inno\ Setup\ 5/:/c/Perl/bin
+
+APP_NAME=@APP_NAME@-@APP_VERSION@
+PACKAGE_NAME=`basename "@COMAINU_HOME@" | sed -e "s/\./_/g;"`
+PACKAGE_SRC_NAME=$(PACKAGE_NAME)-src.tgz
+PACKAGE_MODEL_NAME=$(PACKAGE_NAME)-model.tgz
+PACKAGE_WIN32_NAME=$(PACKAGE_NAME)-win32.exe
+PACKAGE_MODEL_WIN32_NAME=$(PACKAGE_NAME)-model-win32.exe
+SCRIPT_DIR=script
+PACKAGE_DIR=pkg
+ICON_FILE=img/wincomainu.ico
+
+OSTYPE=@OSTYPE@
+MINGW_HOME=@MINGW_HOME@
+MSYS_HOME=@MSYS_HOME@
+
+TRAIN_KC=train/*.KC
+
+PP_OPTS=\
+-M FindBin \
+-M lib \
+-M open \
+-M utf8 \
+-M encoding \
+-M Encode \
+-M Encode::JP \
+-M Getopt::Long \
+-M FileHandle \
+-M File::Basename \
+-M File::Spec \
+-M threads \
+-M Thread::Queue \
+-M Time::HiRes \
+-M DBI \
+-M DBD::SQLite \
+-M Tk \
+-M Tk::Panedwindow \
+-M Tk::Table \
+-M Tk::Text \
+-M Tk::TextUndo \
+-M Tk::Photo \
+-M Tk::ProgressBar \
+-M Tk::BrowseEntry \
+-M Tk::DropSite \
+-M Win32::OLE \
+
+
+all:
+
+dist: dist-src dist-model dist-win32 dist-model-win32
+dist-src:
+	@echo "####################"
+	@echo "# dist-src"
+	@echo "####################"
+	make clean
+	@top_dir=$$(pwd) && pkg_dir=$$(basename $${top_dir}) && \
+	cd $(PACKAGE_DIR) && \
+	if test ! -d dist; then mkdir dist; fi && \
+	cd dist && \
+	if test -d $${pkg_dir}; then rm -fr $${pkg_dir}; fi && \
+	mkdir $${pkg_dir} && \
+	echo "  Copy configure ... " && \
+	cp -pr ../../configure $${pkg_dir}/ && \
+	echo "  Copy Makefile ... " && \
+	cp -pr ../../Makefile.in $${pkg_dir}/ && \
+	echo "  Copy conf file ... " && \
+	cp -pr ../../*_org.conf.in $${pkg_dir}/ && \
+	echo "  Copy text files ... " && \
+	cp -pr ../../*.txt $${pkg_dir}/ && \
+	echo "  Copy doc files ... " && \
+	cp -pr ../../doc $${pkg_dir}/ && \
+	echo "  Copy script files ... " && \
+	cp -pr ../../script $${pkg_dir}/ && \
+	rm -f  $${pkg_dir}/script/wincomainu.pl && \
+	rm -f  $${pkg_dir}/script/comainu.pl && \
+	rm -f  $${pkg_dir}/script/comainu_setup.pl && \
+	echo "  Copy lib files ... " && \
+	cp -pr ../../lib $${pkg_dir}/ && \
+	echo "  Copy etc files ... " && \
+	cp -pr ../../etc $${pkg_dir}/ && \
+	echo "  Copy msg files ... " && \
+	cp -pr ../../msg $${pkg_dir}/ && \
+	echo "  Copy img files ... " && \
+	cp -pr ../../img $${pkg_dir}/ && \
+	echo "  Copy pkg files ... " && \
+	mkdir $${pkg_dir}/pkg && \
+	cp -p ../../pkg/*.iss.in $${pkg_dir}/pkg/ && \
+	echo "  Copy suw2luw files ... " && \
+	cp -pr ../../suw2luw $${pkg_dir}/ && \
+	echo "  Copy sample data files ... " && \
+	cp -pr ../../sample $${pkg_dir}/ && \
+	echo "  Copy mstparser files ... " && \
+	cp -pr ../../mstparser $${pkg_dir}/ && \
+	mkdir $${pkg_dir}/tmp && \
+	tar -zcf ./$(PACKAGE_SRC_NAME) $${pkg_dir} && \
+	cd $${top_dir} && \
+	src_tgz_file=$(PACKAGE_DIR)/dist/$(PACKAGE_SRC_NAME) && \
+	echo "Generated "$${src_tgz_file} && \
+	echo
+
+dist-model:
+	@echo "####################"
+	@echo "# dist-model"
+	@echo "####################"
+	@top_dir=$$(pwd) && pkg_dir=$$(basename $${top_dir}) && \
+	cd $(PACKAGE_DIR) && \
+	if test ! -d dist; then mkdir dist; fi && \
+	cd dist && \
+	if test -d $${pkg_dir}; then rm -fr $${pkg_dir}; fi && \
+	mkdir $${pkg_dir} && \
+	echo "  Copy train files ... " && \
+	cp -pr ../../train $${pkg_dir}/ && \
+	tar -zcf ./$(PACKAGE_MODEL_NAME) $${pkg_dir}/train && \
+	cd $${top_dir} && \
+	src_tgz_file=$(PACKAGE_DIR)/dist/$(PACKAGE_MODEL_NAME) && \
+	echo "Generated "$${src_tgz_file} && \
+	echo
+
+dist-win32:
+	@echo "####################"
+	@echo "# dist-win32"
+	@echo "####################"
+	make clean build-package build-compil32
+
+build-package:
+	@echo "####################"
+	@echo "# build-package"
+	@echo "####################"
+	@echo "Packaging ... "
+	@os_type=$$(echo $$(uname) | sed -e 's/_.*//g;') && \
+	echo "OS_TYPE: "$${os_type} && \
+	if test $${os_type} != "CYGWIN" -a $${os_type} != "MINGW32"; then echo "Quit: not support the OS_TYPE: $${uname}"; exit; fi && \
+	export PATH=$(WIN32_TYPICAL_PATH):$${PATH} && \
+	echo "PATH: "$${PATH} && \
+	cd $(PACKAGE_DIR) && \
+	if test ! -d dist; then mkdir dist; fi && \
+	cd dist && \
+	if test -d $(APP_NAME); then rm -fr $(APP_NAME); fi && \
+	mkdir $(APP_NAME) && \
+	echo "  Copy configure ... " && \
+	cp -pr ../../configure $(APP_NAME)/ && \
+	echo "  Copy Makefile ... " && \
+	cp -pr ../../Makefile.in $(APP_NAME)/ && \
+	echo "  Copy conf file ... " && \
+	cp -pr ../../*_org.conf.in $(APP_NAME)/ && \
+	echo "  Copy text files ... " && \
+	cp -pr ../../*.txt $(APP_NAME)/ && \
+	echo "  Copy doc files ... " && \
+	cp -pr ../../doc $(APP_NAME)/ && \
+	echo "  Copy script files ... " && \
+	cp -pr ../../script $(APP_NAME)/ && \
+	rm -f  $(APP_NAME)/script/wincomainu.pl && \
+	rm -f  $(APP_NAME)/script/comainu.pl && \
+	echo "  Copy lib files ... " && \
+	cp -pr ../../lib $(APP_NAME)/ && \
+	echo "  Copy etc files ... " && \
+	cp -pr ../../etc $(APP_NAME)/ && \
+	echo "  Copy msg files ... " && \
+	cp -pr ../../msg $(APP_NAME)/ && \
+	echo "  Copy img files ... " && \
+	cp -pr ../../img $(APP_NAME)/ && \
+	echo "  Copy pkg files ... " && \
+	mkdir $(APP_NAME)/pkg && \
+	cp -p ../../pkg/*.iss.in $(APP_NAME)/pkg/ && \
+	echo "  Copy suw2luw files ... " && \
+	cp -pr ../../suw2luw $(APP_NAME)/ && \
+	echo "  Copy sample data files ... " && \
+	cp -pr ../../sample $(APP_NAME)/ && \
+	echo "  Copy mstparser files ... " && \
+	cp -pr ../../mstparser $(APP_NAME)/ && \
+	echo "  Generating exe files ... " && \
+	echo "current_dir: "$$(pwd) && \
+	echo "command: "$(PP) $(PP_OPTS) -i $(APP_NAME)/$(ICON_FILE) -o $(APP_NAME)/bin/runcom.exe ../../script/runcom.pl && \
+	out_exe=$(APP_NAME)/bin/runcom.exe && \
+	$(PP) $(PP_OPTS) -i $(APP_NAME)/$(ICON_FILE) -o $${out_exe} ../../script/runcom.pl && \
+	rm -f par*.exe && \
+	echo "Generated "$${out_exe} && \
+	echo
+
+build-compil32:
+	@echo "####################"
+	@echo "# build-compil32"
+	@echo "####################"
+	@echo "Creating installer ... "
+	@os_type=$$(echo $$(uname) | sed -e 's/_.*//g;') && \
+	echo "OS_TYPE: "$${os_type} && \
+	if test $${os_type} != "CYGWIN" -a $${os_type} != "MINGW32"; then echo "Quit: not support the OS_TYPE: $${os_type}"; exit; fi && \
+	export PATH=$(WIN32_TYPICAL_PATH):$${PATH} && \
+	echo "PATH: "$${PATH} && \
+	if test $${os_type} = "CYGWIN"; then opt_cc="/cc"; \
+	else opt_cc="//cc"; fi && \
+	echo "current_dir: "$$(pwd) && \
+	echo "command: "$(COMPIL32) $${opt_cc} $(PACKAGE_DIR)/comainu.iss && \
+	$(COMPIL32) $${opt_cc} $(PACKAGE_DIR)/comainu.iss && \
+	installer_exe=$(PACKAGE_DIR)/dist/$(PACKAGE_WIN32_NAME) && \
+	mv $(PACKAGE_DIR)/dist/setup.exe $${installer_exe} && \
+	echo "Generated "$${installer_exe} && \
+	echo
+
+dist-model-win32:
+	@echo "####################"
+	@echo "# dist-model-win32"
+	@echo "####################"
+	make clean build-model-package build-model-compil32
+
+build-model-package:
+	@echo "####################"
+	@echo "# build-model-package"
+	@echo "####################"
+	@echo "Packaging model ... "
+	cd $(PACKAGE_DIR) && \
+	if test ! -d dist; then mkdir dist; fi && \
+	cd dist && \
+	if test -d $(APP_NAME); then rm -fr $(APP_NAME); fi && \
+	mkdir $(APP_NAME) && \
+	echo "  Copy train files ... " && \
+	cp -pr ../../train $(APP_NAME)/ && \
+	echo
+
+build-model-compil32:
+	@echo "####################"
+	@echo "# build-model-compil32"
+	@echo "####################"
+	@echo "Creating installer ... "
+	@os_type=$$(echo $$(uname) | sed -e 's/_.*//g;') && \
+	echo "OS_TYPE: "$${os_type} && \
+	if test $${os_type} != "CYGWIN" -a $${os_type} != "MINGW32"; then echo "Quit: not support the OS_TYPE: $${os_type}"; exit; fi && \
+	export PATH=$(WIN32_TYPICAL_PATH):$${PATH} && \
+	echo "PATH: "$${PATH} && \
+	if test $${os_type} = "CYGWIN"; then opt_cc="/cc"; \
+	else opt_cc="//cc"; fi && \
+	echo "current_dir: "$$(pwd) && \
+	echo "command: "$(COMPIL32) $${opt_cc} $(PACKAGE_DIR)/comainu_model.iss && \
+	$(COMPIL32) $${opt_cc} $(PACKAGE_DIR)/comainu_model.iss && \
+	installer_exe=$(PACKAGE_DIR)/dist/$(PACKAGE_MODEL_WIN32_NAME) && \
+	mv $(PACKAGE_DIR)/dist/setup.exe $${installer_exe} && \
+	echo "Generated "$${installer_exe} && \
+	echo
+
+train-sample: train-sample-crf \
+	train-sample-mira \
+	train-sample-svm
+
+clean-train-sample: clean-train-sample-crf \
+	clean-train-sample-mira \
+	clean-train-sample-svm
+
+train-sample-crf:
+	@echo "####################"
+	@echo "# $@"
+	@echo "####################"
+	train_dir=./train/CRF && \
+	kc_file=./train/sample.KC && \
+	./script/comainu.pl kc2longmodelCRF "$${kc_file}" "$${train_dir}"
+
+clean-train-sample-crf:
+	rm -fr ./train/CRF/*
+
+train-sample-mira:
+	@echo "####################"
+	@echo "# $@"
+	@echo "####################"
+	train_dir=./train/MIRA && \
+	kc_file=./train/sample.KC && \
+	./script/comainu.pl kc2longmodelMIRA "$${kc_file}" "$${train_dir}"
+
+clean-train-sample-mira:
+	rm -fr ./train/MIRA/*
+
+train-sample-svm:
+	@echo "####################"
+	@echo "# $@"
+	@echo "####################"
+	train_dir=./train/SVM && \
+	kc_file=./train/sample.KC && \
+	./script/comainu.pl kc2longmodelSVM "$${kc_file}" "$${train_dir}"
+
+clean-train-sample-svm:
+	rm -fr ./train/SVM/*
+
+clean:
+	@echo "####################"
+	@echo "# clean"
+	@echo "####################"
+	rm -fr tmp
+	rm -fr out/*
+	rm -f *~
+	cd $(SCRIPT_DIR); rm -f *~
+	cd script; rm -f *~
+	cd lib; rm -f *~
+	cd etc; rm -f *~
+	cd msg; rm -f *~
+	cd img; rm -f *~
+	cd $(PACKAGE_DIR); rm -f *~
+
+distclean: clean
+	@echo "####################"
+	@echo "# distclean"
+	@echo "####################"
+	rm -f Makefile
+	rm -f wincomainu_org.conf
+	rm -f $(SCRIPT_DIR)/wincomainu.pl
+	rm -f $(SCRIPT_DIR)/comainu.pl
+	rm -f $(SCRIPT_DIR)/comainu_setup.pl
+	rm -f config.log
+	rm -f wincomainu.conf
+	rm -fr $(PACKAGE_DIR)/*.iss
+	rm -fr $(PACKAGE_DIR)/dist
+
+.PHONY: all clean distclean\
+	dist dist-src dist-model \
+	dist-win32 build-compil32 \
+	dist-model-win32 build-model-compil32 \
+	train-sample clean-train-sample \
+	train-crf clean-train-crf \
+	train-mira clean-train-mira \
+	train-svm clean-train-svm \
+
+
+#################### END OF FILE ####################

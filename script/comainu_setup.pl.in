@@ -1,0 +1,137 @@
+#!/usr/bin/perl
+# -*- mode: perl; coding: utf-8; -*-
+
+use strict;
+
+use utf8;
+use FindBin qw($Bin);
+use lib "$Bin/../lib";
+use Config;
+use Getopt::Long;
+
+use ComainuGetPath;
+
+my $DEFAULT_VALUES = {
+    "debug"               => 0,
+    "app-name"            => "@APP_NAME@",
+    "app-version"         => "@APP_VERSION@",
+    "app-copyright"       => "@APP_COPYRIGHT@",
+    "app-authors"         => "@APP_AUTHORS@",
+    "comainu-home"        => $Bin."/..",
+    "comainu-appdata-dir" => "",
+    "perl"                => "C:/Perl/bin/perl",
+    "chasen-dir"          => "",
+    "mecab-dir"           => "",
+    "unidic-dir"          => "",
+    "unidic2-dir"         => "",
+    "unidic-db"           => "",
+    "yamcha-dir"          => "",
+    "svm-tool-dir"        => "",
+    "crf-dir"             => "",
+    "mira-dir"            => "",
+    "model-name"          => "train",
+    "java"                => "",
+    "mstparser-dir"       => "",
+};
+
+sub usage {
+    my ($curr) = @_;
+    printf("%s [options] [comainu.pl.in] [comainu.pl]\n", $0);
+    printf("    This script sets up comainu.pl.\n");
+    printf("options\n");
+    printf("  --help                        show this message and exit\n");
+    printf("  --debug                LEVEL  specify the debug level\n");
+    printf("                                  (curr: '%s'\n",
+	   $curr->{"debug"});
+    printf("  --comainu-home         HOME   specify the home of Comainu\n");
+    printf("                                  (curr: '%s'\n",
+	   $curr->{"comainu-home"});
+    printf("  --comainu-appdata-dir  DIR    specify the APPDATA dir for Comainu\n");
+    printf("                                  (curr: '%s'\n",
+	   $curr->{"comainu-appdata-dir"});
+    printf("  --model-name           NAME   specify the model name\n");
+    printf("                                  (curr: '%s'\n",
+	   $curr->{"model-name"});
+}
+
+sub main {
+    my $opts = {%$DEFAULT_VALUES};
+    GetOptions(
+        $opts, "debug=i", "help",
+	       "comainu-home=s",
+        "comainu-appdata-dir=s",
+        "model-name=s"
+    );
+    if (defined($opts->{"help"})) {
+        usage($opts);
+        exit(0);
+    }
+    while($opts->{"comainu-home"} =~ s/\/[^\/]+\/\.\.//) { ; }
+    my $appdata = ($ENV{"APPDATA"} || "");
+    my $allusersprofile = ($ENV{"ALLUSERSPROFILE"} || "");
+    if ($opts->{"comainu-appdata-dir"} eq "") {
+        $opts->{"comainu-appdata-dir"} = $appdata."/Comainu";
+    }
+    if (!-d $opts->{"comainu-appdata-dir"}) {
+        $opts->{"comainu-appdata-dir"} = $allusersprofile."/".File::Basename::basename($appdata)."/Comainu";
+    }
+    my $cgp = ComainuGetPath->new();
+    $opts->{"comainu-home"} = $cgp->adjust_winpath($opts->{"comainu-home"});
+    $opts->{"comainu-appdata-dir"} = $cgp->adjust_winpath($opts->{"comainu-appdata-dir"});
+    $opts->{"chasen-dir"} = $cgp->get_chasen_dir_auto();
+    $opts->{"mecab-dir"} = $cgp->get_mecab_dir_auto();
+    $opts->{"unidic-dir"} = $cgp->get_unidic_dir_auto();
+    $opts->{"unidic2-dir"} = $cgp->get_unidic2_dir_auto();
+    $opts->{"unidic-db"} = $cgp->get_unidic_db_auto();
+    $opts->{"yamcha-dir"} = $cgp->get_yamcha_dir_auto();
+    $opts->{"svm-tool-dir"} = $cgp->get_svm_tool_dir_auto();
+    $opts->{"crf-dir"} = $cgp->get_crf_dir_auto();
+    $opts->{"mira-dir"} = $cgp->get_mira_dir_auto();
+    $opts->{"java"} = $cgp->get_java_auto();
+    $opts->{"mstparser-dir"} = $cgp->get_mstparser_dir_auto();
+
+    my $file_in_list = [
+        $Bin."/../wincomainu_org.conf.in",
+        $Bin."/wincomainu.pl.in",
+        $Bin."/comainu.pl.in",
+    ];
+    foreach my $file_in (@$file_in_list) {
+        my $file_out = $file_in;
+        $file_out =~ s/\.in$//;
+        replace_var_for_file($opts, $file_in, $file_out);
+        printf(STDERR "# Generated %s\n", $file_out);
+    }
+}
+
+sub replace_var_for_file {
+    my ($opts, $file_in, $file_out) = @_;
+    my $fh_in = \*STDIN;
+    my $fh_out = \*STDOUT;
+    open($fh_in, $file_in) if $file_in ne "-";
+    open($fh_out, ">", $file_out) if $file_out ne "-";
+    replace_var_for_fh($opts, $fh_in, $fh_out);
+    close($fh_in) if $file_in ne "-";
+    close($fh_out) if $file_out ne "-";
+}
+
+sub replace_var_for_fh {
+    my ($opts, $fh_in, $fh_out) = @_;
+    while (my $line = <$fh_in>) {
+        $line =~ s/\@([a-zA-Z0-9\-\_]+?)\@/replace_var($1, $opts)/eg;
+        print $fh_out $line;
+    }
+}
+
+sub replace_var {
+    my ($name, $opts) = @_;
+    my $key = lc($name);
+    $key =~ s/\_/\-/g;
+    if (exists($opts->{$key})) {
+        return $opts->{$key};
+    }
+    return "";
+}
+
+main();
+
+#################### end of file ####################

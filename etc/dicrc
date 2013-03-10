@@ -1,0 +1,16 @@
+dictionary-charset = utf8
+config-charset = utf8
+cost-factor = 700
+max-grouping-size = 10
+bos-feature = BOS/EOS,*,*,*,*,*,*,*,*,*,*,*,*,*,*,*,*
+eval-size = 10
+unk-eval-size = 4
+
+node-format-unidic = %m\t%f[9]\t%f[6]\t%f[7]\t%F-[0,1,2,3]\t%f[4]\t%f[5]\n
+unk-format-unidic  = %m\t%m\t%m\t%m\t%F-[0,1,2,3]\t%f[4]\t%f[5]\n
+eos-format-unidic  = EOS\n
+
+node-format-chamame = \t%m\t%f[9]\t%f[6]\t%f[7]\t%F-[0,1,2,3]\t%f[4]\t%f[5]\n
+unk-format-chamame  = \t%m\t%m\t%m\t%m\t%F-[0,1,2,3]\t%f[4]\t%f[5]\n
+eos-format-chamame  = 
+bos-format-chamame  = B

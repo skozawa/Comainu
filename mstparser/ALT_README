@@ -1,0 +1,204 @@
+Introduction
+============
+
+This file contains the configuration and build instructions for using
+Apache Ant (http://ant.apache.org) to build MSTParser, and for setting
+up your environment to use the scripts in the mstparser/bin
+directory. All the instructions in the original README file should
+continue to work as before -- this document describes an optional way
+of compiling and using MSTParser with a few more bells and whistles.
+
+
+Configuring your environment variables
+======================================
+
+The easiest thing to do is to set the environment variables JAVA_HOME
+and MSTPARSER_DIR to the relevant locations on your system. Set JAVA_HOME
+to match the top level directory containing the Java installation you
+want to use. Note that version 1.5 of the Java 2 SDK is required.
+
+For example, on Windows:
+
+C:\> set JAVA_HOME=C:\jdk1.5.0_04
+
+or on Unix:
+
+% setenv JAVA_HOME /usr/local/java
+  (csh)
+> JAVA_HOME=/usr/java; export JAVA_HOME
+  (ksh, bash)
+
+On Windows, to get these settings to persist, it's actually easiest to
+set your environment variables through the System Properties from the
+Control Panel. For example, under WinXP, go to Control Panel, click on
+System Properties, choose the Advanced tab, click on Environment
+Variables, and add your settings in the User variables area.
+
+Next, likewise set MSTPARSER_DIR to be the top level directory where you
+unzipped the download. In Unix, type 'pwd' in the directory where
+this file is and use the path given to you by the shell as
+MSTPARSER_DIR.  You can set this in the same manner as for JAVA_HOME
+above.
+
+Next, add the directory MSTPARSER_DIR/bin to your path. For example, you
+can set the path in your .bashrc file as follows:
+
+export PATH=$PATH:$MSTPARSER_DIR/bin
+
+Once you have taken care of these three things, you should be able to
+build and use MSTParser.
+
+
+Building the system
+===================
+
+The MSTParser build system is based on Apache Ant.
+Ant is a little but very handy tool that uses a build file written in
+XML (build.xml) as building instructions.
+
+To build the code, first make sure your current working
+directory is where the build.xml file is located. Then type:
+
+  sh build.sh      (Unix)
+
+If everything is right and all the required packages are visible, this
+action will generate a file called mstparser.jar in the ./output
+directory, and Java class files in ./output/classes.
+
+
+Build targets
+=============
+
+These are the meaningful targets for the main build file:
+
+  package  --> generates the openccg.jar file (default)
+  compile  --> compiles the source code
+  javadoc  --> generates the API documentation
+  clean    --> cleans up the compilation directory
+
+There are also build files in each sample grammar directory.
+
+To learn the details of what each target does, read the build.xml file.
+It is quite understandable.
+
+
+Trying it out
+=============
+
+If you've managed to configure and build the system, you should be
+able to run mstparser as described in the README, but without some of
+the extra classpath and memory options, and you should be able to do
+so from anywhere on your directory system. 
+
+If you trouble starting up any of the scripts, make sure you have set
+the environment variables properly, and that the scripts (located in
+mstparser/bin) call the right shell environment (top-line of the
+script; to solve the problem, either comment out this line or correct
+the path).
+
+Here's a brief description of some of the scripts:
+
+1. The shell script mst_parse.sh is just a simple wrapper that allows
+you to do this:
+
+> mst_parse.sh \
+  train train-file:data/train.ulab model-name:dep.model \
+  test test-file:data/test.ulab output-file:out.txt \
+  eval gold-file:data/test.ulab
+
+instead of this (as described in the readme):
+
+> java -classpath ".:lib/trove.jar" -Xmx1800m mstparser.DependencyParser \
+  train train-file:data/train.ulab model-name:dep.model \
+  test test-file:data/test.ulab output-file:out.txt \
+  eval gold-file:data/test.ulab
+
+
+[NOTE: actually, if you want to run MSTParser the latter way and you
+build MSTParser using Ant (via build.sh), then your Java class files
+will be contained in ./output/classes rather than ./mstparser, so the
+classpath would need to be "./output/classes:lib/trove.jar". The
+mst_parse.sh script takes care of this and sets the classpath
+appropriately.]
+
+2. The shell script mst_score.sh is just an easy way to call upon the
+main method of the mstparser.DependencyEvaluator class. Call it as
+such:
+
+> mst_score.sh <gold_standard_dependency_file> <parser_output_dependency_file> <format>
+
+where <format> is either MST or CONLL (default CONLL). Here's a concrete example:
+
+> mst_score.sh data/portuguese/floresta_test.conll testbed/my_floresta_parses.conll CONLL
+ 
+
+See the following site for more information on the CONLL format (as
+well as other dependency parsers and info, etc):
+
+http://nextens.uvt.nl/~conll/
+
+3. The Python program mst_experiment.py is more involved wrapper that
+allows one to easily do a randomized ten-fold while improving
+performance on development data. It manages the various files that
+MSTParser produces and keeps them tightly contained into a single
+output directory. It also has hooks for using a part-of-speech tagger
+(see pos_tag.py, which calls on the OpenNLP POS Tagger and assumes it
+is installed).
+
+You can see the options by running:
+
+> mst_experiment.py --help
+
+Here's an example to do an 8-fold cross-validation using the
+non-projective algorithm:
+
+> mst_experiment.py -f 8 -o experiment1 -d non-proj data/train.lab
+
+If you find it useful, that's great -- but before diving into it, you
+should be aware that you may have to hack the Python a bit for your
+own needs. It is actually put together from a program previous used to
+interface with the Bikel parser, so there may be some extraneous
+options and code hanging around.
+
+Note: Do NOT ask Ryan for any help with this Python script. Direct any
+questions to Jason Baldridge instead (see email below), and even then
+don't count on a rapid response.
+
+4. The Python script pos_tag.py calls on an unreleased version of the
+OpenNLP tagger, and is left here only as an example that might help
+you develop a similar script for other taggers. If you want the
+OpenNLP tagger, let Jason know and he will consider packaging it up
+with the parser more cleanly.
+
+5. The Python script mst2conll.py can be used to convert your existing
+MST format files to CONLL format.  The script conll2mst.py converts
+CONLL formated files into MST format.
+
+6. The Python script create_baseline.py creates a right or left
+linking baseline. Default is to create left linking -- use the option
+-r for right linking. Currently, it uses MST format for input and
+output, so you'll need to do some conversion if you have dependency
+files in CONLL format. (This script was adapted from one written by
+Ben Wing.)
+
+
+
+Bug Reports
+===========
+
+See the original README for bug reporting for the system
+itself. Report problems with the Ant build setup, the Python scripts,
+or these instructions to Jason Baldridge (jasonbaldridge@gmail.com).
+
+Also note: if you use Windows and are having problems, you are on your
+own.
+
+
+Special Note
+============
+
+Parts of these instructions and some of the directory structure are
+based on the OpenCCG (openccg.sf.net) project and the JDOM project
+(www.jdom.org).
+
+

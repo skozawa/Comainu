@@ -1,0 +1,9 @@
+3/23/07: Run with version 0.4.3b, second order.
+
+EVALUATION PERFORMANCE:
+Tokens: 4389
+Correct: 3536
+Unlabeled Accuracy: 0.8056504898610162
+Unlabeled Complete Correct: 0.2
+Labeled Accuracy: 0.7477785372522214
+Labeled Complete Correct: 0.145

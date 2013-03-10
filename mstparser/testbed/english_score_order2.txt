@@ -1,0 +1,8 @@
+EVALUATION PERFORMANCE:
+Tokens: 4639
+Correct: 3543
+Unlabeled Accuracy: 0.7637421858159086
+Unlabeled Complete Correct: 0.15
+Labeled Accuracy: 0.7204138823022203
+Labeled Complete Correct: 0.065
+

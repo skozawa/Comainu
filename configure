@@ -1,0 +1,331 @@
+#!/bin/sh
+# -*- mode: shell-script -*-
+
+CURR_DIR=$(pwd)
+PARENT_DIR=$(dirname ${CURR_DIR})
+HOSTNAME=$(hostname)
+
+######################################################################
+# You can change the default configration to write items of
+# "Generating files" and "Parameter variables", if you need.
+######################################################################
+
+########################################
+# Generating files
+########################################
+
+GEN_FILE_LIST="
+Makefile:
+wincomainu_org.conf:
+script/comainu.pl:a+x
+script/wincomainu.pl:a+x
+script/comainu_setup.pl:a+x
+pkg/comainu.iss:
+pkg/comainu_model.iss:
+"
+
+########################################
+# Parameter variables
+########################################
+
+NAME_LIST="
+APP_NAME
+APP_VERSION
+APP_COPYRIGHT
+APP_AUTHORS
+COMAINU_HOME
+COMAINU_APPDATA_DIR
+PERL
+JAVA
+PP
+INNO_SETUP
+COMPIL32
+OSTYPE
+MINGW_HOME
+MSYS_HOME
+YAMCHA_DIR
+CHASEN_DIR
+MECAB_DIR
+UNIDIC_DIR
+UNIDIC2_DIR
+UNIDIC_DB
+SVM_TOOL_DIR
+CRF_DIR
+MIRA_DIR
+MSTPARSER_DIR
+MODEL_NAME
+"
+
+APP_NAME_DEFAULT="Comainu"
+APP_VERSION_DEFAULT="0.60"
+APP_COPYRIGHT_DEFAULT="Copyright (C) 2010-2011 The UniDic Consortium"
+APP_AUTHORS_DEFAULT="UCHIMOTO Kiyotaka, KOZAWA Shunsuke, DEN Yasuharu"
+COMAINU_HOME_DEFAULT="\${CURR_DIR}"
+COMAINU_APPDATA_DIR_DEFAULT="."
+PERL_DEFAULT="/usr/bin/perl"
+JAVA_DEFAULT="/usr/bin/java"
+PP_DEFAULT="\${PERL} c:/Perl/site/bin/pp"
+INNO_SETUP_DEFAULT="c:/Program\ Files/Inno\ Setup\ 5"
+COMPIL32_DEFAULT="\${INNO_SETUP}/compil32"
+OSTYPE_DEFAULT=$(uname | tr 'A-Z' 'a-z' | sed -e 's/_.*//;')
+MINGW_HOME_DEFAULT=$(if test -d "c:/MinGW"; then echo "c:/MinGW"; fi)
+MSYS_HOME_DEFAULT=$(if test -d "c:/msys/1.0"; then echo "c:/msys/1.0"; fi)
+YAMCHA_DIR_DEFAULT="/usr/local/bin"
+CHASEN_DIR_DEFAULT="/usr/local/bin"
+MECAB_DIR_DEFAULT="/usr/local/bin"
+UNIDIC_DIR_DEFAULT="/usr/local/unidic"
+UNIDIC2_DIR_DEFAULT="/usr/local/unidic2"
+UNIDIC_DB_DEFAULT="\${UNIDIC2_DIR}/share/unidic.db"
+SVM_TOOL_DIR_DEFAULT="/usr/local/bin"
+CRF_DIR_DEFAULT="/usr/local/bin"
+MIRA_DIR_DEFAULT="/usr/local/bin"
+MSTPARSER_DIR_DEFAULT="mstparser"
+# MODEL_NAME_DEFAULT="LUW090605b_all"
+# MODEL_NAME_DEFAULT="sample"
+MODEL_NAME_DEFAULT="train"
+
+APP_NAME_HELP="specify the application name"
+APP_VERSION_HELP="specify the application version"
+APP_COPYRIGHT_HELP="specify the application copyright"
+APP_AUTHORS_HELP="specify the application authors"
+COMAINU_HOME_HELP="specify the Comainu home"
+COMAINU_APPDATA_DIR_HELP="specify the Comainu application data directory"
+PERL_HELP="specify perl"
+JAVA_HELP="specify the java"
+PP_HELP="specify PAR::Packer::pp"
+INNO_SETUP_HELP="specify the Inno Setup"
+COMPIL32_HELP="specify compil32(Inno Setup)"
+OSTYPE_HELP="specify the OS type"
+MINGW_HOME_HELP="specify the MinGW home"
+MSYS_HOME_HELP="specify the MSYS home"
+YAMCHA_DIR_HELP="specify the YAMCHA_DIR"
+CHASEN_DIR_HELP="specify the CHASEN_DIR"
+MECAB_DIR_HELP="specify the MECAB_DIR"
+UNIDIC_DIR_HELP="specify the UNIDIC_DIR"
+UNIDIC2_DIR_HELP="specify the UNIDIC2_DIR"
+UNIDIC_DB_HELP="specify the UNIDIC_DB"
+SVM_TOOL_DIR_HELP="specify the SVM_TOOL_DIR"
+CRF_DIR_HELP="specify the CRF_DIR"
+MIRA_DIR_HELP="specify the MIRA_DIR"
+MSTPARSER_DIR_HELP="specify the MSTPARSER_DIR"
+MODEL_NAME_HELP="specify the model name"
+
+######################################################################
+# You don't have to touch the following code to change configuration.
+######################################################################
+
+export LANG=C
+
+help_flag=
+debug_flag=
+
+case_add_opts="case \${option} in "
+for name in ${NAME_LIST}; do
+opt_name0=$(echo ${name} | sed -e 's/_/-/g' | tr 'A-Z' 'a-z')
+opt_name1=$(echo ${name} | tr 'A-Z' 'a-z')
+opt_name2=$(echo ${name} | sed -e 's/_/-/g' | tr 'a-z' 'A-Z')
+opt_name3=$(echo ${name} | tr 'a-z' 'A-Z')
+case_add_opts=${case_add_opts}"
+    (--${opt_name0} | --${opt_name1} | --${opt_name2} | --${opt_name3})
+	prev=${name}
+	;;
+    (--${opt_name0}=* | --${opt_name1}=* | --${opt_name2}=* | --${opt_name3}=*)
+	${name}=\${optarg}
+	;;
+"
+done
+case_add_opts=${case_add_opts}"esac"
+
+for name in ${NAME_LIST};
+do
+    eval "${name}=\"<UNDEF>\""
+done
+
+prev=
+for option
+do
+    if test -n "${prev}"; then
+	eval "${prev}=\${option}"
+	prev=
+	continue
+    fi
+    optarg=`expr "x${option}" : 'x[^=]*=\(.*\)'`
+
+    case ${option} in
+    (-h | --help)
+	help_flag=true
+	;;
+    (-d | --debug)
+	debug_flag=true
+	;;
+    esac
+
+    eval ${case_add_opts}
+
+    case ${option} in
+    ([^-]*=*)
+	envvar=`expr "x${option}" : 'x\([^=]*\)='`
+	optarg=`echo "${optarg}" | sed -e "s/'/'\\\\\\\\''/g"`
+	eval "${envvar}='${optarg}'"
+	export ${envvar}
+	;;
+    esac
+done
+
+if test -n "${help_flag}"; then
+    echo "Usage: $0 [options]... [VAR=VALUE]..."
+    echo
+    echo "options:"
+    echo "  -h, --help"
+    echo "      show this message and exit"
+    echo "  -d, --debug"
+    echo "      show debug information"
+    for name in ${NAME_LIST}; do
+      opt_name0=$(echo ${name} | sed -e 's/_/-/g' | tr 'A-Z' 'a-z')
+      eval "help_msg=\${${name}_HELP}"
+      eval "default_val=\${${name}_DEFAULT}"
+      echo "  --${opt_name0}=${name}"
+      echo "      ${help_msg}"
+      echo "      default: '${default_val}'"
+    done
+    exit
+fi
+
+CONFIG_LOG=config.log
+
+exec 5>${CONFIG_LOG}
+echo "# configuration start"
+echo "# "
+echo -n "#   $ sh $0"
+for arg in "$@"; do
+    case ${arg} in
+    (--*=*)
+	echo -n " \""${arg}"\""
+	;;
+    (--*)
+	echo -n " "${arg}
+	;;
+    (*)
+	echo -n " \""${arg}"\""
+	;;
+    esac
+done
+echo
+echo "# "
+chmod a+x ${CONFIG_LOG}
+echo "#!/bin/sh" >&5
+echo -n "sh $0" >&5
+for arg in "$@"; do
+    case ${arg} in
+    (--*=*)
+	echo -n " \""${arg}"\"" >&5
+	;;
+    (--*)
+	echo -n " "${arg} >&5
+	;;
+    (*)
+	echo -n " \""${arg}"\"" >&5
+	;;
+    esac
+done
+echo >&5
+echo "exit" >&5
+echo "" >&5
+echo "# configuration start" >&5
+echo "# " >&5
+echo -n "#   $ sh $0" >&5
+for arg in "$@"; do
+    case ${arg} in
+    (--*=*)
+	echo -n " \""${arg}"\"" >&5
+	;;
+    (--*)
+	echo -n " "${arg} >&5
+	;;
+    (*)
+	echo -n " \""${arg}"\"" >&5
+	;;
+    esac
+done
+echo >&5
+echo "# " >&5
+
+for env in ${ENV_LIST};
+do
+    eval "val=\${${env}}"
+    echo "# ${env}=$val"
+    echo "# ${env}=$val" >&5
+done
+echo "# "
+echo "# " >&5
+
+for name in ${NAME_LIST};
+do
+    eval "default_val=\"\${${name}_DEFAULT}\""
+    eval "val=\"\${${name}}\""
+    eval "${name}=\"${val}\""
+    if test "x${val}" = "x<UNDEF>"; then eval "${name}=\"${default_val}\""; fi
+    eval "val=\"\${${name}}\""
+    echo "# ${name}=\"${val}\""
+    echo "# ${name}=\"${val}\"" >&5
+done
+echo "# "
+echo "# " >&5
+
+gen_file_list_flat=
+for gen_file in ${GEN_FILE_LIST}; do
+  gen_file_mode=$(echo ${gen_file} | sed -e 's/.*://;')
+  gen_file=$(echo ${gen_file} | sed -e 's/:.*//;')
+  gen_file_list_flat="${gen_file_list_flat}${gen_file} ";
+done
+
+sed_scr="s#@CONFIG_LOG@#${CONFIG_LOG}#g;"
+sed_scr=${sed_scr}"s#@GEN_FILE_LIST@#${gen_file_list_flat}#g;"
+
+for env in ${ENV_LIST};
+do
+    eval "val=\${${env}}"
+    val=$(echo ${val} | sed -e 's#\\#\\\\#g;')
+    sed_scr=${sed_scr}"s#@${env}@#${val}#g;"
+done
+
+for name in ${NAME_LIST};
+do
+    eval "val=\${${name}}"
+    val=$(echo ${val} | sed -e 's#\\#\\\\#g;')
+    sed_scr=${sed_scr}"s#@${name}@#${val}#g;"
+done
+
+if test -n "${debug_flag}"; then
+    echo "sed_com=sed -e {$sed_scr}"
+    echo
+fi
+
+for gen_file in ${GEN_FILE_LIST}; do
+    gen_file_mode=$(echo ${gen_file} | sed -e 's/.*://;')
+    gen_file=$(echo ${gen_file} | sed -e 's/:.*//;')
+    gen_file_in=${gen_file}.in
+    if test -f ${gen_file_in}; then
+	echo -n "# Generating '${gen_file}' ... "
+	echo -n "# Generating '${gen_file}' ... " >&5
+	sed -e "${sed_scr}" ${gen_file_in} > ${gen_file}
+        if test "x${gen_file_mode}" != "x"; then
+	  echo -n "chmod:${gen_file_mode} ... "
+	  echo -n "chmod:${gen_file_mode} ... " >&5
+	  chmod ${gen_file_mode} ${gen_file}
+	fi
+	echo "done."
+	echo "done." >&5
+    else
+	echo "Error: no such file '${gen_file_in}' to generate '${gen_file}'."
+	exit;
+    fi
+done
+
+echo "# "
+echo "# " >&5
+
+echo "# configration done."
+echo "# configration done." >&5
+
+#################### END OF FILE ####################
