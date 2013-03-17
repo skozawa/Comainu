@@ -2,6 +2,7 @@ Makefile
 config.log
 pkg/comainu.iss
 pkg/comainu_model.iss
+pkg/dist
 script/comainu.pl
 script/comainu_setup.pl
 script/wincomainu.pl
