@@ -1578,11 +1578,9 @@ sub mecab2kc_file {
     my $def_buff = "";
     $def_buff .= "dbfile:".$self->{"unidic-db"}."\n";
     $def_buff .= "table:lex\n";
-    #$def_buff .= "input:sLabel,orth,pron,lForm,lemma[-subLemma],pos,cType?,cForm?,tmp1?,tmp2?\n";
-    #$def_buff .= "output:sLabel,orth,pron,lForm,lemma[-subLemma],pos,cType?,cForm?,tmp1?,goshu,form,formBase,formOrthBase,formOrth\n";
-    $def_buff .= "input:sLabel,orth,pron,lForm,lemma[-subLemma],pos,cType?,cForm?\n";
-    $def_buff .= "output:sLabel,orth,pron,lForm,lemma[-subLemma],pos,cType?,cForm?,goshu,form,formBase,formOrthBase,formOrth\n";
-    $def_buff .= "key:lForm,lemma,subLemma,pos,cType,cForm,orth,pron\n";
+    $def_buff .= "input:sLabel,orth,pron,lForm,lemma,pos,cType?,cForm?\n";
+    $def_buff .= "output:sLabel,orth,pron,lForm,lemma,pos,cType?,cForm?,goshu,form,formBase,formOrthBase,formOrth\n";
+    $def_buff .= "key:lForm,lemma,pos,cType,cForm,orth,pron\n";
     $self->write_to_file($ext_def_file, $def_buff);
     undef $def_buff;
 
