@@ -9,10 +9,11 @@ use utf8;
 
 my $DEFAULT_VALUES =
 {
-    "model_type" => 0,
-    "h_label" => {},
-    "k1_label" => {},
-    "k2_label" => {},
+    model_type => 0,
+    h_label    => {},
+    k1_label   => {},
+    k2_label   => {},
+    debug      => 0,
 };
 
 sub new {
@@ -223,10 +224,6 @@ sub extract_BI_data {
             # my $long_yomi = $first[$#first-1];
             my $long_yomi = $first[16+$LOT];
             $pos_feature .= $feature;
-            #$pos_feature .= " H000 H001 H002 H003 H004 H005 H006 H007 H008 H009 H010 H011 H012 H013 H020";
-            #$pos_feature .= " H030 H031 H032 H040 H050 H060 H070 H071 H080 H081 H090 H091";
-            #$pos_feature .= " H120 H130 H131 H132 H133 H134 H135 H136 H137 H138";
-            #$pos_feature .= " H140 H141 H150 H151 H152 H153 H154 H155 H160 H170 H180 H190 H200 H210";
             $pos_feature .= " H000 H005 H006 H007 H008 H009 H010 H011 H012 H013 H020";
             $pos_feature .= " H030 H031 H032 H040 H050 H060 H070 H071 H080 H090";
             $pos_feature .= " H120 H130 H135 H136 H137 H138 H140 H141 H150 H151 H152 H153 H154 H155";
