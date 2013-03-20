@@ -110,10 +110,6 @@ my $KC_MECAB_TABLE_FOR_CHAMAME =
     "12" => "8",
 };
 
-# my $UNIDIC_MECAB_TYPE = "unidic";
-# my $MECAB_CHASEN_TABLE = $MECAB_CHASEN_TABLE_FOR_UNIDIC;
-# my $KC_MECAB_TABLE = $KC_MECAB_TABLE_FOR_UNIDIC;
-
 my $UNIDIC_MECAB_TYPE = "chamame";
 my $MECAB_CHASEN_TABLE = $MECAB_CHASEN_TABLE_FOR_CHAMAME;
 my $KC_MECAB_TABLE = $KC_MECAB_TABLE_FOR_CHAMAME;
@@ -238,11 +234,6 @@ sub METHOD_kc2longout {
     my ($self, $train_kc, $test_kc, $luwmodel, $save_dir ) = @_;
 
     if ( -f $test_kc ) {
-        # unless ( -f $train_kc ) {
-        #     printf(STDERR "ERROR: '%s' not found or not a file.\n",
-        # 		   $train_kc);
-        #     die;
-        # }
         $self->check_luwmodel($luwmodel);
 
         mkdir($save_dir) unless -d $save_dir;
@@ -395,11 +386,6 @@ sub METHOD_bccwj2longout {
     my ($self, $train_kc, $test_bccwj, $luwmodel, $save_dir ) = @_;
 
     if ( -f $test_bccwj ) {
-        # unless ( -f $train_kc ) {
-        #     printf(STDERR "ERROR: '%s' not found or not a file.\n",
-        #            $train_kc);
-        #     die;
-        # }
         $self->check_luwmodel($luwmodel);
         mkdir($save_dir) unless -d $save_dir;
 
@@ -703,11 +689,6 @@ sub METHOD_bccwj2longbnstout {
     my ($self, $long_train_kc, $test_bccwj, $luwmodel, $bnstmodel, $save_dir ) = @_;
 
     if ( -f $test_bccwj ) {
-        # unless ( -f $long_train_kc ) {
-        #     printf(STDERR "ERROR: '%s' not found or not a file.\n",
-        #            $long_train_kc);
-        #     die;
-        # }
         $self->check_luwmodel($luwmodel);
         unless ( -f $bnstmodel ) {
             printf(STDERR "ERROR: '%s' not found or not a file.\n",
@@ -972,7 +953,6 @@ sub bccwjlong2midout_internal {
 
     $self->bccwj2kc_file2($tmp_test_bccwj, $kc_file);
     $self->METHOD_kclong2midout($kc_file, $muwmodel, $tmp_dir);
-    # $self->merge_bccwj_with_mout_file($tmp_test_bccwj, $kc_mout_file, $bccwj_mout_file);
     $self->merge_bccwj_with_kc_mout_file($tmp_test_bccwj, $kc_mout_file, $bccwj_mout_file);
 }
 
@@ -1179,11 +1159,6 @@ sub METHOD_plain2longout {
     my ($self, $train_kc, $test_file, $luwmodel, $save_dir ) = @_;
 
     if ( -f $test_file ) {
-        # unless ( -f $train_kc ) {
-        #     printf(STDERR "ERROR: '%s' not found or not a file.\n",
-        #            $train_kc);
-        #     die;
-        # }
         $self->check_luwmodel($luwmodel);
         mkdir($save_dir) unless -d $save_dir;
 
@@ -1308,11 +1283,6 @@ sub METHOD_plain2longbnstout {
     my ($self, $long_train_kc, $test_file, $luwmodel, $bnstmodel, $save_dir ) = @_;
 
     if ( -f $test_file ) {
-        # unless ( -f $train_kc ) {
-        #     printf(STDERR "ERROR: '%s' not found or not a file.\n",
-        #            $train_kc);
-        #     die;
-        # }
         $self->check_luwmodel($luwmodel);
         unless ( -f $bnstmodel ) {
             printf(STDERR "ERROR: '%s' not found or not a file.\n",
@@ -1383,11 +1353,6 @@ sub METHOD_plain2midout {
     my ($self, $long_train_kc, $test_file, $luwmodel, $muwmodel, $save_dir ) = @_;
 
     if ( -f $test_file ) {
-        # unless ( -f $train_kc ) {
-        #     printf(STDERR "ERROR: '%s' not found or not a file.\n",
-        #            $train_kc);
-        #     die;
-        # }
         $self->check_luwmodel($luwmodel);
         unless ( -f $muwmodel ) {
             printf(STDERR "ERROR: '%s' not found or not a file.\n",
@@ -1457,11 +1422,6 @@ sub METHOD_plain2midbnstout {
     my ($self, $long_train_kc, $test_file, $luwmodel, $muwmodel, $bnstmodel, $save_dir ) = @_;
 
     if ( -f $test_file ) {
-        # unless ( -f $train_kc ) {
-        #     printf(STDERR "ERROR: '%s' not found or not a file.\n",
-        #            $train_kc);
-        #     die;
-        # }
         $self->check_luwmodel($luwmodel);
         unless ( -f $muwmodel ) {
             printf(STDERR "ERROR: '%s' not found or not a file.\n",
@@ -1734,7 +1694,6 @@ sub merge_mecab_with_kc_bout_file {
 
     foreach my $mecab_line ( split(/\r?\n/, $mecab_data) ) {
         my $kc_bout_line = shift(@$kc_bout_data_list);
-        #$kc_bout_line = shift(@$kc_bout_data_list) if($kc_bout_line =~ /^EOS/);
         if ( $kc_bout_line =~ /B/ ) {
             $bout_data .= "*B\n";
         }
@@ -1954,11 +1913,6 @@ sub _process1 {
     }
 
     $buff = $self->delete_column_long($buff);
-
-    # $buff = $self->add_column($buff);
-    # if($self->{"boundary"} ne "none" && $self->{"luwmodel"} eq "SVM") {
-	#     $buff = $self->pp_partial($buff);
-    # }
 
     if ( $self->{"boundary"} eq "sentence" ) {
         $buff =~ s/^\*B.*?\n//mg;
@@ -2294,32 +2248,6 @@ sub _process5 {
     # 入力ファイルの存在確認 (2)
     exit 1 unless $self->exists_file($input2FileName);
 
-    ## poscreate
-    # my $POSCREATE;
-    # print $ENV{"PRCCHARCODE"}."\n";
-    # if($ENV{"PRCCHARCODE"} ne "euc") {
-    #     print "poscreate\n";
-    #     $POSCREATE = $self->{"poscreate"}."/poscreate";
-    # } else {
-    #     print "poscreate_euc\n";
-    #     printf(STDERR "ERROR: poscreate_euc not found.\n");
-    #     exit 1;
-    # }
-
-    ## suw2luw
-    # my $SUW2LUW=$self->{"comainu-home"}."/suw2luw";
-    # my $InflFile=$SUW2LUW."/Infl.txt";
-    # my $DerivFile=$SUW2LUW."/Deriv.txt";
-    # my $CompFile=$SUW2LUW."/Comp.txt";
-    # my $suw2luw = SUW2LUW->new();
-
-    # my $buff = "";
-    # my $proc1 = "\"".$POSCREATE."\" \"".$input1FileName."\" \"".$input2FileName."\"";
-    # $buff = $self->proc_stdin2stdout($proc1, $buff);
-    # $buff = $self->poscreate($input2FileName);
-    # $buff = $self->pp_ctype($buff);
-    # $buff = $suw2luw->suw2luw($buff, $InflFile, $DerivFile, $CompFile);
-
     my $buff = $self->merge_kc_with_svmout($arg2, $input2FileName);
     $self->write_to_file($outputFileName, $buff);
     undef $buff;
@@ -2449,7 +2377,6 @@ sub _bnst_process1 {
 
     my $buff = $self->read_from_file($arg1);
     $buff = $self->kc2bnstsvmdata($buff, 0);
-    #$buff = $self->add_column("*B\n".$buff);
 
     if ( $self->{"bnst_process"} eq "with_luw" ) {
         ## 長単位解析の出力結果
@@ -2619,9 +2546,6 @@ sub training_process1 {
 
     my $NAME = File::Basename::basename($arg1);
     my $buff = $self->read_from_file($arg1);
-    # unless ( -f $arg2."/".$NAME ) {
-    #     $self->write_to_file($arg2."/".$NAME, $buff);
-    # }
     $buff =~ s/^EOS.*?\n|^\*B.*?\n//mg;
     $buff = $self->delete_column_long($buff);
     # $buff = $self->add_column($buff);
@@ -2666,18 +2590,17 @@ sub training_train2 {
     close($fh_ref);
 
     ## 後処理用学習データの作成
-    open(my $fh_ref, "<", $arg1) or die "Cannot open '$arg1'";
-    open(my $fh_svmin, "<", $outputFileName) or die "Cannot open'$outputFileName'";
-    my $BIP = new BIProcessor();
-    $BIP->extract_from_train($fh_ref, $fh_svmin, $arg3, $NAME);
-    close($fh_ref);
-    close($fh_svmin);
+    {
+        open(my $fh_ref, "<", $arg1) or die "Cannot open '$arg1'";
+        open(my $fh_svmin, "<", $outputFileName) or die "Cannot open'$outputFileName'";
+        my $BIP = new BIProcessor();
+        $BIP->extract_from_train($fh_ref, $fh_svmin, $arg3, $NAME);
+        close($fh_ref);
+        close($fh_svmin);
+    }
 
     unlink($outputFileName) unless -s $outputFileName;
 
-    # my $buff = $self->read_from_file($outputFileName);
-    # $buff .= "\n";
-    # $self->write_to_file($outputFileName, $buff);
     return $ret;
 }
 
@@ -2763,40 +2686,6 @@ sub training_train3 {
     printf(STDERR "# COM: %s\n", $com);
     system($com);
 
-    return $ret;
-}
-
-# from unix/bat/subBat/training_train3.sh
-sub training_train3_old {
-    my ($self, $train_kc, $model_dir) = @_;
-    print STDERR "# training_train3\n";
-    my $ret = 0;
-    my $name = File::Basename::basename($train_kc);
-    my $yamcha_tool_dir = $self->get_yamcha_tool_dir();
-    my $svm_tool_dir = $self->get_svm_tool_dir();
-    if ( !defined($yamcha_tool_dir) or !defined($svm_tool_dir) ) {
-        return 1;
-    }
-    my $svm_learn = $svm_tool_dir."/svm_learn";
-    my $yamcha_train_opts = {
-        "TOOL_DIR" => $yamcha_tool_dir,
-        # "SVM_PARAM" => "-t1 -d2 -c1",
-        "SVM_PARAM" => "-t 1  -d 3 -c 1 -m 514",
-        "FEATURE" => "F:-2..2:0.. T:-2..-1",
-        # "DIRECTION" => "",
-        "DIRECTION" => "-B",
-        # "MULTI_CLASS" => "1",
-        "MULTI_CLASS" => "2",
-        "CORPUS" => $model_dir."/".$name.".svmin",
-        "MODEL" => $model_dir."/".$name,
-        "SVM_LEARN" => $svm_learn,
-        "PERL" => $self->{"perl"},
-        "GZIP" => "gzip",
-        "SORT" => "sort",
-        "UNIQ" => "uniq",
-        "YAMCHA" => $self->{"yamcha-dir"}."/yamcha",
-    };
-    $self->yamcha_train(%$yamcha_train_opts);
     return $ret;
 }
 
@@ -2974,14 +2863,14 @@ sub training_bnst {
 
     my $NAME = File::Basename::basename($arg1);
     my $svmin = $arg2."/".$NAME.".svmin";
-    my $buff = $self->read_from_file($arg1);
-    $buff = $self->trans_dataformat($buff, "input-kc", "kc");
-    $buff = $self->kc2bnstsvmdata($buff, 1);
-    $buff = $self->add_bnst_label($buff);
-    $buff =~ s/^EOS.*?\n//mg;
-    $buff .= "\n";
-    $self->write_to_file($svmin, $buff);
-    undef $buff;
+    my $svmin_buff = $self->read_from_file($arg1);
+    $svmin_buff = $self->trans_dataformat($svmin_buff, "input-kc", "kc");
+    $svmin_buff = $self->kc2bnstsvmdata($svmin_buff, 1);
+    $svmin_buff = $self->add_bnst_label($svmin_buff);
+    $svmin_buff =~ s/^EOS.*?\n//mg;
+    $svmin_buff .= "\n";
+    $self->write_to_file($svmin, $svmin_buff);
+    undef $svmin_buff;
 
     my $yamcha = $self->{"yamcha-dir"}."/yamcha";
     my $yamcha_tool_dir = $self->get_yamcha_tool_dir();
@@ -3217,7 +3106,6 @@ sub create_mstfeature {
                 $res .= "_";
             }
             $res .= "\t".$items[19]."\t".$depend."\t_\n";
-            #$res .= join("\t", @items[21..$#items])."\n";
         }
         $res .= "\n";
     }
@@ -3284,7 +3172,6 @@ sub create_middle {
     } elsif ( scalar(@$kc_long) == 1 ) {
         my @items = split(/[ \t]/, $$kc_long[0]);
         $$ref_mid++;
-        #$res .= join(" ",@{$$kc_long[0]}[0..18])." * ".$$ref_mid." ".join(" ",@{$$kc_long[0]}[0..4])."\n";
         $res .= join(" ",@{$$kc_long[0]}[0..18])." * ".$$ref_mid." ".join(" ",@{$$kc_long[0]}[0..0])."\n";
     } elsif ( ${$$kc_long[0]}[13] =~ /^形状詞/ ) {
         $$ref_mid++;
@@ -3295,10 +3182,6 @@ sub create_middle {
         my @mid_text;
         for my $i ( 0 .. $#{$kc_long} ) {
             $mid_text[0] .= ${$$kc_long[$i]}[0];
-            # $mid_text[1] .= ${$$kc_long[$i]}[1];
-            # $mid_text[2] .= ${$$kc_long[$i]}[2];
-            # $mid_text[3] .= ${$$kc_long[$i]}[3];
-            # $mid_text[4] .= ${$$kc_long[$i]}[4];
         }
         $res .= join(" ",@{$$kc_long[0]}[0..18])." ".($pos+${$out[0]}[6]-1)." ".$$ref_mid." ".join(" ",@mid_text)."\n";
         for my $i ( 1 .. $#{$kc_long}-1 ) {
@@ -3315,10 +3198,6 @@ sub create_middle {
             my $long = $$kc_long[$i];
             @$long[21..25] = ("","","","","");
             ${$$kc_long[$mid_pos]}[21] .= $$long[0];
-            # ${$$kc_long[$mid_pos]}[22] .= $$long[1];
-            # ${$$kc_long[$mid_pos]}[23] .= $$long[2];
-            # ${$$kc_long[$mid_pos]}[24] .= $$long[3];
-            # ${$$kc_long[$mid_pos]}[25] .= $$long[4];
 
             if ( ${$out[$i]}[6] == 0 ) {
                 $$long[19] = "*";
@@ -3340,15 +3219,6 @@ sub create_middle {
                 if ( defined $sp_prefix{$$long[2]} ) {
                     $mid_pos = $i+1;
                 }
-            # } elsif ( $i < $#out-1 && ${$out[$i+1]}[0]!=${$out[$i]}[6] ) {
-            #     my $depend = ${$out[$i]}[6];
-            #     if( (${$out[$depend-1]}[3] eq "名詞" && ${$out[$depend-2]}[3] eq "接頭辞") ||
-            #             (${$out[$depend-1]}[3] eq "接尾辞" && ${$out[$depend-2]}[3] eq "名詞") ) {
-            #         $mid_pos = $i+1;
-            #     } else {
-            #         $mid_pos = $i+1;
-            #     }
-            # }
             } elsif ( $i < $#out-1 && ${$out[$i+1]}[0]!=${$out[$i]}[6] ) {
                 if ( ${$out[$i+2]}[0]==${$out[$i]}[6] &&
                          ( (${$out[$i+2]}[3] eq "名詞" && ${$out[$i+1]}[3] eq "接頭辞") ||
@@ -3360,12 +3230,10 @@ sub create_middle {
             }
             $$long[19] = $pos+${$out[$i]}[6]-1;
         }
-        # for my $i ( 0 .. $#{$kc_long} ) {
         for my $i ( 0 .. scalar(@$kc_long)-1 ) {
             my $long = $$kc_long[$i];
             if ( $$long[21] ne "" ) {
                 $$ref_mid++;
-                #$res .= join(" ",@$long[0..19])." ".$$ref_mid." ".join(" ",@$long[21..25]);
                 $res .= join(" ",@$long[0..19])." ".$$ref_mid." ".$$long[21];
             } else {
                 $res .= join(" ",@$long[0..19])." ".$$ref_mid;
@@ -3677,9 +3545,7 @@ sub kc2bnstsvmdata {
             my @cType = split(/\-/, $items[4]."-*-*");
             my @cForm = split(/\-/, $items[5]."-*-*");
             $res .= join(" ",@items[0..5]);
-            #$res .= join(" ",@items[1,3,5..7]);
             $res .= " ".join(" ",@pos[0..3])." ".join(" ",@cType[0..2])." ".join(" ",@cForm[0..2]);
-            #$res .= " $pos[0] $pos[1] $cType[0] $cType[1] $cForm[0] $cForm[1]\n";
             if ( $items[3] eq "補助記号-括弧開" ) {
                 if ( !$parenthetic ) {
                     $res .= " B";
@@ -3745,12 +3611,6 @@ sub bccwj2kc_internal {
     foreach ( split(/\r?\n/, $data) ) {
         # chomp;
         my @suw = split(/\t/);
-        # if ($suw[4] =~ /^B/ || ($self->{"boundary"} eq "word" and $suw[14] ne "NULL")) {
-        # if ($suw[4] =~ /^B/ || ($self->{"boundary"} eq "word" and $suw[18] ne "NULL")) {
-	    # print "*B\n";
-	    # $res .= "*B\n";
-        # }
-        # if ($res ne "" && $suw[3] =~ /^B/ || ($self->{"boundary"} eq "word" and $suw[28] ne "NULL")) {
         if ( $res ne "" && $suw[3] =~ /^B/ ) {
             $res .= "EOS\n";
         }
@@ -3769,27 +3629,12 @@ sub bccwj2kc_internal {
             }
         }
 
-        #$res .= "$suw[5] $suw[5] $suw[7] $suw[8] $suw[6] ";
         $res .= "$suw[4] $suw[5] $suw[6] $suw[8] $suw[9] $suw[10] ";
         $res .= "$suw[16] $suw[17] $suw[18] $suw[19] $suw[22] $suw[23] $suw[21] ";
-        # if($self->{"boundary"} eq "word") {
-	    # print "$suw[5] $suw[5] $suw[7] $suw[8] $suw[6] ";
-	    # print "$suw[10] $suw[11] $suw[12] * * * ";
-	    # $res .= "$suw[5] $suw[5] $suw[7] $suw[8] $suw[6] ";
-	    # $res .= "$suw[10] $suw[11] $suw[12] * * * ";
-        # } else {
-	    # print "$suw[5] $suw[5] $suw[7] $suw[8] $suw[6] $suw[9] ";
-	    # print "$suw[10] $suw[11] * * * ";
-	    # $res .= "$suw[5] $suw[5] $suw[7] $suw[8] $suw[6] $suw[9] ";
-	    # $res .= "$suw[10] $suw[11] * * * ";
-        # }
+
         if ( $type eq "with_luw" && $suw[27] =~ /B/ ) {
-            # print "$suw[16] $suw[17] $suw[18] * * * $suw[22] $suw[23]\n";
-            # $res .= "$suw[16] $suw[17] $suw[18] * * * $suw[22] $suw[23]\n";
-            # $res .= "$suw[19] $suw[20] $suw[21] * * * $suw[22] $suw[23]\n";
             $res .= "$suw[31] $suw[32] $suw[33] $suw[29] $suw[30] $suw[28]\n";
         } else {
-            # print "* * * * * * * *\n";
             $res .= "* * * * * *\n";
         }
     }
@@ -3920,11 +3765,6 @@ sub diff_perl {
 
     system("diff -D".$;." \"$tmpFile1\" \"$tmpFile2\" > \"$tmpFile\"");
 
-    # my $diff = LCSDiff->new("-D" => $;);
-    # open(my $fh, ">", $tmpFile) or die "Cannot open '$tmpFile'";
-    # $diff->diff($tmpFile1, $tmpFile2, sub { print $fh $_[0]; });
-    # close($fh);
-
     open(DIF, ">", $dif) or die "Cannot open '$dif'";
 
     my $flag;
@@ -3993,7 +3833,6 @@ sub merge_iof {
             print STDERR "  morph(".($#morph+1).") < sn1(".$cn1.")\n";
         }
         my $lw = shift(@m);
-        # my @ml = split(/\s/, $lw);
         $lw = shift(@m) if($lw =~ /^EOS|^\*B/);
         my @ml = split(/[ \t]/, $lw);
         if ($#ml+1 < $cn2) {
@@ -4001,7 +3840,6 @@ sub merge_iof {
             print STDERR "  ml(".($#ml+1).") < cn2(".$cn2.")\n";
             print STDERR "$ml[1]\n";
         }
-        #if ($morph[5] ne $ml[1]) {
         if ($morph[4] ne $ml[1]) {
             print STDERR "Two files cannot be marged!: '$morph[4]' ; '$ml[1]'\n";
         }
@@ -4051,12 +3889,8 @@ sub pp_ctype {
     foreach ( split(/\r?\n/, $data) ) {
         if (/^B/) {
             if ($#lw > -1) {
-                # modified by jkawai
-                # my @last = split(/\s/, $lw[$#lw]);
                 my @last = split(/[ \t]/, $lw[$#lw]);
                 if ($last[8] ne "*") {
-                    # modified by jkawai
-                    # my @first = split(/\s/, shift(@lw));
                     my @first = split(/[ \t]/, shift(@lw));
                     if ($first[13] eq "*" && $first[12] =~ /^動詞/) {
                         $first[13] = $last[7];
@@ -4082,11 +3916,8 @@ sub pp_ctype {
     undef $data;
 
     if ($#lw > -1) {
-        # my @last = split(/\s/, $lw[$#]);
-        # my @last = split(/\s/, $lw[$#lw]); # fixed by jkawai
         my @last = split(/[ \t]/, $lw[$#lw]); # fixed by jkawai
         if ($last[8] ne "*") {
-            # my @first = split(/\s/, $lw[0]);
             my @first = split(/[ \t]/, $lw[0]);
             if ($first[13] eq "*" && $first[12] =~ /^動詞/) {
                 $first[13] = $last[7];
@@ -4241,62 +4072,6 @@ sub pp_partial_bnst_with_luw {
 }
 
 
-# from unix/perls/pp_partial.perl
-# -----------------------------------------------------------------------------
-# 前処理(旧)（partial chunkingの入力フォーマットへの変換）
-# -----------------------------------------------------------------------------
-sub pp_partial_old {
-    my ($self, $data) = @_;
-    my $res = "";
-    foreach ( split(/\r?\n/, $data) ) {
-        # my @line = split(/\s/);
-        my @line = split(/[ \t]/);
-        # if ($line[$#line] eq "LRBN") {
-        if ($line[$#line] eq "L" || $line[$#line] eq "B") {
-            push(@line, "B", "Ba");
-        } elsif ($line[$#line] eq "R" || $line[$#line] eq "N") {
-            if ( $self->{"boundary"} eq "sentence" ) {
-                # sentence boundary
-                push(@line, "B", "Ba", "I", "Ia");
-            } else {
-                # word boundary
-                push(@line, "I", "Ia");
-            }
-        } else {
-            # print "$_\n";
-            # $res .= "$_\n";
-        }
-        # print "@line\n";
-        $res .= "@line\n";
-    }
-    return $res;
-}
-
-sub pp_partial_bnst_old {
-    my $self = shift;
-    my ($data) = @_;
-    my $res = "";
-    foreach $_  (split(/\r?\n/, $data)) {
-	my @line = split(/[ \t]/);
-	if ($line[$#line] eq "L" || $line[$#line] eq "B") {
-	    push(@line, "B");
-	} elsif ($line[$#line] eq "R" || $line[$#line] eq "N") {
-	    if($self->{"boundary"} eq "sentence") {
-		# sentence boundary
-		push(@line, "B", "I");
-	    } else {
-		# word boundary
-		push(@line, "I");
-	    }
-	} else {
-	    #$res .= "$_\n";
-	}
-	$res .= "@line\n";
-    }
-    return $res;
-}
-
-
 # from unix/perls/short2long.perl
 # -----------------------------------------------------------------------------
 # *.KCの長単位の情報を短単位に置き換える。
@@ -4325,17 +4100,14 @@ sub short2long_old {
             my @longm2;
             my $m;
             while ($m = shift(@morph)) {
-                # my @melem = split(/\s/, $m);
                 my @melem = split(/[ \t]/, $m);
                 my $flag;
                 if ($#melem < 18) {
-                    # $m =~ s/\*([^\s]+)/\* $1/g;
                     $m =~ s/\*([^ \t]+)/\* $1/g;
                 }
                 if ($m =~ /^\*B/) {
                     push(@com, $m);
                 } else {
-                    # my @h = split(/\s/, $m);
                     my @h = split(/[ \t]/, $m);
                     if (defined($str)) {
                         $str .= $h[0];
@@ -4358,34 +4130,27 @@ sub short2long_old {
                 my $c = join('', @com);
                 my $c2 = join('', @com2);
                 unshift(@longm, $str, @longm2);
-                # print "$c2\n@longm\n$c\n";
                 $res .= "$c2\n@longm\n$c\n";
             } elsif ($#com > -1 && $#com2 > -1) {
                 my $c = join('', @com);
                 my $c2 = join('', @com2);
-                # print "$c$c2\n";
                 $res .= "$c$c2\n";
             } elsif ($#com > -1 && defined($str)) {
                 my $c = join('', @com);
                 unshift(@longm, $str, @longm2);
-                # print "@longm\n$c\n";
                 $res .= "@longm\n$c\n";
             } elsif ($#com2 > -1 && defined($str)) {
                 my $c2 = join('', @com2);
                 unshift(@longm, $str, @longm2);
-                # print "$c2\n@longm\n";
                 $res .= "$c2\n@longm\n";
             } elsif ($#com > -1 ) {
                 my $c = join('', @com);
-                # print "$c\n";
                 $res .= "$c\n";
             } elsif ($#com2 > -1) {
                 my $c2 = join('', @com2);
-                # print "$c2\n";
                 $res .= "$c2\n";
             } elsif (defined($str)) {
                 unshift(@longm, $str, @longm2);
-                # print "@longm\n";
                 $res .= "@longm\n";
             } elsif ($#morph > -1) {
                 print STDERR "ERROR!!: @morph : @elem\n";
@@ -4429,7 +4194,6 @@ sub short2middle_old {
         next if $morph[0] =~ /^\*B|^EOS/;
 
         if ( $morph[21] ne "" ) {
-            #$res .= join(" ", @morph[21..25])."\n";
             $res .= $morph[21]."\n";
         }
     }
@@ -4547,11 +4311,7 @@ sub delete_column_long {
     my $num_of_column = 11;
     foreach my $line ( split(/\r?\n/, $data) ) {
         my $items = [split(/[ \t]/, $line)];
-        # while(scalar(@$items) < $num_of_column) {
-        #    push(@$items, "");
-        # }
         if ( scalar(@$items) > 2 ) {
-            # $items = [@$items[0, 2 .. $num_of_column - 1]];
             $items = [@$items[0 .. 5, 10 .. 12]];
         }
         $res .= join(" ", @$items)."\n";
@@ -4577,7 +4337,6 @@ sub add_pivot_to_kc2 {
 
     foreach my $i ( 0 .. $#{$line_in_list} ) {
         my $line = Encode::decode("utf-8", $$line_in_list[$i]);
-        #$line = Encode::decode("utf-8", $line);
         $line =~ s/\r?\n$//;
         next if $line =~ /^\*B/;
 
@@ -4614,7 +4373,6 @@ sub add_pivot_to_kc2 {
             } else {
                 $pivot .= "a";
             }
-            # $pivot .= "a";
         }
         my $res = "";
         if ( $front ) {
@@ -4646,7 +4404,6 @@ sub move_future_front {
         while ( scalar(@$items) < $num_of_column ) {
             push(@$items, "");
         }
-        #$items = [@$items[$num_of_column - 1, 0, 0 .. $num_of_column - 2]];
         $items = [ @$items[scalar(@$items) - 1, 0 .. scalar(@$items) - 2 ]];
         $res .= join(" ", @$items)."\n";
     }
@@ -4671,11 +4428,6 @@ sub truncate_last_column {
     undef $data;
     return $res;
 }
-
-# We don't need them any more.
-#   unix/src/longanalyze/src/join_pivot_to_kc2.cpp
-#   unix/src/mkep/src/mkep.cpp
-
 
 #
 # poscreateの代わりの関数
