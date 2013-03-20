@@ -2348,30 +2348,16 @@ sub _process6 {
     my $temp_dir = $self->{"comainu-temp"};
     my $model_dir = File::Basename::dirname($arg3);
     my $BIP_model_dir = $self->{"comainu-svm-bip-model"};
+    my $CompFile = $self->{"comainu-home"} . '/suw2luw/Comp.txt';
 
-    ## suw2luw
-    my $SUW2LUW=$self->{"comainu-home"}."/suw2luw";
-    # my $InflFile=$SUW2LUW."/Infl.txt";
-    # my $DerivFile=$SUW2LUW."/Deriv.txt";
-    my $CompFile=$SUW2LUW."/Comp.txt";
-
-    if($self->{"debug"} > 0) {
-        printf(STDERR "# BIP_model_dir: %s\n", $BIP_model_dir);
-    }
-
-    my $BIP = new BIProcessor();
+    my $BIP = BIProcessor->new(debug => $self->{debug});
     my $buff = $BIP->execute_test($YAMCHA, $TRAINNAME, $TESTNAME, $lout_data,
                                   $temp_dir, $BIP_model_dir, $arg4, $CompFile);
     undef $lout_data;
 
     $buff = $self->create_long_lemma($buff, $CompFile);
 
-    # my $suw2luw = SUW2LUW->new();
-    # $buff = $self->pp_ctype($buff);
-    # $buff = $suw2luw->suw2luw($buff, $InflFile, $DerivFile, $CompFile);
-
     my $outputFileName = $loutFile;
-    #$buff = $self->pp_ctype($buff);
     $self->write_to_file($outputFileName, $buff);
     undef $buff;
 
@@ -2396,23 +2382,16 @@ sub _crf_process6 {
     my $lout_data = $self->read_from_file($loutFile);
     my $temp_dir = $self->{"comainu-temp"};
     my $model_dir = File::Basename::dirname($arg3);
+    my $CompFile = $self->{"comainu-home"} . '/suw2luw/Comp.txt';
 
-    my $BIP = new BIProcessor("model_type"=>1);
+    my $BIP = BIProcessor->new(model_type => 1);
     my $buff = $BIP->execute_test($CRF, $TRAINNAME, $TESTNAME, $lout_data,
-                                  $temp_dir, $model_dir, $arg4);
+                                  $temp_dir, $model_dir, $arg4, $CompFile);
     undef $lout_data;
 
-    ## suw2luw
-    my $SUW2LUW=$self->{"comainu-home"}."/suw2luw";
-    my $InflFile=$SUW2LUW."/Infl.txt";
-    my $DerivFile=$SUW2LUW."/Deriv.txt";
-    my $CompFile=$SUW2LUW."/Comp.txt";
-    my $suw2luw = SUW2LUW->new();
-    #$buff = $self->pp_ctype($buff);
-    $buff = $suw2luw->suw2luw($buff, $InflFile, $DerivFile, $CompFile);
+    $buff = $self->create_long_lemma($buff, $CompFile);
 
     my $outputFileName = $loutFile;
-    #$buff = $self->pp_ctype($buff);
     $self->write_to_file($outputFileName, $buff);
     undef $buff;
 
@@ -2436,23 +2415,16 @@ sub _mira_process6 {
     my $loutFile = $arg4."/".$TESTNAME.".lout";
     my $lout_data = $self->read_from_file($loutFile);
     my $temp_dir = $self->{"comainu-temp"};
+    my $CompFile = $self->{"comainu-home"} . '/suw2luw/Comp.txt';
 
-    my $BIP = new BIProcessor("model_type"=>2);
+    my $BIP = new BIProcessor(model_type => 2);
     my $buff = $BIP->execute_test($MIRA, $TRAINNAME, $TESTNAME, $lout_data,
-                                  $temp_dir, $arg3, $arg4);
+                                  $temp_dir, $arg3, $arg4, $CompFile);
     undef $lout_data;
 
-    ## suw2luw
-    my $SUW2LUW=$self->{"comainu-home"}."/suw2luw";
-    my $InflFile=$SUW2LUW."/Infl.txt";
-    my $DerivFile=$SUW2LUW."/Deriv.txt";
-    my $CompFile=$SUW2LUW."/Comp.txt";
-    my $suw2luw = SUW2LUW->new();
-    #$buff = $self->pp_ctype($buff);
-    $buff = $suw2luw->suw2luw($buff, $InflFile, $DerivFile, $CompFile);
+    $buff = $self->create_long_lemma($buff, $CompFile);
 
     my $outputFileName = $loutFile;
-    #$buff = $self->pp_ctype($buff);
     $self->write_to_file($outputFileName, $buff);
     undef $buff;
 
