@@ -7,6 +7,7 @@ use FindBin qw($Bin);
 use utf8;
 use Encode;
 use File::Basename;
+use File::Temp qw(tempfile);
 use Config;
 
 use SUW2LUW;
@@ -3876,8 +3877,10 @@ sub write_to_file {
 sub proc_stdin2stdout {
     my ($self, $proc, $in_data, $file_in_p) = @_;
     my $out_data = "";
-    my $tmp_in = $self->{"comainu-temp"}."/tmp_in";
-    my $tmp_out = $self->{"comainu-temp"}."/tmp_out";
+    my ($tmp_in_fh, $tmp_in)   = tempfile(DIR => $self->{"comainu-temp"});
+    my ($tmp_out_fh, $tmp_out) = tempfile(DIR => $self->{"comainu-temp"});
+    close($tmp_in_fh);
+    close($tmp_out_fh);
     $self->write_to_file($tmp_in, $in_data);
     $self->proc_file2file($proc, $tmp_in, $tmp_out, $file_in_p);
     $out_data = $self->read_from_file($tmp_out);
