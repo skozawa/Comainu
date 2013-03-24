@@ -221,6 +221,7 @@ sub comainu {
     $ENV{"DBG"} = "ON";
 
     my $comainu_method = "METHOD_" . $ARGV[0];
+    $opts->{method} = $ARGV[0];
     my $comainu = Comainu->new(%$opts);
     unless ( $comainu->can($comainu_method) ) {
         printf(STDERR "Not found method : %s\n", $ARGV[0]);
@@ -319,8 +320,8 @@ sub check_sub_tool_path {
         } elsif ( $opts->{suwmodel} eq 'mecab' ) {
             return 0 unless _check_tool_path($opts->{'mecab-dir'}, 'mecab');
         }
-        return 0 unless _check_tool_path($opts->{'unidic-dir'}, 'Unidic');
-        return 0 unless _check_tool_path($opts->{'unidic2-dir'}, 'Unidic2');
+        return 0 unless _check_tool_dir($opts->{'unidic-dir'}, 'Unidic');
+        return 0 unless _check_tool_dir($opts->{'unidic2-dir'}, 'Unidic2');
         unless ( -f $opts->{'unidic-db'} ) {
             printf(STDERR "# Error: Not found Unidic database: '%s'\n",
                    $opts->{"unidic-db"});
