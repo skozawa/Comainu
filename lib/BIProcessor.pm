@@ -7,9 +7,12 @@ package BIProcessor;
 use strict;
 use utf8;
 
-my $DEFAULT_VALUES =
-{
-    model_type => 0,
+use constant MODEL_TYPE_SVM  => 0;
+use constant MODEL_TYPE_CRF  => 1;
+use constant MODEL_TYPE_MIRA => 2;
+
+my $DEFAULT_VALUES = {
+    model_type => MODEL_TYPE_SVM,
     h_label    => {},
     k1_label   => {},
     k2_label   => {},
@@ -26,7 +29,7 @@ sub new {
 
 ## 学習用KCファイルから学習データを取得
 sub extract_from_train {
-    my ($self, $fh_ref,$fh_svmin,$train_dir,$NAME) = @_;
+    my ($self, $fh_ref, $fh_svmin, $train_dir, $basename) = @_;
 
     my @long_units;
     my @BI_units;
@@ -66,11 +69,12 @@ sub extract_from_train {
         $svmin = <$fh_svmin>;
         $svmin = Encode::decode("utf-8", $svmin);
         $svmin =~ s/\r?\n//mg;
+
         while ( $svmin =~ / I/ ) {
             $ref = <$fh_ref>;
             $ref = Encode::decode("utf-8", $ref);
             $ref =~ s/\r?\n//mg;
-            last $ref =~ /^\*B|^EOS/;
+            last if $ref =~ /^\*B|^EOS/;
 
             $short .= "\n".$ref;
             $BI .= "\t".$svmin;
@@ -81,9 +85,9 @@ sub extract_from_train {
         next if $short eq "";
 
         my @shorts = split(/\n/,$short);
-        push @long_units,\@shorts;
+        push @long_units, \@shorts;
         if ( $BI !~ /a/ ) {
-            push @BI_units,$#long_units;
+            push @BI_units, $#long_units;
             $line{$short} //= 1
         }
         if ( $svmin eq "" ) {
@@ -94,28 +98,33 @@ sub extract_from_train {
         }
     }
 
-    $self->extract_BI_data(\@long_units,\@BI_units,$train_dir,$NAME,0);
+    $self->extract_BI_data(\@long_units, \@BI_units, {
+        dir      => $train_dir,
+        basename => $basename,
+        is_test  => 0
+    });
     undef @long_units;
     undef @BI_units;
 }
 
 ## 解析用データからテストデータを作成
 sub execute_test {
-    my ($self, $COM, $TRAINNAME, $TESTNAME, $lout_data,
-        $temp_dir, $model_dir, $out_dir, $CompFile) = @_;
+    my ($self, $cmd, $lout_data, $args) = @_;
 
-    my $kc2file = $temp_dir."/".$TESTNAME."2";
+    my $kc2file = $args->{temp_dir} . "/" . $args->{test_name} . "2";
     my ($long_units, $BI_units) = $self->make_long_unit($lout_data, $kc2file);
     undef $lout_data;
 
-    my $comp = $self->load_comp_file($CompFile);
+    $self->extract_BI_data($long_units, $BI_units, {
+        dir      => $args->{temp_dir},
+        basename => $args->{test_name},
+        is_test  => 1,
+        compfile => $args->{comp_file},
+    });
 
-    $self->extract_BI_data($long_units, $BI_units, $temp_dir, $TESTNAME, 1, $comp);
-    undef $comp;
+    $self->exec_test($cmd, $args->{train_name}, $args->{test_name}, $args->{model_dir}, $args->{temp_dir});
 
-    $self->exec_test($COM, $TRAINNAME, $TESTNAME, $model_dir, $temp_dir);
-
-    $self->merge_data($TESTNAME, $temp_dir, $long_units, $BI_units);
+    $self->merge_data($args->{test_name}, $args->{temp_dir}, $long_units, $BI_units);
 
     my $res = "";
     foreach (@$long_units) {
@@ -179,13 +188,24 @@ sub make_long_unit {
 }
 
 sub extract_BI_data {
-    my ($self, $long_units, $BI_units, $dir, $NAME, $LOT, $comp) = @_;
+    my ($self, $long_units, $BI_units, $args) = @_;
 
-    $self->create_label();
+    $self->create_label;
+    my $is_test = $args->{is_test} // 0;
 
-    my $pos_feature = "";
+    my $pos_feature   = "";
     my $cType_feature = "";
     my $cForm_feature = "";
+
+    my $label_text = "";
+    my $comp = {};
+    if ( $is_test ) {
+        my %h_label  = reverse %{$self->{h_label}};
+        # 助詞・助動詞の除去
+        delete $h_label{$_} for (qw(H100 H110 H111 H112 H113 H114 H115));
+        $label_text = join(" ", keys %h_label);
+        $comp = $self->load_comp_file($args->{compfile});
+    }
 
     foreach my $i ( @$BI_units ) {
         my $long_unit = $$long_units[$i];
@@ -193,53 +213,49 @@ sub extract_BI_data {
         ## 長単位の先頭の短単位
         my @first = split(/ /,$$long_unit[0]);
         # my $long_lemma = $first[$#first];
-        my $long_lemma = $first[17+$LOT];
+        my $long_lemma = $first[17 + $args->{is_test}];
         my $feature = $long_lemma;
 
         if ( $i <= 0 ) {
             $feature .= " *" x 64;
         } else {
             my $pre_long_unit = $$long_units[$i-1];
-            $feature .= $self->long2feature($pre_long_unit, $LOT);
+            $feature .= $self->long2feature($pre_long_unit, $is_test);
         }
-        $feature .= $self->long2feature($long_unit, $LOT);
+        $feature .= $self->long2feature($long_unit, $is_test);
 
         if ( $i >= $#{$long_units} ) {
             $feature .= " *" x 64;
         } else {
             my $post_long_unit = $$long_units[$i+1];
-            $feature .= $self->long2feature($post_long_unit, $LOT);
+            $feature .= $self->long2feature($post_long_unit, $is_test);
         }
 
-        ## 長単位の品詞、活用型、活用形
-        my $f_pos = $first[13+$LOT];
-        my $f_cType = $first[14+$LOT];
-        my $f_cForm = $first[15+$LOT];
+        # 長単位の品詞、活用型、活用形
+        my $f_pos   = $first[13 + $is_test];
+        my $f_cType = $first[14 + $is_test];
+        my $f_cForm = $first[15 + $is_test];
 
-        if ( $LOT == 0 ) {
+        if ( $is_test ) {
+            # my $long_yomi = $first[$#first-1];
+            my $long_yomi = $first[16 + $is_test];
+            $pos_feature .= $feature;
+            $pos_feature .= " " . $label_text;
+            if ( defined $comp->{$long_yomi."_".$long_lemma} ) {
+                $pos_feature .= " ".$self->{h_label}->{$comp->{$long_yomi."_".$long_lemma}};
+            }
+            $pos_feature .= "\n";
+        } else {
             $pos_feature .= $feature." ".$self->{h_label}->{$f_pos}."\n";
             $cType_feature .= $feature." ".$self->{h_label}->{$f_pos}." ".$self->{k1_label}->{$f_cType}."\n";
             $cForm_feature .= $feature." ".$self->{h_label}->{$f_pos}." ".$self->{k1_label}->{$f_cType}." ".$self->{k2_label}->{$f_cForm}."\n" ;
-        } elsif ( $LOT == 1 ) {
-            # my $long_yomi = $first[$#first-1];
-            my $long_yomi = $first[16+$LOT];
-            $pos_feature .= $feature;
-            $pos_feature .= " H000 H005 H006 H007 H008 H009 H010 H011 H012 H013 H020";
-            $pos_feature .= " H030 H031 H032 H040 H050 H060 H070 H071 H080 H090";
-            $pos_feature .= " H120 H130 H135 H136 H137 H138 H140 H141 H150 H151 H152 H153 H154 H155";
-            $pos_feature .= " H160 H170 H180 H190 H200 H210 H220 H230 H240";
-            if ( defined $$comp{$long_yomi."_".$long_lemma} ) {
-                $pos_feature .= " ".$self->{h_label}->{$$comp{$long_yomi."_".$long_lemma}};
-            }
-            $pos_feature .= "\n";
-            #$pos_feature .= " H100 H110 H111 H112 H113 H114 H115\n";
         }
     }
-    if ( $self->{model_type} == 1 ) {
+    if ( $self->{model_type} == MODEL_TYPE_CRF ) {
         $pos_feature =~ s/\n/\n\n/g;
         $cType_feature =~ s/\n/\n\n/g;
         $cForm_feature =~ s/\n/\n\n/g;
-    } elsif ( $self->{model_type} == 2 ) {
+    } elsif ( $self->{model_type} == MODEL_TYPE_MIRA ) {
         $pos_feature =~ s/\n/\n\n/g;
         $pos_feature =~ s/ /\t/g;
         $cType_feature =~ s/\n/\n\n/g;
@@ -247,70 +263,68 @@ sub extract_BI_data {
         $cForm_feature =~ s/\n/\n\n/g;
         $cForm_feature =~ s/ /\t/g;
     }
+    undef $comp;
 
-    my $outputFileName1 = $dir."/pos/".$NAME.".BI_pos.dat";
-    mkdir $dir."/pos" unless -d $dir."/pos";
+    my $dir = $args->{dir};
+    my $basename = $args->{basename};
+    my $outputFileName1 = $dir . "/pos/" . $basename . ".BI_pos.dat";
+    mkdir $dir . "/pos" unless -d $dir . "/pos";
     $self->write_to_file($outputFileName1, $pos_feature."\n");
     undef $pos_feature;
 
-    my $outputFileName2 = $dir."/cType/".$NAME.".BI_cType.dat";
-    mkdir $dir."/cType" unless -d $dir."/cType";
+    my $outputFileName2 = $dir . "/cType/" . $basename . ".BI_cType.dat";
+    mkdir $dir . "/cType" unless -d $dir . "/cType";
     $self->write_to_file($outputFileName2, $cType_feature."\n");
     undef $cType_feature;
 
-    my $outputFileName3 = $dir."/cForm/".$NAME.".BI_cForm.dat";
-    mkdir $dir."/cForm" unless -d $dir."/cForm";
+    my $outputFileName3 = $dir . "/cForm/" . $basename . ".BI_cForm.dat";
+    mkdir $dir . "/cForm" unless -d $dir . "/cForm";
     $self->write_to_file($outputFileName3, $cForm_feature."\n");
     undef $cForm_feature;
 }
 
 sub long2feature {
-    my ($self, $long_unit, $LOT) = @_;
+    my ($self, $long_unit, $is_test) = @_;
 
     my $feature = "";
     if ( $#{$long_unit} >= 1 ) {
         for my $i ( 0 .. 1 ) {
-            $feature .= $self->short2feature($$long_unit[$i],$LOT);
+            $feature .= $self->short2feature($$long_unit[$i], $is_test);
         }
         for my $i ( 0 .. 1 ) {
-            $feature .= $self->short2feature($$long_unit[$#{$long_unit}+$i-1], $LOT);
+            $feature .= $self->short2feature($$long_unit[$#{$long_unit}+$i-1], $is_test);
         }
     } else {
-        $feature .= $self->short2feature($$long_unit[0],$LOT);
-        $feature .= " * * * * * * * * * * * * * * * *" .
-            " * * * * * * * * * * * * * * * *" . $feature;
+        $feature .= $self->short2feature($$long_unit[0], $is_test);
+        $feature .= (" *" x 32) . $feature;
     }
     return $feature;
 }
 
 sub short2feature {
-    my ($self, $short_unit, $LOT) = @_;
+    my ($self, $short_unit, $is_test) = @_;
 
     my $feature = "";
     my @short = split(/ /, $short_unit);
 
     ## 見出し、読み、語彙素
-    for my $i ( 0 .. 2 ) {
-        $feature .= " ".$short[$i+$LOT];
-    }
+    $feature .= " ".$short[$_ + $is_test] for ( 0 .. 2 );
     ## 品詞
-    $feature .= " ".$short[3+$LOT];
-    my @pos = split(/\-/,$short[3+$LOT]);
+    $feature .= " ".$short[3 + $is_test];
+    my @pos = split(/\-/,$short[3 + $is_test]);
     for my $i ( 0 .. 3 ) {
         $feature .= " " . ($pos[$i] // '*');
     }
+
     ## 活用型
-    $feature .= " ".$short[4+$LOT];
-    my @cType = split(/\-/,$short[4+$LOT]);
-    for my $i ( 0 .. 2 ) {
-        $feature .= " " . ($cType[$i] // '*');
-    }
+    $feature .= " ".$short[4 + $is_test];
+    my @cType = split(/\-/,$short[4 + $is_test]);
+    $feature .= " " . ($cType[$_] // '*') for ( 0 .. 2 );
+
     ## 活用形
-    $feature .= " ".$short[5+$LOT];
-    my @cForm = split(/\-/,$short[5+$LOT]);
-    for my $i ( 0 .. 2 ) {
-        $feature .= " " . ($cForm[$i] // '*');
-    }
+    $feature .= " ".$short[5 + $is_test];
+    my @cForm = split(/\-/,$short[5 + $is_test]);
+    $feature .= " " . ($cForm[$_] // '*') for ( 0 .. 2 );
     undef @short;
     return $feature;
 }
@@ -318,43 +332,40 @@ sub short2feature {
 sub exec_test {
     my ($self, $COM, $TRAINNAME, $TESTNAME, $model_dir, $temp_dir) = @_;
 
-    # print STDERR "# test pos\n";
     my $pos = $temp_dir."/pos/".$TESTNAME.".BI_pos.dat";
     my $pos_out = $temp_dir."/pos/".$TESTNAME.".BI_pos.out";
+    my $pos_model = $model_dir."/pos/".$TRAINNAME.".BI_pos.model";
     my $com1 = sprintf("%s -m \"%s\" < \"%s\" > \"%s\"",
-		       $COM, $model_dir."/pos/".$TRAINNAME.".BI_pos.model",
-		       $pos, $pos_out);
-    if ( $self->{model_type} == 2 ) {
+                       $COM, $pos_model, $pos, $pos_out);
+    if ( $self->{model_type} == MODEL_TYPE_MIRA ) {
         $com1 = sprintf("%s -m \"%s\" < \"%s\" > \"%s\"",
-                        $COM, $model_dir."/pos",$pos,$pos_out);
+                        $COM, $model_dir."/pos", $pos, $pos_out);
     }
     print STDERR "# $com1\n";
     system($com1);
 
-    # print STDERR "# test cType\n";
     my $cType = $temp_dir."/cType/".$TESTNAME.".BI_cType.dat";
     my $cType_out = $temp_dir."/cType/".$TESTNAME.".BI_cType.out";
+    my $cType_model = $model_dir."/cType/".$TRAINNAME.".BI_cType.model";
     $self->create_cType_dat($pos_out, $cType);
     my $com2 = sprintf("%s -m \"%s\" < \"%s\" > \"%s\"",
-		       $COM, $model_dir."/cType/".$TRAINNAME.".BI_cType.model",
-		       $cType, $cType_out);
-    if ( $self->{model_type} == 2 ) {
+                       $COM, $cType_model, $cType, $cType_out);
+    if ( $self->{model_type} == MODEL_TYPE_MIRA ) {
         $com2 = sprintf("%s -m \"%s\" < \"%s\" > \"%s\"",
-                        $COM, $model_dir."/cType",$cType,$cType_out);
+                        $COM, $model_dir."/cType", $cType, $cType_out);
     }
     print STDERR "# $com2\n";
     system($com2);
 
-    # print STDERR "# test cForm\n";
     my $cForm = $temp_dir."/cForm/".$TESTNAME.".BI_cForm.dat";
     my $cForm_out = $temp_dir."/cForm/".$TESTNAME.".BI_cForm.out";
+    my $cForm_model = $model_dir."/cForm/".$TRAINNAME.".BI_cForm.model";
     $self->create_cForm_dat($cType_out, $cForm);
     my $com3 = sprintf("%s -m \"%s\" < \"%s\" > \"%s\"",
-		       $COM, $model_dir."/cForm/".$TRAINNAME.".BI_cForm.model",
-		       $cForm, $cForm_out);
-    if ( $self->{model_type} == 2 ) {
+                       $COM, $cForm_model, $cForm, $cForm_out);
+    if ( $self->{model_type} == MODEL_TYPE_MIRA ) {
         $com3 = sprintf("%s -m \"%s\" < \"%s\" > \"%s\"",
-                        $COM, $model_dir."/cForm",$cForm,$cForm_out);
+                        $COM, $model_dir."/cForm", $cForm, $cForm_out);
     }
     print STDERR "# $com3\n";
     system($com3);
@@ -364,14 +375,14 @@ sub exec_test {
 sub merge_data {
     my ($self, $TESTNAME, $temp_dir, $long_units, $BI_units, $label) = @_;
 
-    my $pos_file = $temp_dir."/pos/".$TESTNAME.".BI_pos.out";
+    my $pos_file   = $temp_dir."/pos/".$TESTNAME.".BI_pos.out";
     my $cType_file = $temp_dir."/cType/".$TESTNAME.".BI_cType.out";
     my $cForm_file = $temp_dir."/cForm/".$TESTNAME.".BI_cForm.out";
 
-    my @pos = split(/ /,$self->read_from_out($pos_file));
-    my @cType = split(/ /,$self->read_from_out($cType_file));
-    my @cForm = split(/ /,$self->read_from_out($cForm_file));
-    my %h_label = reverse %{$self->{h_label}};
+    my @pos   = split(/ /, $self->read_from_out($pos_file));
+    my @cType = split(/ /, $self->read_from_out($cType_file));
+    my @cForm = split(/ /, $self->read_from_out($cForm_file));
+    my %h_label  = reverse %{$self->{h_label}};
     my %k1_label = reverse %{$self->{k1_label}};
     my %k2_label = reverse %{$self->{k2_label}};
     for my $i ( 0..$#{$BI_units} ) {
@@ -406,6 +417,21 @@ sub merge_data {
 sub create_cType_dat {
     my ($self, $out, $file) = @_;
 
+    my $labels = { verb => [], adj => [], aux => [] };
+    for ( keys %{$self->{k1_label}} ) {
+        my $label = $self->{k1_label}->{$_};
+        push @{$labels->{verb}}, $label if $label =~ /^K10|^K11[12]|^K120/;
+        push @{$labels->{adj}}, $label  if $label =~ /^K11[34]/;
+        push @{$labels->{aux}}, $label  if $label =~ /^K11[56789]/;
+    }
+
+    my $label_text = {
+        verb => join(" ", @{$labels->{verb}}),
+        adj  => join(" ", @{$labels->{adj}}),
+        aux  => join(" ", @{$labels->{aux}}),
+    };
+    undef $labels;
+
     my $buff = "";
     open(my $fh, $out) or die "Cannot open '$out'";
     binmode($fh);
@@ -417,35 +443,22 @@ sub create_cType_dat {
         my @items = split(/\t/,$line);
         $buff .= join(" ",@items);
         if ( $items[$#items] eq "H080" || $items[$#items] eq "H081" ) {
-            $buff .= " K1000 K1001 K1002 K1003 K1004 K1005 K1006 K1007 K1008 K1009 K1010 K1011 K1012 K1013 K1014 K1015";
-            $buff .= " K1020 K1021 K1022 K1023 K1024 K1025 K1026 K1027 K1028 K1029 K1030 K1031 K1032 K1033";
-            $buff .= " K1034 K1035 K1036 K1037 K1038 K1039 K1040 K1041 K1042 K1043 K1050 K1051 K1052";
-            $buff .= " K1060 K1061 K1062 K1063 K1064 K1065 K1066 K1067 K1068 K1070 K1071 K1072 K1073 K1074 K1075 K1076 K1077 K1078";
-            $buff .= " K1080 K1081 K1082 K1083 K1084 K1085 K1086 K1087 K1088 K1089 K1090 K1091 K1092";
-            $buff .= " K1100 K1101 K1102 K1103 K1104 K1105 K1110 K1120 K1121 K1122 K1123 K1124 K1200\n";
+            $buff .= " " . $label_text->{verb} . "\n";
         } elsif ( $items[$#items] eq "H090" || $items[$#items] eq "H091" ) {
-            $buff .= " K1130 K1140 K1141 K1142\n";
+            $buff .= " " . $label_text->{adj} . "\n";
         } elsif ( $items[$#items] eq "H100" ) {
-            $buff .= " K1000 K1001 K1002 K1003 K1004 K1005 K1006 K1007 K1008 K1009 K1010 K1011 K1012 K1013 K1014 K1015";
-            $buff .= " K1020 K1021 K1022 K1023 K1024 K1025 K1026 K1027 K1028 K1029 K1030 K1031 K1032 K1033";
-            $buff .= " K1034 K1035 K1036 K1037 K1038 K1039 K1040 K1041 K1042 K1043 K1050 K1051 K1052";
-            $buff .= " K1060 K1061 K1062 K1063 K1064 K1065 K1066 K1067 K1068 K1070 K1071 K1072 K1073 K1074 K1075 K1076 K1077 K1078";
-            $buff .= " K1080 K1081 K1082 K1083 K1084 K1085 K1086 K1087 K1088 K1089 K1090 K1091 K1092";
-            $buff .= " K1100 K1101 K1102 K1103 K1104 K1105 K1110 K1120 K1121 K1122 K1123 K1124 K1200";
-
-            $buff .= " K1130 K1140 K1141 K1142";
-
-            $buff .= " K1150 K1151 K1152 K1153 K1154 K1155 K1156 K1157 K1158 K1159 K1160 K1161 K1162 K1163 K1164";
-            $buff .= " K1170 K1171 K1172 K1173 K1174 K1175 K1176 K1177 K1178 K1179 K1180 K1181 K1182 K1183 K1184 K1185 K1186 K1187 K1188 K1189 K1190 K1191\n";
+            $buff .= " " . $label_text->{verb} .
+                     " " . $label_text->{adj} .
+                     " " . $label_text->{aux} . "\n";
         } else {
             $buff .= " K1999\n";
         }
     }
     close($fh);
 
-    if ( $self->{model_type} == 1 ) {
+    if ( $self->{model_type} == MODEL_TYPE_CRF ) {
         $buff =~ s/\n/\n\n/mg;
-    } elsif ( $self->{model_type} == 2 ) {
+    } elsif ( $self->{model_type} == MODEL_TYPE_MIRA ) {
         $buff =~ s/\n/\n\n/mg;
         $buff =~ s/ /\t/mg;
     }
@@ -456,6 +469,10 @@ sub create_cType_dat {
 
 sub create_cForm_dat {
     my ($self, $out, $file) = @_;
+
+    my %labels  = reverse %{$self->{k2_label}};
+    delete $labels{K2999};
+    my $label_text = join(" ", keys %labels);
 
     my $buff = "";
     open(my $fh, $out) or die "Cannot open '$file'";
@@ -468,17 +485,14 @@ sub create_cForm_dat {
         my @items = split(/\t/, $line);
         $buff .= join(" ",@items);
         if ( $items[$#items - 1] ~~ ["H080", "H081", "H090", "H091", "H100"] ) {
-            $buff .= " K2000 K2001 K2010 K2011 K2012 K2013 K2014 K2015 K2020";
-            $buff .= " K2030 K2031 K2032 K2033 K2034 K2035 K2036 K2037 K2038 K2039 K2040 K2041";
-            $buff .= " K2050 K2051 K2052 K2053 K2054 K2055 K2056 K2060 K2061 K2062 K2063 K2064";
-            $buff .= " K2070 K2071 K2072 K2073 K2080 K2081 K2090 K2100\n";
+            $buff .= " " . $label_text . "\n";
         } else {
             $buff .= " K2999\n";
         }
     }
-    if ( $self->{model_type} == 1 ) {
+    if ( $self->{model_type} == MODEL_TYPE_CRF ) {
         $buff =~ s/\n/\n\n/mg;
-    } elsif ( $self->{model_type} == 2 ) {
+    } elsif ( $self->{model_type} == MODEL_TYPE_MIRA ) {
         $buff =~ s/\n/\n\n/mg;
         $buff =~ s/ /\t/mg;
     }
@@ -499,10 +513,10 @@ sub merge_data_and_out {
     my $data2 = Encode::decode("utf-8", <$fh2>);
     while ( $data1 && $data2 ) {
         $data1 =~ s/\r?\n//g;
-        $data1 =~ s/^EOS//g if($self->{model_type} == 2);
+        $data1 =~ s/^EOS//g if($self->{model_type} == MODEL_TYPE_MIRA);
         $data2 =~ s/\r?\n//g;
         my @items = split(/\t/,$data1);
-        if ( $self->{model_type} == 2 ) {
+        if ( $self->{model_type} == MODEL_TYPE_MIRA ) {
             $data .= join("\t",@items)."\t".$data2."\n";
         } else {
             $data .= join(" ",@items)." ".$data2."\n";

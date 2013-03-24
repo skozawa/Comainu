@@ -16,8 +16,7 @@ use CreateDictionary;
 use AddFeature;
 use BIProcessor;
 
-my $DEFAULT_VALUES =
-{
+my $DEFAULT_VALUES = {
     "debug" => 0,
     "comainu-home" => $Bin."/..",
     "comainu-temp" => $Bin."/../tmp/temp",
@@ -43,8 +42,7 @@ my $DEFAULT_VALUES =
     "bnst_process" => "none",
 };
 
-my $MECAB_CHASEN_TABLE_FOR_UNIDIC =
-{
+my $MECAB_CHASEN_TABLE_FOR_UNIDIC = {
     # MECAB => CHASEN
     "0" => "orth",
     "1" => "pron",
@@ -56,8 +54,7 @@ my $MECAB_CHASEN_TABLE_FOR_UNIDIC =
     "7" => "goshu",
 };
 
-my $KC_MECAB_TABLE_FOR_UNIDIC =
-{
+my $KC_MECAB_TABLE_FOR_UNIDIC = {
     # KC => MECAB
     "0" => "0",
     "1" => "0",
@@ -72,8 +69,7 @@ my $KC_MECAB_TABLE_FOR_UNIDIC =
     "10" => "*",
 };
 
-my $MECAB_CHASEN_TABLE_FOR_CHAMAME =
-{
+my $MECAB_CHASEN_TABLE_FOR_CHAMAME = {
     # MECAB => CHASEN
     "0" => "",
     "1" => "orth",
@@ -87,8 +83,7 @@ my $MECAB_CHASEN_TABLE_FOR_CHAMAME =
     #"9" => "goshu",
 };
 
-my $KC_MECAB_TABLE_FOR_CHAMAME =
-{
+my $KC_MECAB_TABLE_FOR_CHAMAME = {
     # KC => MECAB
     "0" => "1",
     "1" => "3",
@@ -122,97 +117,12 @@ sub new {
     return $self;
 }
 
-
-# 概要
-# 訓練対象KCファイルからモデルを訓練する。
-#
-# 使用方法
-# $self->METHOD_kc2longmodel(訓練対象KCファイル, モデルディレクトリ);
-#
-sub USAGE_kc2longmodel {
-    my $self = shift;
-    printf("COMAINU-METHOD: kc2longmodel\n");
-    printf("  Usage: %s kc2longmodel <train-kc> <long-model-dir>\n", $0);
-    printf("    This command trains model from <train-kc> into <long-model-dir>.\n");
-    printf("\n");
-    printf("  ex.)\n");
-    printf("  \$ perl ./script/comainu.pl kc2longmodel sample/sample.KC train\n");
-    printf("    -> train/sample.KC.model\n");
-    printf("\n");
-}
-
-sub METHOD_kc2longmodel {
-    my ($self, $train_kc, $model_dir) = @_;
-    if ( $self->{"luwmodel"} eq "SVM" ) {
-        # yamchaのディレクトリの存在確認
-        unless ( -d $self->{"yamcha-dir"} ) {
-            printf(STDERR "ERROR: Not found YAMCHA_DIR '%s'.\n",
-                   $self->{"yamcha-dir"});
-            return 1;
-        }
-        my $yamcha_tool_dir = $self->get_yamcha_tool_dir();
-        my $svm_tool_dir = $self->get_svm_tool_dir();
-
-        return 1 unless defined $yamcha_tool_dir;
-    } elsif ($self->{"luwmodel"} eq "CRF" ) {
-        # CRF++のディレクトリの存在確認
-        unless ( -d $self->{"crf-dir"} ) {
-            printf(STDERR "ERROR: Not found CRF_DIR '%s'.\n",
-                   $self->{"crf-dir"});
-            return 1;
-        }
-        my $crf_dir = $self->get_crf_dir();
-
-        return 1 unless defined $crf_dir;
-    } elsif ( $self->{"luwmodel"} eq "MIRA" ) {
-        # MIRAのディレクトリの存在確認
-        unless ( -d $self->{"mira-dir"} ) {
-            printf(STDERR "ERROR: Not found MIRA_DIR '%s'.\n",
-                   $self->{"mira-dir"});
-            return 1;
-        }
-        my $mira_dir = $self->get_mira_dir();
-
-        return 1 unless defined $mira_dir;
-    }
-    unless ( $model_dir ) {
-        $model_dir = File::Basename::dirname($train_kc);
-    }
-
-    my $tmp_train_kc = $self->{"comainu-temp"}."/".File::Basename::basename($train_kc);
-    my $buff = $self->read_from_file($train_kc);
-    $buff = $self->trans_dataformat($buff, "input-kc", "kc");
-    $self->write_to_file($tmp_train_kc, $buff);
-    undef $buff;
-
-    $self->training_process1($tmp_train_kc, $model_dir);
-    $self->training_train2($tmp_train_kc, $model_dir, $model_dir);
-
-    if ( $self->{"luwmodel"} eq "SVM" ) {
-        $self->training_train3($tmp_train_kc, $model_dir);
-    } elsif ( $self->{"luwmodel"} eq "CRF" ) {
-        $self->training_crftrain3($tmp_train_kc, $model_dir);
-    } elsif ( $self->{"luwmodel"} eq "MIRA" ) {
-        $self->training_miratrain3($tmp_train_kc, $model_dir);
-    }
-    if ( $self->{"luwmrph"} eq "with" ) {
-        $self->training_train4($tmp_train_kc, $model_dir);
-    }
-    unlink($tmp_train_kc);
-
-    return 0;
-}
-
-
-# 概要
-# 辞書用KCファイル、解析対象KCファイル、モデルファイルの３つを用いて
+############################################################
+# KCファイルからの解析
+############################################################
+# 長単位解析
+# 訓練用KCファイル、解析対象KCファイル、モデルファイルの３つを用いて
 # 解析対象KCファイルに長単位情報を付与する。
-#
-# 使用方法
-# $self->METHOD_kc2longout(辞書用KCファイル名, 解析対象KCファイル,
-#                             解析で作成したモデルファイル名, 変換後ファイルの保存先ディレクトリ);
-#
-#
 sub USAGE_kc2longout {
     my $self = shift;
     printf("COMAINU-METHOD: kc2longout\n");
@@ -221,11 +131,11 @@ sub USAGE_kc2longout {
     printf("    The result is put into <out-dir>.\n");
     printf("\n");
     printf("  ex.)\n");
-    printf("  \$ perl ./script/comainu.pl kc2longout sample/sample.KC sample/sample.KC sample/sample.KC.model out\n");
+    printf("  \$ perl ./script/comainu.pl kc2longout train.KC sample/sample.KC train/CRF/train.KC.model out\n");
     printf("    -> out/sample.lout\n");
-    printf("  \$ perl ./script/comainu.pl kc2longout --luwmodel=SVM sample/sample.KC sample/sample.KC sample/sample.KC.model out\n");
+    printf("  \$ perl ./script/comainu.pl kc2longout --luwmodel=SVM train.KC sample/sample.KC train/SVM/train.KC.model out\n");
     printf("    -> out/sample.KC.lout\n");
-    printf("  \$ perl ./script/comainu.pl kc2longout --luwmodel=MIRA sample/sample.KC sample train out\n");
+    printf("  \$ perl ./script/comainu.pl kc2longout --luwmodel=MIRA train.KC sample/sample.KC train/MIRA out\n");
     printf("    -> out/sample.lout\n");
     printf("\n");
 }
@@ -233,25 +143,22 @@ sub USAGE_kc2longout {
 sub METHOD_kc2longout {
     my ($self, $train_kc, $test_kc, $luwmodel, $save_dir ) = @_;
 
+    $self->check_args(scalar @_ == 5);
+    $self->check_luwmodel($luwmodel);
+    mkdir $save_dir unless -d $save_dir;
+
     if ( -f $test_kc ) {
-        $self->check_luwmodel($luwmodel);
-
-        mkdir($save_dir) unless -d $save_dir;
-
-        if ( -f $test_kc ) {
-            $self->kc2longout_internal($train_kc, $test_kc, $luwmodel, $save_dir);
-        } elsif ( -d $test_kc ) {
-            opendir(my $dh, $test_kc);
-            while ( my $test_kc_file = readdir($dh) ) {
-                if ( $test_kc_file =~ /.KC$/ ) {
-                    $self->kc2longout_internal($train_kc, $test_kc_file, $luwmodel, $save_dir);
-                }
+        $self->kc2longout_internal($train_kc, $test_kc, $luwmodel, $save_dir);
+    } elsif ( -d $test_kc ) {
+        opendir(my $dh, $test_kc);
+        while ( my $test_kc_file = readdir($dh) ) {
+            if ( $test_kc_file =~ /.KC$/ ) {
+                $self->kc2longout_internal($train_kc, $test_kc_file, $luwmodel, $save_dir);
             }
-            closedir($dh);
         }
-    } else {
-        printf(STDERR "Error: invalid [test_kc] arg\n");
+        closedir($dh);
     }
+
     return 0;
 }
 
@@ -259,233 +166,187 @@ sub kc2longout_internal {
     my ($self, $train_kc, $test_kc, $luwmodel, $save_dir ) = @_;
 
     my $tmp_test_kc = $self->{"comainu-temp"}."/".File::Basename::basename($test_kc);
-    my $buff = $self->read_from_file($test_kc);
-    $buff = $self->trans_dataformat($buff, "input-kc", "kc");
-    $self->write_to_file($tmp_test_kc, $buff);
+    $self->format_inputdata($test_kc, $tmp_test_kc, 'input-kc', 'kc');
+
+    $self->create_features($tmp_test_kc, $train_kc, $luwmodel);
+
+    $luwmodel =~ s/[\/\\]$// if $self->{luwmodel} eq "MIRA";
+    $self->chunk_luw($tmp_test_kc, $luwmodel);
+    $luwmodel .= "/" . File::Basename::basename($train_kc)
+        if $self->{luwmodel} eq "MIRA";
+    $self->merge_chunk_result($tmp_test_kc, $save_dir);
+    $self->post_process($train_kc, $tmp_test_kc, $luwmodel, $save_dir);
+}
+
+# 解析用KC２ファイルへ素性追加
+sub create_features {
+    my ($self, $tmp_test_kc, $train_kc, $luwmodel) = @_;
+    print STDERR "# CREATE FEATURE DATA\n";
+
+    # 出力ファイル名の生成
+    my $output_file = $self->{"comainu-temp"} . "/" .
+        File::Basename::basename($tmp_test_kc, ".KC") . ".KC2";
+    # すでに同じ名前の中間ファイルがあれば削除
+    unlink($output_file) if -s $output_file;
+
+    my $buff = $self->read_from_file($tmp_test_kc);
+    if ( $self->{boundary} ne "sentence" && $self->{boundary} ne "word" ) {
+        $buff =~ s/^EOS.*?\n//mg;
+    }
+    $buff = $self->delete_column_long($buff);
+    $buff =~ s/^\*B.*?\n//mg if $self->{boundary} eq "sentence";
+
+    # SVMの場合、partial chunking
+    $buff = $self->pp_partial($buff) if $self->{luwmodel} eq "SVM";
+
+    # 素性の追加
+    my $AF = new AddFeature();
+    my $basename = File::Basename::basename($train_kc);
+    if ( $self->{luwmodel} eq "SVM" || $self->{luwmodel} eq "CRF" ) {
+        my ($filename, $path) = File::Basename::fileparse($luwmodel);
+        $buff = $AF->add_feature($buff, $basename, $path);
+    } elsif ( $self->{luwmodel} eq "MIRA" ) {
+        $buff = $AF->add_feature($buff, $basename, $luwmodel);
+    }
+
+    $self->write_to_file($output_file, $buff);
     undef $buff;
 
-    $self->_process1($tmp_test_kc, $train_kc, $luwmodel);
+    # 不十分な中間ファイルならば、削除しておく
+    unlink $output_file unless -s $output_file;
 
-    if ( $self->{"luwmodel"} eq "SVM" ) {
-        $self->_process2($tmp_test_kc, $luwmodel);
-    } elsif ( $self->{"luwmodel"} eq "CRF" ) {
-        $self->_crf_process2($tmp_test_kc, $luwmodel);
-    } elsif ( $self->{"luwmodel"} eq "MIRA" ) {
-    	$luwmodel =~ s/[\/\\]$//;
-    	$self->_mira_process2($tmp_test_kc, $luwmodel);
-    	$luwmodel .= "/".File::Basename::basename($train_kc);
-    }
-    # $self->_process3($train_kc);
-    # $self->_process4($train_kc);
-    $self->_process5($train_kc, $tmp_test_kc, $save_dir);
-    $self->_process6($train_kc, $tmp_test_kc, $luwmodel, $save_dir);
-}
-
-
-# 概要
-# 正解の情報が付与されたKCファイルと、長単位解析結果のKCファイルを比較し、
-# diff結果と精度を出力する。
-#
-# 使用方法
-# $self->METHOD_kc2longeval(正解KCファイル, 解析結果KCファイル(.lout),
-#                           保存先ディレクトリ);
-#
-# 動作
-# 第１引数をよび第２引数の種類によって解析対象を変える。
-# ・どちらもファイルの場合
-#   それぞれのファイルを使って処理し、解析結果KCファイル名の拡張子を".eval",
-#   ".eval.long"を付けた名前で、第３引数のパスに保存する。
-# ・どちらもディレクトリの場合
-#   第一引数のディレクトリ内に有る"*.KC"ファイル全てを対象として処理を行う。
-#   ".lout"ファイルは、第二引数で与えられたディレクトリ内のファイルで、".KC"ファイル
-#   とペアとなる".lout"ファイルを順次適用する。無ければエラーとする。
-#   処理結果は、".KC"ファイル名から拡張子を除いた文字列に".eval",
-#   ".eval.long"を付けた名前で、第３引数のパスに保存する。
-# ・上記２つの場合に該当しない組合せはエラーとする。
-#
-# 2005/08/04
-sub USAGE_kc2longeval {
-    my $self = shift;
-    printf("COMAINU-METHOD: kc2longeval\n");
-    printf("  Usage: %s kc2longeval <ref-kc> <kc-lout> <out-dir>\n", $0);
-    printf("    This command make a evaluation for <kc-lout> with <ref-kc>.\n");
-    printf("    The result is put into <out-dir>.\n");
-    printf("\n");
-    printf("  ex.)\n");
-    printf("  perl ./script/comainu.pl kc2longeval sample/sample.KC out/sample.KC.lout out\n");
-    printf("    -> out/sample.eval.long\n");
-    printf("\n");
-}
-
-sub METHOD_kc2longeval {
-    my ($self, $correct_kc, $result_kc_lout, $save_dir) = @_;
-
-    mkdir($save_dir) unless -d $save_dir;
-
-    if ( -f $result_kc_lout ) {
-        $self->kc2longeval_internal($correct_kc, $result_kc_lout, $save_dir);
-    } elsif ( -d $result_kc_lout ) {
-        opendir(my $dh, $result_kc_lout);
-        while ( my $result_kc_lout_file = readdir($dh) ) {
-            if ( $result_kc_lout_file =~ /.KC$/ ) {
-                $self->kc2longeval_internal($correct_kc, $result_kc_lout_file, $save_dir);
-            }
-        }
-        closedir($dh);
-    } else {
-        printf(STDERR "# Error: Not found result_kc_lout '%s'\n", $result_kc_lout);
-    }
     return 0;
 }
 
-sub kc2longeval_internal {
-    my ($self, $correct_kc, $result_kc_lout, $save_dir) = @_;
-    $self->_compare($correct_kc, $result_kc_lout, $save_dir);
-}
+# 解析用KC２ファイルをチャンキングモデル(yamcha, crf++, mira)で解析
+sub chunk_luw {
+    my ($self, $tmp_test_kc, $luwmodel) = @_;
+    print STDERR "# CHUNK LUW\n";
 
-
-# 概要
-# 辞書用KCファイル、解析対象BCCWJファイル、モデルファイルの３つを用いて
-# 解析対象BCCWJファイルに長単位情報を付与する。
-#
-# 使用方法
-# $self->METHOD_bccwj2longout(辞書用KCファイル名, 解析対象BCCWJファイル,
-#                                   解析で作成したモデルファイル名,
-#                                   変換後ファイルの保存先ディレクトリ);
-#
-# 動作
-# 第２引数の種類によって解析対象を変える。
-# ・ファイルの場合
-#   第２引数のファイルを解析する。
-#   処理結果は第２引数のファイル名に".lout"を付与したファイル名で
-#   第４引数のパスに保存する。
-# ・ディレクトリの場合
-#   第２引数のディレクトリ内に有る"*.txt"ファイル全てを対象として変換処理を行う。
-#   処理結果は、第２引数のディレクトリで見付けたファイル名に
-#   ".lout"を付与したファイル名で第４引数のパスに保存する。
-# ・上記２つの場合に該当しない組合せはエラーとする。
-#
-sub USAGE_bccwj2longout {
-    my $self = shift;
-    printf("COMAINU-METHOD: bccwj2longout\n");
-    printf("  Usage: %s bccwj2longout <train-kc> <test-bccwj> <long-model-file> <out-dir>\n", $0);
-    printf("    This command analyzes <test-bccwj> with <train-kc> and <long-model-file>.\n");
-    printf("    The result is put into <out-dir>.\n");
-    printf("\n");
-    printf("  ex.)\n");
-    printf("  \$ perl ./script/comainu.pl bccwj2longout train.KC sample/sample.bccwj.txt train/CRF/sample.KC.model out\n");
-    printf("    -> out/sample.bccwj.txt.lout\n");
-    printf("  \$ perl ./script/comainu.pl bccwj2longout --luwmodel=SVM train.KC sample/sample.bccwj.txt train/SVM/sample.KC.model out\n");
-    printf("    -> out/sample.bccwj.txt.lout\n");
-    printf("  \$ perl ./script/comainu.pl bccwj2longout --luwmodel=MIRA train.KC sample/sample.bccwj.txt train/MIRA out\n");
-    printf("    -> out/sample.bccwj.txt.lout\n");
-    printf("\n");
-}
-
-sub METHOD_bccwj2longout {
-    my ($self, $train_kc, $test_bccwj, $luwmodel, $save_dir ) = @_;
-
-    if ( -f $test_bccwj ) {
-        $self->check_luwmodel($luwmodel);
-        mkdir($save_dir) unless -d $save_dir;
-
-        if ( -f $test_bccwj ) {
-            $self->bccwj2longout_internal($train_kc, $test_bccwj, $luwmodel, $save_dir);
-        } elsif ( -d $test_bccwj ) {
-            opendir(my $dh, $test_bccwj);
-            while ( my $test_bccwj_file = readdir($dh) ) {
-                if ( $test_bccwj_file =~ /.txt$/ ) {
-                    $self->bccwj2longout_internal($train_kc, $test_bccwj_file, $luwmodel, $save_dir);
-                }
-            }
-            closedir($dh);
-        }
-    } else {
-        printf(STDERR "Error: invalid test_bccwj='%s' arg\n", $test_bccwj);
+    my $tool_cmd;
+    my $opt = "";
+    if ( $self->{luwmodel} eq 'SVM' ) {
+        # sentence/word boundary
+        $opt = "-C" if $self->{boundary} eq "sentence"
+            || $self->{boundary} eq "word";
+        $tool_cmd = $self->{"yamcha-dir"} . "/yamcha";
+    } elsif ( $self->{luwmodel} eq 'CRF' ) {
+        $tool_cmd = $self->{"crf-dir"} . "/crf_test";
+    } elsif ( $self->{luwmodel} eq 'MIRA' ) {
+        $tool_cmd = $self->{"mira-dir"} . "/mira-predict";
     }
+    $tool_cmd .= ".exe" if $Config{osname} eq "MSWin32";
+
+    if(! -x $tool_cmd) {
+        printf(STDERR "WARNING: %s Not Found or executable.\n", $tool_cmd);
+        exit 0;
+    }
+
+    my $input_file = $self->{"comainu-temp"} . "/" .
+        File::Basename::basename($tmp_test_kc, ".KC") . ".KC2";
+    my $output_file = $self->{"comainu-temp"} . "/" .
+        File::Basename::basename($tmp_test_kc) . ".svmout";
+    # すでに同じ名前の中間ファイルがあれば削除
+    unlink($output_file) if -s $output_file;
+    $self->check_file($input_file);
+
+    my $buff = $self->read_from_file($input_file);
+    $buff =~ s/ /\t/mg if $self->{luwmodel} eq 'MIRA';
+    $buff =~ s/^EOS.*?//mg if $self->{luwmodel} eq 'CRF' || $self->{luwmodel} eq 'MIRA';
+    # yamchaやCRF++のために、明示的に最終行に改行を付与
+    $buff .= "\n";
+    $self->write_to_file($input_file, $buff);
+
+    my $com = "";
+    if ( $self->{luwmodel} eq "SVM" ) {
+        $com = "\"" . $tool_cmd . "\" " . $opt . " -m \"" . $luwmodel . "\"";
+    } elsif ( $self->{luwmodel} eq "CRF" || $self->{luwmodel} eq "MIRA" ) {
+        $com = "\"$tool_cmd\" -m \"$luwmodel\"";
+    }
+    printf(STDERR "# COM: %s\n", $com) if $self->{debug};
+
+    $buff = $self->proc_stdin2stdout($com, $buff);
+    $buff =~ s/\x0d\x0a/\x0a/sg;
+    if ( $self->{luwmodel} eq "SVM" || $self->{luwmodel} eq "CRF" ) {
+        $buff =~ s/^\r?\n//mg;
+        $buff = $self->move_future_front($buff);
+    } elsif ( $self->{luwmodel} eq "MIRA" ) {
+        $buff = $self->move_future_front($buff);
+        $buff =~ s/^ EOS.*\r?\n//mg;
+    }
+    $buff = $self->truncate_last_column($buff);
+    $self->write_to_file($output_file, $buff);
+    undef $buff;
+
+    # 不十分な中間ファイルならば、削除しておく
+    unlink $output_file unless -s $output_file;
+
     return 0;
 }
 
-sub bccwj2longout_internal {
-    my ($self, $train_kc, $test_bccwj, $luwmodel, $save_dir) = @_;
+# チャンクの結果をマージして出力ディレクトリへ結果を保存
+sub merge_chunk_result {
+    my ($self, $tmp_test_kc, $save_dir) = @_;
+    print STDERR "# MERGE CHUNK RESULT\n";
 
-    mkdir($self->{"comainu-temp"}) unless -d $self->{"comainu-temp"};
+    my $basename = File::Basename::basename($tmp_test_kc);
+    my $svmout_file = $self->{"comainu-temp"} . "/" . $basename . ".svmout";
+    my $lout_file = $save_dir . "/" . $basename . ".lout";
 
-    my $tmp_dir = $self->{"comainu-temp"};
-    my $tmp_test_bccwj = $tmp_dir."/".File::Basename::basename($test_bccwj);
-    my $buff = $self->read_from_file($test_bccwj);
-    $buff = $self->trans_dataformat($buff, "input-bccwj", "bccwj");
-    $self->write_to_file($tmp_test_bccwj, $buff);
+    $self->check_file($svmout_file);
+
+    my $buff = $self->merge_kc_with_svmout($tmp_test_kc, $svmout_file);
+    $self->write_to_file($lout_file, $buff);
     undef $buff;
 
-    my $kc_file = $tmp_dir."/".File::Basename::basename($test_bccwj).".KC";
-    my $kc_lout_file = $tmp_dir."/".File::Basename::basename($test_bccwj).".KC.lout";
-    my $bccwj_lout_file = $save_dir."/".File::Basename::basename($test_bccwj).".lout";
+    # 不十分な中間ファイルならば、削除しておく
+    unlink $lout_file unless -s $lout_file;
 
-    $self->bccwj2kc_file($tmp_test_bccwj, $kc_file);
-    $self->METHOD_kc2longout($train_kc, $kc_file, $luwmodel, $tmp_dir);
-    $self->merge_bccwj_with_kc_lout_file($tmp_test_bccwj, $kc_lout_file, $bccwj_lout_file);
-
-    return;
+    return 0;
 }
 
+# 後処理:BIのみのチャンクを再処理
+sub post_process {
+    my ($self, $train_kc, $tmp_test_kc, $luwmodel, $save_dir) = @_;
+    my $ret = 0;
+    print STDERR "# POST PROCESS\n";
 
-sub bccwj2kc_file {
-    my ($self, $bccwj_file, $kc_file) = @_;
-    my $buff = $self->read_from_file($bccwj_file);
-    $buff = $self->bccwj2kc($buff);
-    $self->write_to_file($kc_file, $buff);
-    undef $buff;
-}
+    my $cmd = $self->{"yamcha-dir"}."/yamcha";
+    $cmd .= ".exe" if $Config{osname} eq "MSWin32";
+    $cmd = sprintf("\"%s\" -C", $cmd);
 
-sub merge_bccwj_with_kc_lout_file {
-    my ($self, $bccwj_file, $kc_lout_file, $lout_file) = @_;
-    my $bccwj_data = $self->read_from_file($bccwj_file);
-    my $kc_lout_data = $self->read_from_file($kc_lout_file);
-    my $lout_data = $self->merge_iof($bccwj_data, $kc_lout_data);
-    undef $bccwj_data;
-    undef $kc_lout_data;
+    my $train_name = $self->{luwmodel} ne "MIRA" ?
+        File::Basename::basename($luwmodel, ".model") :
+        File::Basename::basename($train_kc, ".KC");
+    my $test_name = File::Basename::basename($tmp_test_kc);
+    my $lout_file = $save_dir . "/" . $test_name . ".lout";
+    my $lout_data = $self->read_from_file($lout_file);
+    my $comp_file = $self->{"comainu-home"} . '/suw2luw/Comp.txt';
 
-    $self->write_to_file($lout_file, $lout_data);
+    my $BIP = BIProcessor->new(
+        debug      => $self->{debug},
+        model_type => 0,
+    );
+    my $buff = $BIP->execute_test($cmd, $lout_data, {
+        train_name => $train_name,
+        test_name  => $test_name,
+        temp_dir   => $self->{"comainu-temp"},
+        model_dir  => $self->{"comainu-svm-bip-model"},
+        comp_file  => $comp_file,
+    });
     undef $lout_data;
-}
 
-##############################################
-## 文節境界解析
-##############################################
-sub USAGE_kc2bnstmodel {
-    my $self = shift;
-    printf("COMAINU-METHOD: kc2bnstmodel\n");
-    printf("  Usage: %s kc2bnstmodel <train-kc> <bnst-model-dir>\n", $0);
-    printf("    This command trains model from <train-kc> into <bnst-model-dir>.\n");
-    printf("\n");
-    printf("  ex.)\n");
-    printf("  \$ perl ./script/comainu.pl kc2bnstmodel sample/sample.KC train\n");
-    printf("    -> train/sample.KC.model\n");
-    printf("\n");
-}
+    $buff = $self->create_long_lemma($buff, $comp_file);
 
-sub METHOD_kc2bnstmodel {
-    my ($self, $train_kc, $model_dir) = @_;
-    # yamchaのディレクトリの存在確認
-    unless ( -d $self->{"yamcha-dir"} ) {
-        printf(STDERR "ERROR: Not found YAMCHA_DIR '%s'.\n",
-               $self->{"yamcha-dir"});
-        return 1;
-    }
-    unless ( $model_dir ) {
-        $model_dir = File::Basename::dirname($train_kc);
-    }
-    my $yamcha_tool_dir = $self->get_yamcha_tool_dir();
-    my $svm_tool_dir = $self->get_svm_tool_dir();
-    unless ( defined($yamcha_tool_dir) ) {
-        return 1;
-    }
-    $self->training_bnst($train_kc, $model_dir);
-    return 0;
+    $self->write_to_file($lout_file, $buff);
+    undef $buff;
+
+    return $ret;
 }
 
 
+# 文節境界解析
+# 解析対象KCファイルとモデルファイルを用いて解析対象ファイルに文節境界を付与する。
 sub USAGE_kc2bnstout {
     my $self = shift;
     printf("COMAINU-METHOD: kc2bnstout\n");
@@ -500,47 +361,302 @@ sub USAGE_kc2bnstout {
 }
 
 sub METHOD_kc2bnstout {
-    my ($self, $test_kc, $bnstmodel, $save_dir ) = @_;
+    my ($self, $test_kc, $bnstmodel, $save_dir) = @_;
+
+    $self->check_args(scalar @_ == 4);
+    $self->check_file($bnstmodel);
+    mkdir $save_dir unless -d $save_dir;
 
     if ( -f $test_kc ) {
-        unless ( -f $bnstmodel ) {
-            printf(STDERR "ERROR: '%s' not found or not a file.\n",
-                   $bnstmodel);
-            die;
-        }
-        mkdir($save_dir) unless -d $save_dir;
-
-        if ( -f $test_kc ) {
-            $self->kc2bnstout_internal($test_kc, $bnstmodel, $save_dir);
-        } elsif ( -d $test_kc ) {
-            opendir(my $dh, $test_kc);
-            while ( my $test_kc_file = readdir($dh) ) {
-                if ( $test_kc_file =~ /.KC$/ ) {
-                    $self->kc2bnstout_internal($test_kc_file, $bnstmodel, $save_dir);
-                }
+        $self->kc2bnstout_internal($test_kc, $bnstmodel, $save_dir);
+    } elsif ( -d $test_kc ) {
+        opendir(my $dh, $test_kc);
+        while ( my $test_kc_file = readdir($dh) ) {
+            if ( $test_kc_file =~ /.KC$/ ) {
+                $self->kc2bnstout_internal($test_kc_file, $bnstmodel, $save_dir);
             }
-            closedir($dh);
         }
-    } else {
-        printf(STDERR "Error: invalid [test_kc] arg\n");
+        closedir($dh);
     }
+
     return 0;
 }
 
 sub kc2bnstout_internal {
     my ($self, $test_kc, $bnstmodel, $save_dir) = @_;
 
-    my $tmp_test_kc = $self->{"comainu-temp"}."/".File::Basename::basename($test_kc);
-    my $buff = $self->read_from_file($test_kc);
-    $buff = $self->trans_dataformat($buff, "input-kc", "kc");
-    $self->write_to_file($tmp_test_kc, $buff);
+    my $tmp_test_kc = $self->{"comainu-temp"} . "/" .
+        File::Basename::basename($test_kc);
+    $self->format_inputdata($test_kc, $tmp_test_kc, "input-kc", "kc");
+    $self->format_bnstdata($tmp_test_kc);
+    $self->chunk_bnst($tmp_test_kc, $bnstmodel, $save_dir);
+}
+
+# 文節解析用の形式に変換
+sub format_bnstdata {
+    my ($self, $tmp_test_kc) = @_;
+    print STDERR "# FORMAT FOR BNSTDATA\n";
+
+    my $basename = File::Basename::basename($tmp_test_kc);
+    my $output_file = $self->{"comainu-temp"} . "/" . $basename . ".svmdata";
+    # すでに同じ名前の中間ファイルがあれば削除
+    unlink $output_file if -s $output_file;
+
+    my $buff = $self->read_from_file($tmp_test_kc);
+    $buff = $self->kc2bnstsvmdata($buff, 0);
+
+    if ( $self->{bnst_process} eq "with_luw" ) {
+        ## 長単位解析の出力結果
+        my $svmout_file = $self->{"comainu-temp"} . "/" . $basename . ".svmout";
+        $buff = $self->pp_partial_bnst_with_luw($buff, $svmout_file);
+    } elsif ( $self->{boundary} ne "none" ) {
+        $buff = $self->pp_partial($buff, {is_bnst => 1});
+    }
+
+    $self->write_to_file($output_file, $buff);
     undef $buff;
 
-    $self->_bnst_process1($tmp_test_kc);
-    $self->_bnst_process2($tmp_test_kc, $bnstmodel, $save_dir);
+    # 不十分な中間ファイルならば、削除しておく
+    unlink $output_file unless -s $output_file;
+
+    return 0;
+}
+
+# yamchaを利用して文節境界解析
+sub chunk_bnst {
+    my ($self, $tmp_test_kc, $bnstmodel, $save_dir) = @_;
+    print STDERR "# CHUNK BNST\n";
+    my $yamcha_opt = "";
+    if ($self->{"boundary"} eq "sentence" || $self->{"boundary"} eq "word") {
+        # sentence/word boundary
+        $yamcha_opt = "-C";
+    }
+    my $ret = 0;
+
+    my $YAMCHA = $self->{"yamcha-dir"}."/yamcha";
+    $YAMCHA .= ".exe" if $Config{osname} eq "MSWin32";
+    unless ( -x $YAMCHA ) {
+        printf(STDERR "WARNING: %s Not Found or executable.\n", $YAMCHA);
+        exit 0;
+    }
+
+    my $basename = File::Basename::basename($tmp_test_kc);
+    my $svmdata_file = $self->{"comainu-temp"} . "/" . $basename . ".svmdata";
+    my $output_file = $save_dir . "/" . $basename . ".bout";
+    # すでに同じ名前の中間ファイルがあれば削除
+    unlink $output_file if -s $output_file;
+
+    $self->check_file($svmdata_file);
+
+    my $buff = $self->read_from_file($svmdata_file);
+    # YAMCHA用に明示的に最終行に改行を付けさせる
+    $buff .= "\n";
+
+    my $yamcha_com = "\"".$YAMCHA."\" ".$yamcha_opt." -m \"".$bnstmodel."\"";
+    printf(STDERR "# YAMCHA_COM: %s\n", $yamcha_com) if $self->{debug};
+
+    $buff = $self->proc_stdin2stdout($yamcha_com, $buff);
+    $buff =~ s/\x0d\x0a/\x0a/sg;
+    $buff =~ s/^\r?\n//mg;
+    $buff = $self->move_future_front($buff);
+    $self->write_to_file($output_file, $buff);
+
+    $buff = $self->merge_kc_with_bout($tmp_test_kc, $output_file);
+    $self->write_to_file($output_file, $buff);
+    undef $buff;
+
+    # 不十分な中間ファイルならば、削除しておく
+    unlink $output_file unless -s $output_file;
+
+    return $ret;
 }
 
 
+# 中単位解析
+# 解析対象KCファイル、モデルファイルを用いて、
+# 解析対象KCファイルに中単位を付与する。
+sub USAGE_kclong2midout {
+    my $self = shift;
+    printf("COMAINU-METHOD: kclong2midout\n");
+    printf("  Usage: %s kclong2midout <test-kc> <mid-model-file> <out-dir>\n", $0);
+    printf("    This command analyzes <test-kc> with <mid-model-file>.\n");
+    printf("    The result is put into <out-dir>.\n");
+    printf("\n");
+    printf("  ex.)\n");
+    printf("  \$ perl ./script/comainu.pl kclong2midout sample/sample.KC train/MST/train.KC.model out\n");
+    printf("    -> out/sample.KC.mout\n");
+    printf("\n");
+}
+
+sub METHOD_kclong2midout {
+    my ($self, $test_kc, $muwmodel, $save_dir ) = @_;
+
+    $self->check_args(scalar @_ == 4);
+    $self->check_file($muwmodel);
+    mkdir $save_dir unless -d $save_dir;
+
+    if ( -f $test_kc ) {
+        $self->kclong2midout_internal($test_kc, $muwmodel, $save_dir);
+    } elsif ( -d $test_kc ) {
+        opendir(my $dh, $test_kc);
+        while ( my $test_kc_file = readdir($dh) ) {
+            if ( $test_kc_file =~ /.KC$/ ) {
+                $self->kclong2midout_internal($test_kc_file, $muwmodel, $save_dir);
+            }
+        }
+        closedir($dh);
+    }
+
+    return 0;
+}
+
+sub kclong2midout_internal {
+    my ($self, $test_kc, $muwmodel, $save_dir) = @_;
+
+    my $tmp_test_kc = $self->{"comainu-temp"} . "/" .
+        File::Basename::basename($test_kc);
+    $self->format_inputdata($test_kc, $tmp_test_kc, 'input-kc', 'kc');
+    $self->create_mstin($tmp_test_kc);
+    $self->parse_muw($tmp_test_kc, $muwmodel);
+    $self->merge_mst_result($tmp_test_kc, $save_dir);
+}
+
+# 中単位解析(MST)用のデータを作成
+sub create_mstin {
+    my ($self, $tmp_test_kc) = @_;
+    print STDERR "# CREATE MSTIN\n";
+
+    my $output_file = $self->{"comainu-temp"} . "/" .
+        File::Basename::basename($tmp_test_kc, ".KC") . ".mstin";
+
+    my $buff = $self->read_from_file($tmp_test_kc);
+    $buff = $self->kc2mstin($buff);
+
+    $self->write_to_file($output_file, $buff);
+    undef $buff;
+
+    return 0;
+}
+
+# mstparserを利用して中単位解析
+sub parse_muw {
+    my ($self, $tmp_test_kc, $muwmodel) = @_;
+    print STDERR "# PARSE MUW\n";
+
+    my $java = $self->{"java"};
+    my $mstparser_dir = $self->{"mstparser-dir"};
+
+    my $basename = File::Basename::basename($tmp_test_kc, ".KC");
+    my $mstin = $self->{"comainu-temp"} . "/" . $basename . ".mstin";
+    my $output_file = $self->{"comainu-temp"} . "/" . $basename . ".mstout";
+
+    my $mst_classpath = $mstparser_dir."/output/classes:".$mstparser_dir."/lib/trove.jar";
+    my $memory = "-Xmx1800m";
+    if ( $Config{osname} eq "MSWin32" ) {
+        $mst_classpath = $mstparser_dir."/output/classes;".$mstparser_dir."/lib/trove.jar";
+        $memory = "-Xmx1000m";
+        # remove drive letter for MS-Windows
+        $muwmodel =~ s/^[a-zA-Z]\://;
+        $mstin =~ s/^[a-zA-Z]\://;
+        $output_file =~ s/^[a-zA-Z]\://;
+    }
+    ## 入力ファイルが空だった場合
+    if ( -z $mstin ) {
+    	$self->write_to_file($output_file, "");
+    	return 0;
+    }
+    my $cmd = sprintf("\"%s\" -classpath \"%s\" %s mstparser.DependencyParser test model-name:\"%s\" test-file:\"%s\" output-file:\"%s\" order:1",
+                      $java, $mst_classpath, $memory, $muwmodel, $mstin, $output_file);
+    print STDERR $cmd,"\n" if $self->{debug};
+    system($cmd);
+
+    return 0;
+}
+
+sub merge_mst_result {
+    my ($self, $tmp_test_kc, $save_dir) = @_;
+    print STDERR "# MERGE RESULT\n";
+    my $ret = 0;
+
+    my $mstout_file = $self->{"comainu-temp"} . "/" .
+        File::Basename::basename($tmp_test_kc, ".KC") . ".mstout";
+    my $output_file = $save_dir . "/" .
+        File::Basename::basename($tmp_test_kc) . ".mout";
+
+    my $buff = $self->merge_mout_with_kc_mstout_file($tmp_test_kc, $mstout_file);
+    $self->write_to_file($output_file, $buff);
+    undef $buff;
+
+    return $ret;
+}
+
+
+############################################################
+# BCCWJファイルからの解析
+############################################################
+# 長単位解析 BCCWJ
+# 辞書用KCファイル、解析対象BCCWJファイル、モデルファイルの３つを用いて
+# 解析対象BCCWJファイルに長単位情報を付与する。
+sub USAGE_bccwj2longout {
+    my $self = shift;
+    printf("COMAINU-METHOD: bccwj2longout\n");
+    printf("  Usage: %s bccwj2longout <train-kc> <test-bccwj> <long-model-file> <out-dir>\n", $0);
+    printf("    This command analyzes <test-bccwj> with <train-kc> and <long-model-file>.\n");
+    printf("    The result is put into <out-dir>.\n");
+    printf("\n");
+    printf("  ex.)\n");
+    printf("  \$ perl ./script/comainu.pl bccwj2longout train.KC sample/sample.bccwj.txt train/CRF/train.KC.model out\n");
+    printf("    -> out/sample.bccwj.txt.lout\n");
+    printf("  \$ perl ./script/comainu.pl bccwj2longout --luwmodel=SVM train.KC sample/sample.bccwj.txt train/SVM/train.KC.model out\n");
+    printf("    -> out/sample.bccwj.txt.lout\n");
+    printf("  \$ perl ./script/comainu.pl bccwj2longout --luwmodel=MIRA train.KC sample/sample.bccwj.txt train/MIRA out\n");
+    printf("    -> out/sample.bccwj.txt.lout\n");
+    printf("\n");
+}
+
+sub METHOD_bccwj2longout {
+    my ($self, $train_kc, $test_bccwj, $luwmodel, $save_dir) = @_;
+
+    $self->check_args(scalar @_ == 5);
+    $self->check_luwmodel($luwmodel);
+    mkdir $save_dir unless -d $save_dir;
+
+    if ( -f $test_bccwj ) {
+        $self->bccwj2longout_internal($train_kc, $test_bccwj, $luwmodel, $save_dir);
+    } elsif ( -d $test_bccwj ) {
+        opendir(my $dh, $test_bccwj);
+        while ( my $test_bccwj_file = readdir($dh) ) {
+            if ( $test_bccwj_file =~ /.txt$/ ) {
+                $self->bccwj2longout_internal($train_kc, $test_bccwj_file, $luwmodel, $save_dir);
+            }
+        }
+        closedir($dh);
+    }
+
+    return 0;
+}
+
+sub bccwj2longout_internal {
+    my ($self, $train_kc, $test_bccwj, $luwmodel, $save_dir) = @_;
+
+    my $tmp_dir = $self->{"comainu-temp"};
+    my $basename = File::Basename::basename($test_bccwj);
+    my $tmp_test_bccwj =  $tmp_dir . "/" . $basename;
+    $self->format_inputdata($test_bccwj, $tmp_test_bccwj, 'input-bccwj', 'bccwj');
+
+    my $kc_file = $tmp_dir . "/" . $basename . ".KC";
+    my $kc_lout_file = $tmp_dir . "/" . $basename . ".KC.lout";
+    my $bccwj_lout_file = $save_dir . "/" . $basename . ".lout";
+
+    $self->bccwj2kc_file($tmp_test_bccwj, $kc_file);
+    $self->METHOD_kc2longout($train_kc, $kc_file, $luwmodel, $tmp_dir);
+    $self->merge_bccwj_with_kc_lout_file($tmp_test_bccwj, $kc_lout_file, $bccwj_lout_file);
+
+    return 0;
+}
+
+
+# 文節境界解析 BCCWJ
 sub USAGE_bccwj2bnstout {
     my $self = shift;
     printf("COMAINU-METHOD: bccwj2bnstout\n");
@@ -557,121 +673,46 @@ sub USAGE_bccwj2bnstout {
 sub METHOD_bccwj2bnstout {
     my ($self, $test_bccwj, $bnstmodel, $save_dir ) = @_;
 
-    if ( -f $test_bccwj ) {
-        unless ( -f $bnstmodel ) {
-            printf(STDERR "ERROR: '%s' not found or not a file.\n",
-                   $bnstmodel);
-            die;
-        }
-        mkdir($save_dir) unless -d $save_dir;
+    $self->check_args(scalar @_ == 4);
+    $self->check_file($bnstmodel);
+    mkdir $save_dir unless -d $save_dir;
 
-        if (-f $test_bccwj ) {
-            $self->bccwj2bnstout_internal($test_bccwj, $bnstmodel, $save_dir);
-        } elsif ( -d $test_bccwj ) {
-            opendir(my $dh, $test_bccwj);
-            while ( my $test_bccwj_file = readdir($dh) ) {
-                if ( $test_bccwj_file =~ /.txt$/ ) {
-                    $self->bccwj2bnstout_internal($test_bccwj_file, $bnstmodel, $save_dir);
-                }
+    if (-f $test_bccwj ) {
+        $self->bccwj2bnstout_internal($test_bccwj, $bnstmodel, $save_dir);
+    } elsif ( -d $test_bccwj ) {
+        opendir(my $dh, $test_bccwj);
+        while ( my $test_bccwj_file = readdir($dh) ) {
+            if ( $test_bccwj_file =~ /.txt$/ ) {
+                $self->bccwj2bnstout_internal($test_bccwj_file, $bnstmodel, $save_dir);
             }
-            closedir($dh);
         }
-    } else {
-        printf(STDERR "Error: invalid test_bccwj='%s' arg\n", $test_bccwj);
+        closedir($dh);
     }
+
     return 0;
 }
 
 sub bccwj2bnstout_internal {
     my ($self, $test_bccwj, $bnstmodel, $save_dir ) = @_;
 
-    mkdir($self->{"comainu-temp"}) unless -d $self->{"comainu-temp"};
-
     my $tmp_dir = $self->{"comainu-temp"};
-    my $tmp_test_bccwj = $tmp_dir."/".File::Basename::basename($test_bccwj);
-    my $buff = $self->read_from_file($test_bccwj);
-    $buff = $self->trans_dataformat($buff, "input-bccwj", "bccwj");
-    $self->write_to_file($tmp_test_bccwj, $buff);
-    undef $buff;
+    my $basename = File::Basename::basename($test_bccwj);
+    my $tmp_test_bccwj = $tmp_dir . "/" . $basename;
+    $self->format_inputdata($test_bccwj, $tmp_test_bccwj, "input-bccwj", "bccwj");
 
-    my $kc_file = $tmp_dir."/".File::Basename::basename($test_bccwj).".KC";
-    my $kc_bout_file = $tmp_dir."/".File::Basename::basename($test_bccwj).".KC.bout";
-    my $bccwj_bout_file = $save_dir."/".File::Basename::basename($test_bccwj).".bout";
+    my $kc_file = $tmp_dir . "/" . $basename . ".KC";
+    my $kc_bout_file = $tmp_dir . "/" . $basename . ".KC.bout";
+    my $bccwj_bout_file = $save_dir . "/" . $basename . ".bout";
 
     $self->bccwj2kc_file($tmp_test_bccwj, $kc_file);
     $self->METHOD_kc2bnstout($kc_file, $bnstmodel, $tmp_dir);
     $self->merge_bccwj_with_kc_bout_file($tmp_test_bccwj, $kc_bout_file, $bccwj_bout_file);
-}
 
-sub merge_bccwj_with_kc_bout_file {
-    my ($self, $bccwj_file, $kc_bout_file, $bout_file) = @_;
-    my $bccwj_data = $self->read_from_file($bccwj_file);
-    my $kc_bout_data = $self->read_from_file($kc_bout_file);
-
-    my $bout_data = "";
-    my @m = split(/\r?\n/, $kc_bout_data);
-    undef $kc_bout_data;
-
-    foreach ( split(/\r?\n/, $bccwj_data) ) {
-        my $item_list = [split(/\t/)];
-        my $lw = shift(@m);
-        $lw = shift(@m) if $lw =~ /^EOS|^\*B/;
-        my @ml = split(/[ \t]/, $lw);
-        $$item_list[26] = $ml[0];
-        $bout_data .= join("\t",@$item_list)."\n";
-    }
-    undef $bccwj_data;
-
-    $self->write_to_file($bout_file, $bout_data);
-    undef $bout_data;
-}
-
-
-sub USAGE_kc2bnsteval {
-    my $self = shift;
-    printf("COMAINU-METHOD: kc2bnsteval\n");
-    printf("  Usage: %s kc2bnsteval <ref-kc> <kc-lout> <out-dir>\n", $0);
-    printf("    This command make a evaluation for <kc-lout> with <ref-kc>.\n");
-    printf("    The result is put into <out-dir>.\n");
-    printf("\n");
-    printf("  ex.)\n");
-    printf("  perl ./script/comainu.pl kc2bnsteval sample/sample.KC out/sample.KC.bout out\n");
-    printf("    -> out/sample.eval.bnst\n");
-    printf("\n");
-}
-
-sub METHOD_kc2bnsteval {
-    my ($self, $correct_kc, $result_kc_lout, $save_dir) = @_;
-
-    mkdir($save_dir) unless -d $save_dir;
-
-    if ( -f $result_kc_lout ) {
-        $self->kc2bnsteval_internal($correct_kc, $result_kc_lout, $save_dir);
-    } elsif ( -d $result_kc_lout ) {
-        opendir(my $dh, $result_kc_lout);
-        while ( my $result_kc_lout_file = readdir($dh) ) {
-            if ( $result_kc_lout_file =~ /.KC$/ ) {
-                $self->kc2bnsteval_internal($correct_kc, $result_kc_lout_file, $save_dir);
-            }
-        }
-        closedir($dh);
-    } else {
-        printf(STDERR "# Error: Not found result_kc_lout '%s'\n", $result_kc_lout);
-    }
     return 0;
 }
 
-sub kc2bnsteval_internal {
-    my ($self, $correct_kc, $result_kc_lout, $save_dir) = @_;
-    $self->_compare_bnst($correct_kc, $result_kc_lout, $save_dir);
-}
 
-
-############################################################
-
-########################################
 # 文節，長単位の同時出力
-########################################
 sub USAGE_bccwj2longbnstout {
     my $self = shift;
     printf("COMAINU-METHOD: bccwj2longbnstout\n");
@@ -686,50 +727,40 @@ sub USAGE_bccwj2longbnstout {
 }
 
 sub METHOD_bccwj2longbnstout {
-    my ($self, $long_train_kc, $test_bccwj, $luwmodel, $bnstmodel, $save_dir ) = @_;
+    my ($self, $long_train_kc, $test_bccwj, $luwmodel, $bnstmodel, $save_dir) = @_;
+
+    $self->check_args(scalar @_ == 6);
+    $self->check_luwmodel($luwmodel);
+    $self->check_file($bnstmodel);
+    mkdir $save_dir unless -d $save_dir;
 
     if ( -f $test_bccwj ) {
-        $self->check_luwmodel($luwmodel);
-        unless ( -f $bnstmodel ) {
-            printf(STDERR "ERROR: '%s' not found or not a file.\n",
-                   $bnstmodel);
-            die;
-        }
-        mkdir($save_dir) unless -d $save_dir;
-
-        if ( -f $test_bccwj ) {
-            $self->bccwj2longbnstout_internal($long_train_kc, $test_bccwj, $luwmodel, $bnstmodel, $save_dir);
-        } elsif ( -d $test_bccwj ) {
-            opendir(my $dh, $test_bccwj);
-            while ( my $test_bccwj_file = readdir($dh) ) {
-                if ( $test_bccwj_file =~ /.txt$/ ) {
-                    $self->bccwj2longbnstout_internal($long_train_kc, $test_bccwj_file, $luwmodel, $bnstmodel, $save_dir);
-                }
+        $self->bccwj2longbnstout_internal($long_train_kc, $test_bccwj, $luwmodel, $bnstmodel, $save_dir);
+    } elsif ( -d $test_bccwj ) {
+        opendir(my $dh, $test_bccwj);
+        while ( my $test_bccwj_file = readdir($dh) ) {
+            if ( $test_bccwj_file =~ /.txt$/ ) {
+                $self->bccwj2longbnstout_internal($long_train_kc, $test_bccwj_file, $luwmodel, $bnstmodel, $save_dir);
             }
-            closedir($dh);
         }
-    } else {
-        printf(STDERR "Error: invalid test_bccwj='%s' arg\n", $test_bccwj);
+        closedir($dh);
     }
+
     return 0;
 }
 
 sub bccwj2longbnstout_internal {
     my ($self, $long_train_kc, $test_bccwj, $luwmodel, $bnstmodel, $save_dir) = @_;
 
-    mkdir($self->{"comainu-temp"}) unless -d $self->{"comainu-temp"};
-
     my $tmp_dir = $self->{"comainu-temp"};
-    my $tmp_test_bccwj = $tmp_dir."/".File::Basename::basename($test_bccwj);
-    my $buff = $self->read_from_file($test_bccwj);
-    $buff = $self->trans_dataformat($buff, "input-bccwj", "bccwj");
-    $self->write_to_file($tmp_test_bccwj, $buff);
-    undef $buff;
+    my $basename = File::Basename::basename($test_bccwj);
+    my $tmp_test_bccwj = $tmp_dir . "/" . $basename;
+    $self->format_inputdata($test_bccwj, $tmp_test_bccwj, "input-bccwj", "bccwj");
 
-    my $kc_file = $tmp_dir."/".File::Basename::basename($test_bccwj).".KC";
-    my $kc_lout_file = $tmp_dir."/".File::Basename::basename($test_bccwj).".KC.lout";
-    my $kc_bout_file = $tmp_dir."/".File::Basename::basename($test_bccwj).".KC.bout";
-    my $bccwj_lbout_file = $save_dir."/".File::Basename::basename($test_bccwj).".lbout";
+    my $kc_file = $tmp_dir . "/" . $basename . ".KC";
+    my $kc_lout_file = $tmp_dir . "/" . $basename . ".KC.lout";
+    my $kc_bout_file = $tmp_dir . "/" . $basename . ".KC.bout";
+    my $bccwj_lbout_file = $save_dir . "/" . $basename . ".lbout";
 
     $self->{"bnst_process"} = "with_luw";
 
@@ -739,232 +770,11 @@ sub bccwj2longbnstout_internal {
     $self->merge_bccwj_with_kc_lout_file($tmp_test_bccwj, $kc_lout_file, $bccwj_lbout_file);
     $self->merge_bccwj_with_kc_bout_file($bccwj_lbout_file, $kc_bout_file, $bccwj_lbout_file);
 
-    return;
-}
-
-############################################################
-
-########################################
-# 中単位解析
-########################################
-
-sub USAGE_kclong2midmodel {
-    my $self = shift;
-    printf("COMAINU-METHOD: kclong2midmodel\n");
-    printf("  Usage: %s kclong2midmodel <train-kc> <mid-model-dir>\n", $0);
-    printf("    This command trains model from <train-kc> into <mid-model-dir>.\n");
-    printf("\n");
-    printf("  ex.)\n");
-    printf("  \$ perl ./script/comainu.pl kclong2midmodel sample/sample.KC train\n");
-    printf("    -> train/sample.KC.model\n");
-    printf("\n");
-}
-
-sub METHOD_kclong2midmodel {
-    my ($self, $train_kc, $model_dir) = @_;
-    # mstparserのディレクトリの存在確認
-    unless ( -d $self->{"mstparser-dir"} ) {
-        printf(STDERR "ERROR: Not found MSTPARSER_DIR '%s'.\n",
-               $self->{"mstparser-dir"});
-        return 1;
-    }
-    unless ( $model_dir ) {
-        $model_dir = File::Basename::dirname($train_kc);
-    }
-    my $mstparser_dir = $self->get_mstparser_dir();
-
-    return 1 unless defined($mstparser_dir);
-
-    $self->training_mid_train1($train_kc, $model_dir);
-    $self->training_mid_train2($train_kc, $model_dir);
-
     return 0;
 }
 
 
-sub USAGE_kclong2midout {
-    my $self = shift;
-    printf("COMAINU-METHOD: kclong2midout\n");
-    printf("  Usage: %s kclong2midout <test-kc> <mid-model-file> <out-dir>\n", $0);
-    printf("    This command analyzes <test-kc> with <mid-model-file>.\n");
-    printf("    The result is put into <out-dir>.\n");
-    printf("\n");
-    printf("  ex.)\n");
-    printf("  \$ perl ./script/comainu.pl kclong2midout sample/sample.KC train/sample.KC.model out\n");
-    printf("    -> out/sample.KC.mout\n");
-    printf("\n");
-}
-
-sub METHOD_kclong2midout {
-    my ($self, $test_kc, $muwmodel, $save_dir ) = @_;
-
-    if ( -f $test_kc ) {
-        unless ( -f $muwmodel ) {
-            printf(STDERR "ERROR: '%s' not found or not a file.\n",
-                   $muwmodel);
-            die;
-        }
-        mkdir($save_dir) unless -d $save_dir;
-
-        if ( -f $test_kc ) {
-            $self->kclong2midout_internal($test_kc, $muwmodel, $save_dir);
-        } elsif ( -d $test_kc ) {
-            opendir(my $dh, $test_kc);
-            while ( my $test_kc_file = readdir($dh) ) {
-                if ( $test_kc_file =~ /.KC$/ ) {
-                    $self->kclong2midout_internal($test_kc_file, $muwmodel, $save_dir);
-                }
-            }
-            closedir($dh);
-        }
-    } else {
-        printf(STDERR "Error: invalid [test_kc] arg\n");
-    }
-    return 0;
-}
-
-sub kclong2midout_internal {
-    my ($self, $test_kc, $muwmodel, $save_dir ) = @_;
-
-    my $tmp_test_kc = $self->{"comainu-temp"}."/".File::Basename::basename($test_kc);
-    my $buff = $self->read_from_file($test_kc);
-    $buff = $self->trans_dataformat($buff, "input-kc", "kc_mid");
-    $self->write_to_file($tmp_test_kc, $buff);
-    undef $buff;
-
-    $self->_mid_process1($tmp_test_kc);
-    $self->_mid_process2($tmp_test_kc, $muwmodel, $save_dir);
-    $self->_mid_process3($tmp_test_kc, $save_dir);
-}
-
-sub USAGE_kclong2mideval {
-    my $self = shift;
-    printf("COMAINU-METHOD: kclong2mideval\n");
-    printf("  Usage: %s kclong2mideval <ref-kc> <kc-mout> <out-dir>\n", $0);
-    printf("    This command make a evaluation for <kc-mout> with <ref-kc>.\n");
-    printf("    The result is put into <out-dir>.\n");
-    printf("\n");
-    printf("  ex.)\n");
-    printf("  perl ./script/comainu.pl kclong2mideval sample/sample.KC out/sample.KC.mout out\n");
-    printf("    -> out/sample.eval.mid\n");
-    printf("\n");
-}
-
-sub METHOD_kclong2mideval {
-    my ($self, $correct_kc, $result_kc_mout, $save_dir) = @_;
-
-    if ( -f $result_kc_mout ) {
-        $self->kclong2mideval_internal($correct_kc, $result_kc_mout, $save_dir);
-    } elsif ( -d $result_kc_mout ) {
-        opendir(my $dh, $result_kc_mout);
-        while ( my $result_kc_mout_file = readdir($dh) ) {
-            if ( $result_kc_mout_file =~ /.KC$/ ) {
-                $self->kclong2mideval_internal($correct_kc, $result_kc_mout_file, $save_dir);
-            }
-        }
-        closedir($dh);
-    } else {
-        printf(STDERR "# Error: Not found result_kc_mout '%s'\n", $result_kc_mout);
-    }
-    return 0;
-}
-
-sub kclong2mideval_internal {
-    my ($self, $correct_kc, $result_kc_mout, $save_dir) = @_;
-    $self->_compare_mid($correct_kc, $result_kc_mout, $save_dir);
-}
-
-
-sub lout2kc4mid_file {
-    my ($self, $kc_lout_file, $kc_file) = @_;
-
-    my $kc_lout_data = $self->read_from_file($kc_lout_file);
-    my $kc_buff = "";
-    foreach my $line ( split(/\r?\n/, $kc_lout_data) ) {
-        my @items = split(/[ \t]/, $line);
-        if ( $items[0] =~ /^EOS/ ) {
-            $kc_buff .= "EOS\n";
-            next;
-        }
-        $kc_buff .= join(" ", @items[1..$#items-1])."\n";
-    }
-    $self->write_to_file($kc_file, $kc_buff);
-
-    undef $kc_lout_data;
-    undef $kc_buff;
-}
-
-sub USAGE_bccwjlong2midout {
-    my $self = shift;
-    printf("COMAINU-METHOD: bccwjlong2midout\n");
-    printf("  Usage: %s bccwjlong2midout <test-kc> <mid-model-file> <out-dir>\n", $0);
-    printf("    This command analyzes <test-kc> with <mid-model-file>.\n");
-    printf("    The result is put into <out-dir>.\n");
-    printf("\n");
-    printf("  ex.)\n");
-    printf("  \$ perl ./script/comainu.pl bccwjlong2midout sample/sample.bccwj.txt train/MST/train.KC.model out\n");
-    printf("    -> out/sample.bccwj.txt.mout\n");
-    printf("\n");
-}
-
-sub METHOD_bccwjlong2midout {
-    my ($self, $test_bccwj, $muwmodel, $save_dir ) = @_;
-
-    if ( -f $test_bccwj ) {
-        unless ( -f $muwmodel ) {
-            printf(STDERR "ERROR: '%s' not found or not a file.\n",
-                   $muwmodel);
-            die;
-        }
-        mkdir($save_dir) unless -d $save_dir;
-
-        if ( -f $test_bccwj ) {
-            $self->bccwjlong2midout_internal($test_bccwj, $muwmodel, $save_dir);
-        } elsif ( -d $test_bccwj ) {
-            opendir(my $dh, $test_bccwj);
-            while ( my $test_bccwj_file = readdir($dh) ) {
-                if ( $test_bccwj_file =~ /.txt$/ ) {
-                    $self->bccwjlong2midout_internal($test_bccwj_file, $muwmodel, $save_dir);
-                }
-            }
-            closedir($dh);
-        }
-    } else {
-        printf(STDERR "Error: invalid test_bccwj='%s' arg\n", $test_bccwj);
-    }
-    return 0;
-}
-
-sub bccwjlong2midout_internal {
-    my ($self, $test_bccwj, $muwmodel, $save_dir ) = @_;
-
-    mkdir($self->{"comainu-temp"}) unless -d $self->{"comainu-temp"};
-
-    my $tmp_dir = $self->{"comainu-temp"};
-    my $tmp_test_bccwj = $tmp_dir."/".File::Basename::basename($test_bccwj);
-    my $buff = $self->read_from_file($test_bccwj);
-    $buff = $self->trans_dataformat($buff, "input-bccwj", "bccwj");
-    $self->write_to_file($tmp_test_bccwj, $buff);
-    undef $buff;
-
-    my $kc_file = $tmp_dir."/".File::Basename::basename($test_bccwj).".KC";
-    my $kc_mout_file = $tmp_dir."/".File::Basename::basename($test_bccwj).".KC.mout";
-    my $bccwj_mout_file = $save_dir."/".File::Basename::basename($test_bccwj).".mout";
-
-    $self->bccwj2kc_file2($tmp_test_bccwj, $kc_file);
-    $self->METHOD_kclong2midout($kc_file, $muwmodel, $tmp_dir);
-    $self->merge_bccwj_with_kc_mout_file($tmp_test_bccwj, $kc_mout_file, $bccwj_mout_file);
-}
-
-sub bccwj2kc_file2 {
-    my ($self, $bccwj_file, $kc_file) = @_;
-    my $buff = $self->read_from_file($bccwj_file);
-    $buff = $self->bccwj2kc_with_luw($buff);
-    $self->write_to_file($kc_file, $buff);
-    undef $buff;
-}
-
-
+# 中単位解析 BCCWJ
 sub USAGE_bccwj2midout {
     my $self = shift;
     printf("COMAINU-METHOD: bccwj2midout\n");
@@ -979,50 +789,40 @@ sub USAGE_bccwj2midout {
 }
 
 sub METHOD_bccwj2midout {
-    my ($self, $long_train_kc, $test_bccwj, $luwmodel, $muwmodel, $save_dir ) = @_;
+    my ($self, $long_train_kc, $test_bccwj, $luwmodel, $muwmodel, $save_dir) = @_;
+
+    $self->check_args(scalar @_ == 6);
+    $self->check_luwmodel($luwmodel);
+    $self->check_file($muwmodel);
+    mkdir $save_dir unless -d $save_dir;
 
     if ( -f $test_bccwj ) {
-    	$self->check_luwmodel($luwmodel);
-        unless ( -f $muwmodel ) {
-            printf(STDERR "ERROR: '%s' not found or not a file.\n",
-                   $muwmodel);
-            die;
-        }
-        mkdir($save_dir) unless -d $save_dir;
-
-        if ( -f $test_bccwj ) {
-            $self->bccwj2midout_internal($long_train_kc, $test_bccwj, $luwmodel, $muwmodel, $save_dir);
-        } elsif ( -d $test_bccwj ) {
-            opendir(my $dh, $test_bccwj);
-            while ( my $test_bccwj_file = readdir($dh) ) {
-                if ( $test_bccwj_file =~ /.txt$/ ) {
-                    $self->bccwj2midout_internal($long_train_kc, $test_bccwj_file, $luwmodel, $muwmodel, $save_dir);
-                }
+        $self->bccwj2midout_internal($long_train_kc, $test_bccwj, $luwmodel, $muwmodel, $save_dir);
+    } elsif ( -d $test_bccwj ) {
+        opendir(my $dh, $test_bccwj);
+        while ( my $test_bccwj_file = readdir($dh) ) {
+            if ( $test_bccwj_file =~ /.txt$/ ) {
+                $self->bccwj2midout_internal($long_train_kc, $test_bccwj_file, $luwmodel, $muwmodel, $save_dir);
             }
-            closedir($dh);
         }
-    } else {
-        printf(STDERR "Error: invalid test_bccwj='%s' arg\n", $test_bccwj);
+        closedir($dh);
     }
+
     return 0;
 }
 
 sub bccwj2midout_internal {
     my ($self, $long_train_kc, $test_bccwj, $luwmodel, $muwmodel, $save_dir) = @_;
 
-    mkdir($self->{"comainu-temp"}) unless -d $self->{"comainu-temp"};
-
+    my $basename = File::Basename::basename($test_bccwj);
     my $tmp_dir = $self->{"comainu-temp"};
-    my $tmp_test_bccwj = $tmp_dir."/".File::Basename::basename($test_bccwj);
-    my $buff = $self->read_from_file($test_bccwj);
-    $buff = $self->trans_dataformat($buff, "input-bccwj", "bccwj");
-    $self->write_to_file($tmp_test_bccwj, $buff);
-    undef $buff;
+    my $tmp_test_bccwj = $tmp_dir . "/" . $basename;
+    $self->format_inputdata($test_bccwj, $tmp_test_bccwj, "input-bccwj", "bccwj");
 
-    my $kc_file = $tmp_dir."/".File::Basename::basename($test_bccwj).".KC";
-    my $kc_lout_file = $tmp_dir."/".File::Basename::basename($test_bccwj).".KC.lout";
-    my $kc_mout_file = $tmp_dir."/".File::Basename::basename($test_bccwj).".KC.mout";
-    my $bccwj_mout_file = $save_dir."/".File::Basename::basename($test_bccwj).".mout";
+    my $kc_file = $tmp_dir . "/" . $basename . ".KC";
+    my $kc_lout_file = $tmp_dir . "/" . $basename . ".KC.lout";
+    my $kc_mout_file = $tmp_dir . "/" . $basename . ".KC.mout";
+    my $bccwj_mout_file = $save_dir . "/" . $basename . ".mout";
 
     $self->bccwj2kc_file($tmp_test_bccwj, $kc_file);
     $self->METHOD_kc2longout($long_train_kc, $kc_file, $luwmodel, $tmp_dir);
@@ -1030,32 +830,12 @@ sub bccwj2midout_internal {
     $self->METHOD_kclong2midout($kc_file, $muwmodel, $tmp_dir);
     $self->merge_bccwj_with_kc_lout_file($tmp_test_bccwj, $kc_lout_file, $bccwj_mout_file);
     $self->merge_bccwj_with_kc_mout_file($bccwj_mout_file, $kc_mout_file, $bccwj_mout_file);
+
+    return 0;
 }
 
-sub merge_bccwj_with_kc_mout_file {
-    my ($self, $bccwj_file, $kc_mout_file, $mout_file) = @_;
 
-    my $bccwj_data = $self->read_from_file($bccwj_file);
-    my $kc_mout_data = $self->read_from_file($kc_mout_file);
-
-    my $mout_data = "";
-    my @m = split(/\r?\n/, $kc_mout_data);
-    undef $kc_mout_data;
-
-    foreach ( split(/\r?\n/, $bccwj_data) ) {
-        my $item_list = [split(/\t/)];
-        my $lw = shift(@m);
-        $lw = shift(@m) if $lw =~ /^EOS|^\*B/;
-        my @ml = split(/[ \t]/, $lw);
-        @$item_list[34..36] = @ml[19..21];
-        $mout_data .= join("\t",@$item_list)."\n";
-    }
-    undef $bccwj_data;
-
-    $self->write_to_file($mout_file, $mout_data);
-    undef $mout_data;
-}
-
+# 文節、長・中単位の同時解析
 sub USAGE_bccwj2midbnstout {
     my $self = shift;
     printf("COMAINU-METHOD: bccwj2midbnstout\n");
@@ -1070,57 +850,42 @@ sub USAGE_bccwj2midbnstout {
 }
 
 sub METHOD_bccwj2midbnstout {
-    my ($self, $long_train_kc, $test_bccwj, $luwmodel, $muwmodel, $bnstmodel, $save_dir ) = @_;
+    my ($self, $long_train_kc, $test_bccwj, $luwmodel, $muwmodel, $bnstmodel, $save_dir) = @_;
+
+    $self->check_args(scalar @_ == 7);
+    $self->check_luwmodel($luwmodel);
+    $self->check_file($muwmodel);
+    $self->check_file($bnstmodel);
+    mkdir $save_dir unless -d $save_dir;
 
     if ( -f $test_bccwj ) {
-    	$self->check_luwmodel($luwmodel);
-        unless ( -f $muwmodel ) {
-            printf(STDERR "ERROR: '%s' not found or not a file.\n",
-                   $muwmodel);
-            die;
-        }
-        unless ( -f $bnstmodel ) {
-            printf(STDERR "ERROR: '%s' not found or not a file.\n",
-                   $bnstmodel);
-            die;
-        }
-
-        mkdir($save_dir) unless -d $save_dir;
-
-        if ( -f $test_bccwj ) {
-            $self->bccwj2midbnstout_internal($long_train_kc, $test_bccwj, $luwmodel, $muwmodel, $bnstmodel, $save_dir);
-        } elsif ( -d $test_bccwj ) {
-            opendir(my $dh, $test_bccwj);
-            while ( my $test_bccwj_file = readdir($dh) ) {
-                if ( $test_bccwj_file =~ /.txt$/ ) {
-                    $self->bccwj2midbnstout_internal($long_train_kc, $test_bccwj_file, $luwmodel, $muwmodel, $bnstmodel, $save_dir);
-                }
+        $self->bccwj2midbnstout_internal($long_train_kc, $test_bccwj, $luwmodel, $muwmodel, $bnstmodel, $save_dir);
+    } elsif ( -d $test_bccwj ) {
+        opendir(my $dh, $test_bccwj);
+        while ( my $test_bccwj_file = readdir($dh) ) {
+            if ( $test_bccwj_file =~ /.txt$/ ) {
+                $self->bccwj2midbnstout_internal($long_train_kc, $test_bccwj_file, $luwmodel, $muwmodel, $bnstmodel, $save_dir);
             }
-            closedir($dh);
         }
-    } else {
-        printf(STDERR "Error: invalid test_bccwj='%s' arg\n", $test_bccwj);
+        closedir($dh);
     }
+
     return 0;
 }
 
 sub bccwj2midbnstout_internal {
-    my ($self, $long_train_kc, $test_bccwj, $luwmodel, $muwmodel, $bnstmodel, $save_dir ) = @_;
-
-    mkdir($self->{"comainu-temp"}) unless -d $self->{"comainu-temp"};
+    my ($self, $long_train_kc, $test_bccwj, $luwmodel, $muwmodel, $bnstmodel, $save_dir) = @_;
 
     my $tmp_dir = $self->{"comainu-temp"};
-    my $tmp_test_bccwj = $tmp_dir."/".File::Basename::basename($test_bccwj);
-    my $buff = $self->read_from_file($test_bccwj);
-    $buff = $self->trans_dataformat($buff, "input-bccwj", "bccwj");
-    $self->write_to_file($tmp_test_bccwj, $buff);
-    undef $buff;
+    my $basename = File::Basename::basename($test_bccwj);
+    my $tmp_test_bccwj = $tmp_dir . "/" . $basename;
+    $self->format_inputdata($test_bccwj, $tmp_test_bccwj, "input-bccwj", "bccwj");
 
-    my $kc_file = $tmp_dir."/".File::Basename::basename($test_bccwj).".KC";
-    my $kc_lout_file = $tmp_dir."/".File::Basename::basename($test_bccwj).".KC.lout";
-    my $kc_mout_file = $tmp_dir."/".File::Basename::basename($test_bccwj).".KC.mout";
-    my $kc_bout_file = $tmp_dir."/".File::Basename::basename($test_bccwj).".KC.bout";
-    my $bccwj_mbout_file = $save_dir."/".File::Basename::basename($test_bccwj).".mbout";
+    my $kc_file = $tmp_dir . "/" . $basename . ".KC";
+    my $kc_lout_file = $tmp_dir . "/" . $basename . ".KC.lout";
+    my $kc_mout_file = $tmp_dir . "/" . $basename . ".KC.mout";
+    my $kc_bout_file = $tmp_dir . "/" . $basename . ".KC.bout";
+    my $bccwj_mbout_file = $save_dir . "/" . $basename . ".mbout";
 
     $self->{"bnst_process"} = "with_luw";
 
@@ -1133,13 +898,70 @@ sub bccwj2midbnstout_internal {
     $self->merge_bccwj_with_kc_bout_file($bccwj_mbout_file, $kc_bout_file, $bccwj_mbout_file);
     $self->merge_bccwj_with_kc_mout_file($bccwj_mbout_file, $kc_mout_file, $bccwj_mbout_file);
 
-    return;
+    return 0;
 }
 
 
-########################################
+# 中単位解析 BCCWJ
+sub USAGE_bccwjlong2midout {
+    my $self = shift;
+    printf("COMAINU-METHOD: bccwjlong2midout\n");
+    printf("  Usage: %s bccwjlong2midout <test-kc> <mid-model-file> <out-dir>\n", $0);
+    printf("    This command analyzes <test-kc> with <mid-model-file>.\n");
+    printf("    The result is put into <out-dir>.\n");
+    printf("\n");
+    printf("  ex.)\n");
+    printf("  \$ perl ./script/comainu.pl bccwjlong2midout sample/sample.bccwj.txt train/MST/train.KC.model out\n");
+    printf("    -> out/sample.bccwj.txt.mout\n");
+    printf("\n");
+}
+
+sub METHOD_bccwjlong2midout {
+    my ($self, $test_bccwj, $muwmodel, $save_dir) = @_;
+
+    $self->check_args(scalar @_ == 4);
+    $self->check_file($muwmodel);
+    mkdir $save_dir unless -d $save_dir;
+
+    if ( -f $test_bccwj ) {
+        $self->bccwjlong2midout_internal($test_bccwj, $muwmodel, $save_dir);
+    } elsif ( -d $test_bccwj ) {
+        opendir(my $dh, $test_bccwj);
+        while ( my $test_bccwj_file = readdir($dh) ) {
+            if ( $test_bccwj_file =~ /.txt$/ ) {
+                $self->bccwjlong2midout_internal($test_bccwj_file, $muwmodel, $save_dir);
+            }
+        }
+        closedir($dh);
+    }
+
+    return 0;
+}
+
+sub bccwjlong2midout_internal {
+    my ($self, $test_bccwj, $muwmodel, $save_dir) = @_;
+
+    my $tmp_dir = $self->{"comainu-temp"};
+    my $basename = File::Basename::basename($test_bccwj);
+    my $tmp_test_bccwj = $tmp_dir . "/" . $basename;
+    $self->format_inputdata($test_bccwj, $tmp_test_bccwj, "input-bccwj", "bccwj");
+
+    my $kc_file = $tmp_dir . "/" . $basename . ".KC";
+    my $kc_mout_file = $tmp_dir . "/" . $basename . ".KC.mout";
+    my $bccwj_mout_file = $save_dir . "/" . $basename . ".mout";
+
+    $self->bccwjlong2kc_file($tmp_test_bccwj, $kc_file);
+    $self->METHOD_kclong2midout($kc_file, $muwmodel, $tmp_dir);
+    $self->merge_bccwj_with_kc_mout_file($tmp_test_bccwj, $kc_mout_file, $bccwj_mout_file);
+
+    return 0;
+}
+
+
+############################################################
+# 平文からの解析
+############################################################
 # 平文からの長単位解析
-########################################
 sub USAGE_plain2longout {
     my $self = shift;
     printf("COMAINU-METHOD: plain2longout\n");
@@ -1156,40 +978,37 @@ sub USAGE_plain2longout {
 }
 
 sub METHOD_plain2longout {
-    my ($self, $train_kc, $test_file, $luwmodel, $save_dir ) = @_;
+    my ($self, $train_kc, $test_file, $luwmodel, $save_dir) = @_;
+
+    $self->check_args(scalar @_ == 5);
+    $self->check_luwmodel($luwmodel);
+    mkdir $save_dir unless -d $save_dir;
 
     if ( -f $test_file ) {
-        $self->check_luwmodel($luwmodel);
-        mkdir($save_dir) unless -d $save_dir;
-
-        if ( -f $test_file ) {
-            $self->plain2longout_internal($train_kc, $test_file, $luwmodel, $save_dir);
-        } elsif ( -d $test_file ) {
-            opendir(my $dh, $test_file);
-            while ( my $test_file2 = readdir($dh) ) {
-                if ( $test_file2 =~ /.txt$/ ) {
-                    $self->plain2longout_internal($train_kc, $test_file2, $luwmodel, $save_dir);
-                }
+        $self->plain2longout_internal($train_kc, $test_file, $luwmodel, $save_dir);
+    } elsif ( -d $test_file ) {
+        opendir(my $dh, $test_file);
+        while ( my $test_file2 = readdir($dh) ) {
+            if ( $test_file2 =~ /.txt$/ ) {
+                $self->plain2longout_internal($train_kc, $test_file2, $luwmodel, $save_dir);
             }
-            closedir($dh);
         }
-    } else {
-        printf(STDERR "Error: invalid test_file='%s' arg\n", $test_file);
+        closedir($dh);
     }
+
     return 0;
 }
 
 sub plain2longout_internal {
     my ($self, $train_kc, $test_file, $luwmodel, $save_dir) = @_;
 
-    mkdir($self->{"comainu-temp"}) unless -d $self->{"comainu-temp"};
-
     my $tmp_dir = $self->{"comainu-temp"};
-    my $chasen_file = $tmp_dir."/".File::Basename::basename($test_file).".chasen";
-    my $mecab_file = $tmp_dir."/".File::Basename::basename($test_file).".mecab";
-    my $kc_file = $tmp_dir."/".File::Basename::basename($test_file).".KC";
-    my $kc_lout_file = $tmp_dir."/".File::Basename::basename($test_file).".KC.lout";
-    my $mecab_lout_file = $save_dir."/".File::Basename::basename($test_file).".lout";
+    my $basename = File::Basename::basename($test_file);
+    my $chasen_file = $tmp_dir . "/" . $basename . ".chasen";
+    my $mecab_file = $tmp_dir . "/" . $basename . ".mecab";
+    my $kc_file = $tmp_dir . "/" . $basename . ".KC";
+    my $kc_lout_file = $tmp_dir . "/" . $basename . ".KC.lout";
+    my $mecab_lout_file = $save_dir . "/" . $basename . ".lout";
 
     $self->plain2mecab_file($test_file, $chasen_file, $mecab_file);
     $self->mecab2kc_file($mecab_file, $kc_file);
@@ -1198,9 +1017,8 @@ sub plain2longout_internal {
     return;
 }
 
-########################################
-# 平文からの文節解析
-########################################
+
+# 平文からの文節境界解析
 sub USAGE_plain2bnstout {
     my $self = shift;
     printf("COMAINU-METHOD: plain2bnstout\n");
@@ -1215,57 +1033,48 @@ sub USAGE_plain2bnstout {
 }
 
 sub METHOD_plain2bnstout {
-    my ($self, $test_file, $bnstmodel, $save_dir ) = @_;
+    my ($self, $test_file, $bnstmodel, $save_dir) = @_;
+
+    $self->check_args(scalar @_ == 4);
+    $self->check_file($bnstmodel);
+    mkdir $save_dir unless -d $save_dir;
 
     if ( -f $test_file ) {
-        unless ( -f $bnstmodel ) {
-            printf(STDERR "ERROR: '%s' not found or not a file.\n",
-                   $bnstmodel);
-            die;
-        }
-        mkdir($save_dir) unless -d $save_dir;
-
-        if ( -f $test_file ) {
-            $self->plain2bnstout_internal($test_file, $bnstmodel, $save_dir);
-        } elsif ( -d $test_file ) {
-            opendir(my $dh, $test_file);
-            while ( my $test_file2 = readdir($dh) ) {
-                if ( $test_file2 =~ /.txt$/ ) {
-                    $self->plain2bnstout_internal($test_file2, $bnstmodel, $save_dir);
-                }
+        $self->plain2bnstout_internal($test_file, $bnstmodel, $save_dir);
+    } elsif ( -d $test_file ) {
+        opendir(my $dh, $test_file);
+        while ( my $test_file2 = readdir($dh) ) {
+            if ( $test_file2 =~ /.txt$/ ) {
+                $self->plain2bnstout_internal($test_file2, $bnstmodel, $save_dir);
             }
-            closedir($dh);
         }
-    } else {
-        printf(STDERR "Error: invalid test_mecab='%s' arg\n", $test_file);
+        closedir($dh);
     }
+
     return 0;
 }
 
 sub plain2bnstout_internal {
     my ($self, $test_file, $bnstmodel, $save_dir) = @_;
 
-    mkdir($self->{"comainu-temp"}) unless -d $self->{"comainu-temp"};
-
     my $tmp_dir = $self->{"comainu-temp"};
-    my $chasen_file = $tmp_dir."/".File::Basename::basename($test_file).".chasen";
-    my $mecab_file = $tmp_dir."/".File::Basename::basename($test_file).".mecab";
-    my $kc_file = $tmp_dir."/".File::Basename::basename($test_file).".KC";
-    my $kc_bout_file = $tmp_dir."/".File::Basename::basename($test_file).".KC.bout";
-    my $bout_file = $save_dir."/".File::Basename::basename($test_file).".bout";
+    my $basename = File::Basename::basename($test_file);
+    my $chasen_file  = $tmp_dir . "/" . $basename . ".chasen";
+    my $mecab_file   = $tmp_dir . "/" . $basename . ".mecab";
+    my $kc_file      = $tmp_dir . "/" . $basename . ".KC";
+    my $kc_bout_file = $tmp_dir . "/" . $basename . ".KC.bout";
+    my $bout_file    = $save_dir . "/" . $basename . ".bout";
 
     $self->plain2mecab_file($test_file, $chasen_file, $mecab_file);
     $self->mecab2kc_file($mecab_file, $kc_file);
     $self->METHOD_kc2bnstout($kc_file, $bnstmodel, $tmp_dir);
     $self->merge_mecab_with_kc_bout_file($mecab_file, $kc_bout_file, $bout_file);
 
-    return;
+    return 0;
 }
 
 
-########################################
 # 平文からの長単位・文節解析
-########################################
 sub USAGE_plain2longbnstout {
     my $self = shift;
     printf("COMAINU-METHOD: plain2longbnstout\n");
@@ -1280,46 +1089,39 @@ sub USAGE_plain2longbnstout {
 }
 
 sub METHOD_plain2longbnstout {
-    my ($self, $long_train_kc, $test_file, $luwmodel, $bnstmodel, $save_dir ) = @_;
+    my ($self, $long_train_kc, $test_file, $luwmodel, $bnstmodel, $save_dir) = @_;
+
+    $self->check_args(scalar @_ == 6);
+    $self->check_luwmodel($luwmodel);
+    $self->check_file($bnstmodel);
+    mkdir $save_dir unless -d $save_dir;
 
     if ( -f $test_file ) {
-        $self->check_luwmodel($luwmodel);
-        unless ( -f $bnstmodel ) {
-            printf(STDERR "ERROR: '%s' not found or not a file.\n",
-                   $bnstmodel);
-            die;
-        }
-        mkdir($save_dir) unless -d $save_dir;
-
-        if ( -f $test_file ) {
-            $self->plain2longbnstout_internal($long_train_kc, $test_file, $luwmodel, $bnstmodel, $save_dir);
-        } elsif ( -d $test_file ) {
-            opendir(my $dh, $test_file);
-            while ( my $test_file2 = readdir($dh) ) {
-                if ( $test_file2 =~ /.txt$/ ) {
-                    $self->plain2longbnstout_internal($long_train_kc, $test_file2, $luwmodel, $bnstmodel, $save_dir);
-                }
+        $self->plain2longbnstout_internal($long_train_kc, $test_file, $luwmodel, $bnstmodel, $save_dir);
+    } elsif ( -d $test_file ) {
+        opendir(my $dh, $test_file);
+        while ( my $test_file2 = readdir($dh) ) {
+            if ( $test_file2 =~ /.txt$/ ) {
+                $self->plain2longbnstout_internal($long_train_kc, $test_file2, $luwmodel, $bnstmodel, $save_dir);
             }
-            closedir($dh);
         }
-    } else {
-        printf(STDERR "Error: invalid test_file='%s' arg\n", $test_file);
+        closedir($dh);
     }
+
     return 0;
 }
 
 sub plain2longbnstout_internal {
     my ($self, $long_train_kc, $test_file, $luwmodel, $bnstmodel, $save_dir) = @_;
 
-    mkdir($self->{"comainu-temp"}) unless -d $self->{"comainu-temp"};
-
     my $tmp_dir = $self->{"comainu-temp"};
-    my $chasen_file = $tmp_dir."/".File::Basename::basename($test_file).".chasen";
-    my $mecab_file = $tmp_dir."/".File::Basename::basename($test_file).".mecab";
-    my $kc_file = $tmp_dir."/".File::Basename::basename($test_file).".KC";
-    my $kc_lout_file = $tmp_dir."/".File::Basename::basename($test_file).".KC.lout";
-    my $kc_bout_file = $tmp_dir."/".File::Basename::basename($test_file).".KC.bout";
-    my $lbout_file = $save_dir."/".File::Basename::basename($test_file).".lbout";
+    my $basename = File::Basename::basename($test_file);
+    my $chasen_file  = $tmp_dir . "/" . $basename . ".chasen";
+    my $mecab_file   = $tmp_dir . "/" . $basename . ".mecab";
+    my $kc_file      = $tmp_dir . "/" . $basename . ".KC";
+    my $kc_lout_file = $tmp_dir . "/" . $basename . ".KC.lout";
+    my $kc_bout_file = $tmp_dir . "/" . $basename . ".KC.bout";
+    my $lbout_file   = $save_dir . "/" . $basename . ".lbout";
 
     $self->{"bnst_process"} = "with_luw";
 
@@ -1329,13 +1131,12 @@ sub plain2longbnstout_internal {
     $self->METHOD_kc2bnstout($kc_file, $bnstmodel, $tmp_dir);
     $self->merge_mecab_with_kc_lout_file($mecab_file, $kc_lout_file, $lbout_file);
     $self->merge_mecab_with_kc_bout_file($lbout_file, $kc_bout_file, $lbout_file);
-    return;
+
+    return 0;
 }
 
 
-########################################
 # 平文からの中単位解析
-########################################
 sub USAGE_plain2midout {
     my $self = shift;
     printf("COMAINU-METHOD: plain2midout\n");
@@ -1350,46 +1151,39 @@ sub USAGE_plain2midout {
 }
 
 sub METHOD_plain2midout {
-    my ($self, $long_train_kc, $test_file, $luwmodel, $muwmodel, $save_dir ) = @_;
+    my ($self, $long_train_kc, $test_file, $luwmodel, $muwmodel, $save_dir) = @_;
+
+    $self->check_args(scalar @_ == 6);
+    $self->check_luwmodel($luwmodel);
+    $self->check_file($muwmodel);
+    mkdir $save_dir unless -d $save_dir;
 
     if ( -f $test_file ) {
-        $self->check_luwmodel($luwmodel);
-        unless ( -f $muwmodel ) {
-            printf(STDERR "ERROR: '%s' not found or not a file.\n",
-                   $muwmodel);
-            die;
-        }
-        mkdir($save_dir) unless -d $save_dir;
-
-        if ( -f $test_file ) {
-            $self->plain2midout_internal($long_train_kc, $test_file, $luwmodel, $muwmodel, $save_dir);
-        } elsif ( -d $test_file ) {
-            opendir(my $dh, $test_file);
-            while ( my $test_file2 = readdir($dh) ) {
-                if ( $test_file2 =~ /.txt$/ ) {
-                    $self->plain2midout_internal($long_train_kc, $test_file2, $luwmodel, $muwmodel, $save_dir);
-                }
+        $self->plain2midout_internal($long_train_kc, $test_file, $luwmodel, $muwmodel, $save_dir);
+    } elsif ( -d $test_file ) {
+        opendir(my $dh, $test_file);
+        while ( my $test_file2 = readdir($dh) ) {
+            if ( $test_file2 =~ /.txt$/ ) {
+                $self->plain2midout_internal($long_train_kc, $test_file2, $luwmodel, $muwmodel, $save_dir);
             }
-            closedir($dh);
         }
-    } else {
-        printf(STDERR "Error: invalid test_file='%s' arg\n", $test_file);
+        closedir($dh);
     }
+
     return 0;
 }
 
 sub plain2midout_internal {
     my ($self, $long_train_kc, $test_file, $luwmodel, $muwmodel, $save_dir) = @_;
 
-    mkdir($self->{"comainu-temp"}) unless -d $self->{"comainu-temp"};
-
     my $tmp_dir = $self->{"comainu-temp"};
-    my $chasen_file = $tmp_dir."/".File::Basename::basename($test_file).".chasen";
-    my $mecab_file = $tmp_dir."/".File::Basename::basename($test_file).".mecab";
-    my $kc_file = $tmp_dir."/".File::Basename::basename($test_file).".KC";
-    my $kc_lout_file = $tmp_dir."/".File::Basename::basename($test_file).".KC.lout";
-    my $kc_mout_file = $tmp_dir."/".File::Basename::basename($test_file).".KC.mout";
-    my $mout_file = $save_dir."/".File::Basename::basename($test_file).".mout";
+    my $basename = File::Basename::basename($test_file);
+    my $chasen_file  = $tmp_dir . "/" . $basename . ".chasen";
+    my $mecab_file   = $tmp_dir . "/" . $basename . ".mecab";
+    my $kc_file      = $tmp_dir . "/" . $basename . ".KC";
+    my $kc_lout_file = $tmp_dir . "/" . $basename . ".KC.lout";
+    my $kc_mout_file = $tmp_dir . "/" . $basename . ".KC.mout";
+    my $mout_file   = $save_dir . "/" . $basename . ".mout";
 
     $self->plain2mecab_file($test_file, $chasen_file, $mecab_file);
     $self->mecab2kc_file($mecab_file, $kc_file);
@@ -1398,13 +1192,11 @@ sub plain2midout_internal {
     $self->METHOD_kclong2midout($kc_file, $muwmodel, $tmp_dir);
     $self->merge_mecab_with_kc_mout_file($mecab_file, $kc_mout_file, $mout_file);
 
-    return;
+    return 0;
 }
 
 
-########################################
 # 平文からの中単位・文節解析
-########################################
 sub USAGE_plain2midbnstout {
     my $self = shift;
     printf("COMAINU-METHOD: plain2midbnstout\n");
@@ -1419,52 +1211,41 @@ sub USAGE_plain2midbnstout {
 }
 
 sub METHOD_plain2midbnstout {
-    my ($self, $long_train_kc, $test_file, $luwmodel, $muwmodel, $bnstmodel, $save_dir ) = @_;
+    my ($self, $long_train_kc, $test_file, $luwmodel, $muwmodel, $bnstmodel, $save_dir) = @_;
+
+    $self->check_args(scalar @_ == 7);
+    $self->check_luwmodel($luwmodel);
+    $self->check_file($muwmodel);
+    $self->check_file($bnstmodel);
+    mkdir $save_dir unless -d $save_dir;
 
     if ( -f $test_file ) {
-        $self->check_luwmodel($luwmodel);
-        unless ( -f $muwmodel ) {
-            printf(STDERR "ERROR: '%s' not found or not a file.\n",
-                   $muwmodel);
-            die;
-        }
-        unless ( -f $bnstmodel ) {
-            printf(STDERR "ERROR: '%s' not found or not a file.\n",
-                   $bnstmodel);
-            die;
-        }
-        mkdir($save_dir) unless -d $save_dir;
-
-        if ( -f $test_file ) {
-            $self->plain2midbnstout_internal($long_train_kc, $test_file, $luwmodel, $muwmodel, $bnstmodel, $save_dir);
-        } elsif ( -d $test_file ) {
-            opendir(my $dh, $test_file);
-            while ( my $test_file2 = readdir($dh) ) {
-                if ( $test_file2 =~ /.txt$/ ) {
-                    $self->plain2midbnstout_internal($long_train_kc, $test_file2, $luwmodel, $muwmodel, $bnstmodel, $save_dir);
-                }
+        $self->plain2midbnstout_internal($long_train_kc, $test_file, $luwmodel, $muwmodel, $bnstmodel, $save_dir);
+    } elsif ( -d $test_file ) {
+        opendir(my $dh, $test_file);
+        while ( my $test_file2 = readdir($dh) ) {
+            if ( $test_file2 =~ /.txt$/ ) {
+                $self->plain2midbnstout_internal($long_train_kc, $test_file2, $luwmodel, $muwmodel, $bnstmodel, $save_dir);
             }
-            closedir($dh);
         }
-    } else {
-        printf(STDERR "Error: invalid test_file='%s' arg\n", $test_file);
+        closedir($dh);
     }
+
     return 0;
 }
 
 sub plain2midbnstout_internal {
     my ($self, $long_train_kc, $test_file, $luwmodel, $muwmodel, $bnstmodel, $save_dir) = @_;
 
-    mkdir($self->{"comainu-temp"}) unless -d $self->{"comainu-temp"};
-
     my $tmp_dir = $self->{"comainu-temp"};
-    my $chasen_file = $tmp_dir."/".File::Basename::basename($test_file).".chasen";
-    my $mecab_file = $tmp_dir."/".File::Basename::basename($test_file).".mecab";
-    my $kc_file = $tmp_dir."/".File::Basename::basename($test_file).".KC";
-    my $kc_lout_file = $tmp_dir."/".File::Basename::basename($test_file).".KC.lout";
-    my $kc_mout_file = $tmp_dir."/".File::Basename::basename($test_file).".KC.mout";
-    my $kc_bout_file = $tmp_dir."/".File::Basename::basename($test_file).".KC.bout";
-    my $mbout_file = $save_dir."/".File::Basename::basename($test_file).".mbout";
+    my $basename = File::Basename::basename($test_file);
+    my $chasen_file  = $tmp_dir . "/" . $basename . ".chasen";
+    my $mecab_file   = $tmp_dir . "/" . $basename . ".mecab";
+    my $kc_file      = $tmp_dir . "/" . $basename . ".KC";
+    my $kc_lout_file = $tmp_dir . "/" . $basename . ".KC.lout";
+    my $kc_mout_file = $tmp_dir . "/" . $basename . ".KC.mout";
+    my $kc_bout_file = $tmp_dir . "/" . $basename . ".KC.bout";
+    my $mbout_file  = $save_dir . "/" . $basename . ".mbout";
 
     $self->{"bnst_process"} = "with_luw";
 
@@ -1476,28 +1257,32 @@ sub plain2midbnstout_internal {
     $self->METHOD_kclong2midout($kc_file, $muwmodel, $tmp_dir);
     $self->merge_mecab_with_kc_mout_file($mecab_file, $kc_mout_file, $mbout_file);
     $self->merge_mecab_with_kc_bout_file($mbout_file, $kc_bout_file, $mbout_file);
-    return;
+
+    return 0;
 }
 
+
+############################################################
+# 形態素解析
+############################################################
 sub plain2mecab_file {
     my ($self, $test_file, $chasen_file, $mecab_file) = @_;
 
     my $unidic_dir = $self->{"unidic-dir"};
     my $com = "";
-    if ( $self->{"suwmodel"} eq "chasen" ) {
+    if ( $self->{suwmodel} eq "chasen" ) {
         my $chasen_dir = $self->{"chasen-dir"};
         my $chasenrc = $unidic_dir."/dic/unidic-chasen/chasenrc";
         $com = sprintf("\"%s/chasen\" -r \"%s\" -i w",
                        $chasen_dir, $chasenrc);
-    } elsif ( $self->{"suwmodel"} eq "mecab" ) {
+    } elsif ( $self->{suwmodel} eq "mecab" ) {
         my $mecab_dir = $self->{"mecab-dir"};
         my $mecabdic = $unidic_dir."/dic/unidic-mecab";
         $com = sprintf("\"%s/mecab\" -O%s -d\"%s\" -r\"%s\"",
-                       $mecab_dir, $UNIDIC_MECAB_TYPE, $mecabdic, $self->{"mecab_rcfile"});
+                       $mecab_dir, $UNIDIC_MECAB_TYPE, $mecabdic, $self->{mecab_rcfile});
     }
-    if ( $Config{"osname"} eq "MSWin32" ) {
-        $com =~ s/\//\\/g;
-    }
+    $com =~ s/\//\\/g if $Config{osname} eq "MSWin32";
+
     print STDERR "# COM: ".$com."\n";
     my $in_buff = $self->read_from_file($test_file);
     my $out_buffs = [];
@@ -1513,23 +1298,16 @@ sub plain2mecab_file {
     undef $out_buffs;
     undef $in_buff;
 
-    if ( $self->{"suwmodel"} eq "chasen" ) {
+    if ( $self->{suwmodel} eq "chasen" ) {
         $self->write_to_file($chasen_file, $out_buff);
         $self->chasen2mecab_file($chasen_file, $mecab_file);
-    } elsif ( $self->{"suwmodel"} eq "mecab" ) {
+    } elsif ( $self->{suwmodel} eq "mecab" ) {
         $self->write_to_file($mecab_file, $out_buff);
     }
     undef $out_buff;
 }
 
-sub chasen2mecab_file {
-    my ($self, $chasen_file, $kc_file) = @_;
-    my $buff = $self->read_from_file($chasen_file);
-    $buff = $self->chasen2mecab($buff);
-    $self->write_to_file($kc_file, $buff);
-    undef $buff;
-}
-
+# extcorput.plを利用して付加情報を付与
 sub mecab2kc_file {
     my ($self, $chasen_file, $kc_file) = @_;
     my $chasen_ext_file = $chasen_file."_ext";
@@ -1544,7 +1322,7 @@ sub mecab2kc_file {
     $self->write_to_file($ext_def_file, $def_buff);
     undef $def_buff;
 
-    my $perl = $self->{"perl"};
+    my $perl = $self->{perl};
     my $com = sprintf("\"%s\" \"%s/bin/extcorpus.pl\" -C \"%s\"",
 		      $perl,
 		      $self->{"unidic2-dir"}, $ext_def_file);
@@ -1557,1032 +1335,97 @@ sub mecab2kc_file {
     undef $buff;
 }
 
-sub mecab2kc_file_old {
-    my ($self, $chasen_file, $kc_file) = @_;
-    my $buff = $self->read_from_file($chasen_file);
-    $buff = $self->mecab2kc($buff);
-    $self->write_to_file($kc_file, $buff);
-    undef $buff;
+
+############################################################
+# 訓練対象KCファイルからモデルを訓練する。
+############################################################
+# 長単位解析モデルを学習する
+sub USAGE_kc2longmodel {
+    my $self = shift;
+    printf("COMAINU-METHOD: kc2longmodel\n");
+    printf("  Usage: %s kc2longmodel <train-kc> <long-model-dir>\n", $0);
+    printf("    This command trains model from <train-kc> into <long-model-dir>.\n");
+    printf("\n");
+    printf("  ex.)\n");
+    printf("  \$ perl ./script/comainu.pl kc2longmodel sample/sample.KC train\n");
+    printf("    -> train/sample.KC.model\n");
+    printf("\n");
 }
 
-# convert chasen(unidic) to mecab(unidic)
-sub chasen2mecab {
-    my ($self, $buff) = @_;
+sub METHOD_kc2longmodel {
+    my ($self, $train_kc, $model_dir) = @_;
 
-    my $table = $MECAB_CHASEN_TABLE;
-    my $res_str = "";
-    my $item_name_list = [map {$table->{$_};} keys %$table];
-    $buff =~ s/\r?\n$//;
+    $self->check_args(scalar @_ == 3);
 
-    foreach my $line ( split(/\r?\n/, $buff) ) {
-        if ( $line =~ /^EOS/ ) {
-            $res_str .= $line."\n";
-            next;
-        }
-        if ( $line !~ /<cha:W1.*?<\/cha:W1>/ ) {
-            next;
-        }
-        my $item_map = {};
-        foreach my $item_name (@$item_name_list) {
-            my ($item_value) = ($line =~ / $item_name=\"(.*?)\"/);
-            if(($item_name eq "cType" or $item_name eq "cForm") && !defined($item_value)) {
-                $item_value = "";
-            }
-            $item_value =~ s/\&lt;/\</gs;
-            $item_value =~ s/\&gt;/\>/gs;
-            $item_value =~ s/\&quot;/\'/gs;
-            $item_value =~ s/\&apos;/\"/gs;
-            $item_value =~ s/\&amp;/\&/gs;
-            $item_map->{$item_name} = $item_value;
-        }
-        my $value_list = [ map {
-            $item_map->{$table->{$_}};
-        } sort {$a <=> $b} keys %$table ];
-        $res_str .= sprintf("%s\n", join("\t", @$value_list));
-    }
-    if ( $res_str !~ /EOS\s*$/ ) {
-        $res_str .= "EOS\n";
-    }
+    $model_dir = File::Basename::dirname($train_kc) unless $model_dir;
+    mkdir $model_dir unless -d $model_dir;
 
-    undef $buff;
-    undef $item_name_list;
+    my $tmp_train_kc = $self->{"comainu-temp"} . "/" .
+        File::Basename::basename($train_kc);
+    $self->format_inputdata($train_kc, $tmp_train_kc, "input-kc", "kc");
 
-    return $res_str;
-}
+    $self->make_luw_traindata($tmp_train_kc, $model_dir);
+    $self->add_luw_label($tmp_train_kc, $model_dir);
 
-sub mecab2kc {
-    my ($self, $buff) = @_;
-    my $table = $KC_MECAB_TABLE;
-    my $res_str = "";
-    my $first_flag = 0;
-    my $item_name_list = [keys %$table];
-    $buff =~ s/\r?\n$//;
-    foreach my $line ( split(/\r?\n/, $buff) ) {
-        if ( $line =~ /^EOS/ ) {
-            $first_flag = 1;
-            next;
-        }
-        my $item_list = [ split(/\t/, $line) ];
-        $item_list->[2] = $item_list->[1] if $item_list->[2] eq "";
-        $item_list->[3] = $item_list->[1] if $item_list->[3] eq "";
-        $item_list->[5] = "*"             if $item_list->[5] eq "";
-        $item_list->[6] = "*"             if $item_list->[6] eq "";
-        $item_list->[7] = "*"             if $item_list->[7] eq "";
-
-        my $value_list = [ map {
-            $table->{$_} eq "*" ? "*" : $item_list->[$table->{$_}];
-        } sort {$a <=> $b} keys %$table ];
-        $value_list = [ @$value_list, "*", "*", "*", "*", "*", "*", "*", "*" ];
-        if ( $first_flag == 1 ) {
-            $first_flag = 0;
-            $res_str .= "EOS\n";
-        }
-        $res_str .= sprintf("%s\n", join(" ", @$value_list));
-    }
-    $res_str .= "EOS\n";
-
-    undef $buff;
-    undef $item_name_list;
-
-    return $res_str;
-}
-
-sub merge_mecab_with_kc_lout_file {
-    my ($self, $mecab_file, $kc_lout_file, $lout_file) = @_;
-    my $mecab_data = $self->read_from_file($mecab_file);
-    my $kc_lout_data = $self->read_from_file($kc_lout_file);
-    my $lout_data = $self->merge_mecab_with_kc($mecab_data, $kc_lout_data);
-    undef $mecab_data;
-    undef $kc_lout_data;
-    $self->write_to_file($lout_file, $lout_data);
-    undef $lout_data;
-}
-
-sub merge_mecab_with_kc {
-    my ($self, $mecab_data, $kc_lout_data) = @_;
-    my $kc_lout_data_list = [ split(/\r?\n/, $kc_lout_data) ];
-    undef $kc_lout_data;
-
-    my $lout_data = "";
-    foreach my $mecab_line ( split(/\r?\n/, $mecab_data) ) {
-        if ( $mecab_line =~ /^EOS|^\*B/ ) {
-            $lout_data .= $mecab_line."\n";
-            next;
-        }
-        my $mecab_item_list = [ split(/\t/, $mecab_line, -1) ];
-        my $kc_lout_line = shift(@$kc_lout_data_list);
-        $kc_lout_line = shift(@$kc_lout_data_list) if $kc_lout_line =~ /^EOS/;
-        my $kc_lout_item_list = [ split(/[ \t]/, $kc_lout_line) ];
-        if ( $mecab_item_list->[0] ne $kc_lout_item_list->[0] ) {
-        }
-        push(@$mecab_item_list, splice(@$kc_lout_item_list, 14, 6));
-        $lout_data .= sprintf("%s\n", join("\t", @$mecab_item_list));
-    }
-    undef $mecab_data;
-    undef $kc_lout_data_list;
-    return $lout_data;
-}
-
-sub merge_mecab_with_kc_bout_file {
-    my ($self, $mecab_file, $kc_bout_file, $bout_file) = @_;
-    my $mecab_data = $self->read_from_file($mecab_file);
-    my $kc_bout_data = $self->read_from_file($kc_bout_file);
-
-    my $bout_data = "";
-    my $kc_bout_data_list = [split(/\r?\n/, $kc_bout_data)];
-    undef $kc_bout_data;
-
-    foreach my $mecab_line ( split(/\r?\n/, $mecab_data) ) {
-        my $kc_bout_line = shift(@$kc_bout_data_list);
-        if ( $kc_bout_line =~ /B/ ) {
-            $bout_data .= "*B\n";
-        }
-        if ( $mecab_line !~ /^\*B/ ) {
-            $bout_data .= $mecab_line."\n";
-        }
-    }
-    undef $mecab_data;
-    undef $kc_bout_data_list;
-
-    $self->write_to_file($bout_file, $bout_data);
-    undef $bout_data;
-}
-
-sub merge_mecab_with_kc_mout_file {
-    my ($self, $mecab_file, $kc_mout_file, $mout_file) = @_;
-    my $mecab_data = $self->read_from_file($mecab_file);
-    my $kc_mout_data = $self->read_from_file($kc_mout_file);
-
-    my $mout_data = "";
-    my $kc_mout_data_list = [split(/\r?\n/, $kc_mout_data)];
-    undef $kc_mout_data;
-
-    foreach my $mecab_line ( split(/\r?\n/, $mecab_data) ) {
-        if ( $mecab_line =~ /^EOS|^\*B/ ) {
-            $mout_data .= $mecab_line."\n";
-            next;
-        }
-        my $mecab_item_list = [ split(/\t/, $mecab_line, -1) ];
-        my $kc_mout_line = shift(@$kc_mout_data_list);
-        $kc_mout_line = shift(@$kc_mout_data_list) if $kc_mout_line =~ /^EOS/;
-        my $kc_mout_item_list = [ split(/[ \t]/, $kc_mout_line) ];
-        push(@$mecab_item_list, splice(@$kc_mout_item_list, 14, 9));
-        $mout_data .= sprintf("%s\n", join("\t", @$mecab_item_list));
-    }
-    undef $mecab_data;
-    undef $kc_mout_data_list;
-
-    $self->write_to_file($mout_file, $mout_data);
-    undef $mout_data;
-}
-
-# 概要
-# 正解KCファイルと長単位解析結果KCファイルを受け取り、
-# 処理して".eval.long"ファイルを出力する。
-#
-# 使用方法
-# _compare.sh （正解KCファイル名）（長単位解析結果KCファイル名）（出力ファイル名（拡張子無し））
-#
-sub _compare {
-    my ($self, $arg1, $arg2, $arg3) = @_;
-    print STDERR "_compare\n";
-    my $res = "";
-
-    mkdir($self->{"comainu-temp"}) unless -d $self->{"comainu-temp"};
-
-    # 中間ファイル名の生成 (1)
-    my $tmp1FileName = $self->{"comainu-temp"}."/".File::Basename::basename($arg1, ".KC").".long";
-
-    # すでに中間ファイルが出来ていれば処理しない
-    if ( -s $tmp1FileName ) {
-        print STDERR "Use Cache \'$tmp1FileName\'.\n";
-    } else {
-        # 入力ファイルの存在確認 (1)
-        unless ( -f $arg1 ) {
-            print STDERR "ERROR: \'$1\' not Found.\n";
-            return $res;
-        }
-        my $buff = $self->read_from_file($arg1);
-        $buff = $self->trans_dataformat($buff, "input-kc", "kc");
-        $buff = $self->short2long($buff);
-        $self->write_to_file($tmp1FileName, $buff);
-        undef $buff;
-    }
-
-    # 入力ファイルの存在確認 (2)
-    unless ( -f $arg2 ) {
-        print STDERR "ERROR: \'$2\' not Found.\n";
-        return $res;
-    }
-
-    # 中間ファイル名の生成 (2)
-    my $tmp2FileName = $self->{"comainu-temp"}."/".File::Basename::basename($arg2, ".lout").".svmout_poscreate.long";
-    my $buff = $self->read_from_file($arg2);
-    $buff = $self->short2long($buff);
-    $self->write_to_file($tmp2FileName, $buff);
-    undef $buff;
-
-    # 出力ファイル名の生成
-    my $outputFileName = $arg3."/".File::Basename::basename($arg2, ".lout").".eval.long";
-
-    $res = $self->eval_long($tmp1FileName, $tmp2FileName);
-    $self->write_to_file($outputFileName, $res);
-    print $res;
-
-    return $res;
-}
-
-sub _compare_mid {
-    my ($self, $arg1, $arg2, $arg3) = @_;
-    print STDERR "_compare\n";
-    my $res = "";
-
-    mkdir($self->{"comainu-temp"}) unless -d $self->{"comainu-temp"};
-
-    # 中間ファイル名の生成 (1)
-    my $tmp1FileName = $self->{"comainu-temp"}."/".File::Basename::basename($arg1, ".KC").".mid";
-
-    # すでに中間ファイルが出来ていれば処理しない
-    if ( -s $tmp1FileName ) {
-        print STDERR "Use Cache \'$tmp1FileName\'.\n";
-    } else {
-        # 入力ファイルの存在確認 (1)
-        unless ( -f $arg1 ) {
-            print STDERR "ERROR: \'$1\' not Found.\n";
-            return $res;
-        }
-        my $buff = $self->read_from_file($arg1);
-        $buff = $self->short2middle($buff);
-        $self->write_to_file($tmp1FileName, $buff);
-        undef $buff;
-    }
-
-    # 入力ファイルの存在確認 (2)
-    unless ( -f $arg2 ) {
-        print STDERR "ERROR: \'$2\' not Found.\n";
-        return $res;
-    }
-
-    # 中間ファイル名の生成 (2)
-    my $tmp2FileName = $self->{"comainu-temp"}."/".File::Basename::basename($arg2, ".lout").".svmout_poscreate.mid";
-    my $buff = $self->read_from_file($arg2);
-    $buff = $self->short2middle($buff);
-    $self->write_to_file($tmp2FileName, $buff);
-    undef $buff;
-
-    # 出力ファイル名の生成
-    my $outputFileName = $arg3."/".File::Basename::basename($arg2, ".mout").".eval.mid";
-
-    $res = $self->eval_long($tmp1FileName, $tmp2FileName, 1);
-    $self->write_to_file($outputFileName, $res);
-    print $res;
-
-    return $res;
-}
-
-sub _compare_bnst {
-    my ($self, $arg1, $arg2, $arg3) = @_;
-    print STDERR "_compare\n";
-    my $res = "";
-
-    mkdir($self->{"comainu-temp"}) unless -d $self->{"comainu-temp"};
-
-    # 中間ファイル名の生成 (1)
-    my $tmp1FileName = $self->{"comainu-temp"}."/".File::Basename::basename($arg1, ".KC").".bnst";
-
-    # すでに中間ファイルが出来ていれば処理しない
-    if ( -s $tmp1FileName ) {
-        print STDERR "Use Cache \'$tmp1FileName\'.\n";
-    } else {
-	# 入力ファイルの存在確認 (1)
-        unless ( -f $arg1 ) {
-            print STDERR "ERROR: \'$1\' not Found.\n";
-            return $res;
-        }
-        my $buff = $self->read_from_file($arg1);
-        $buff = $self->short2bnst($buff);
-        $self->write_to_file($tmp1FileName, $buff);
-        undef $buff;
-    }
-
-    # 入力ファイルの存在確認 (2)
-    unless ( -f $arg2 ) {
-        print STDERR "ERROR: \'$2\' not Found.\n";
-        return $res;
-    }
-
-    # 中間ファイル名の生成 (2)
-    my $tmp2FileName = $self->{"comainu-temp"}."/".File::Basename::basename($arg2, ".lout").".svmout_poscreate.bnst";
-    my $buff = $self->read_from_file($arg2);
-    $buff = $self->short2bnst($buff);
-    $self->write_to_file($tmp2FileName, $buff);
-    undef $buff;
-
-    # 出力ファイル名の生成
-    my $outputFileName = $arg3."/".File::Basename::basename($arg2, ".bout").".eval.bnst";
-
-    $res = $self->eval_long($tmp1FileName, $tmp2FileName, 1);
-    $self->write_to_file($outputFileName, $res);
-    print $res;
-
-    return $res;
-}
-
-# 概要
-# 解析対象KCファイル名を受け取り、処理して一時保存ディレクトリへ保存する。
-#
-# 使用方法
-# _process1.sh （解析対象KCファイル名）
-#
-sub _process1 {
-    my ($self, $arg1, $arg2, $arg3) = @_;
-    print STDERR "_process1\n";
-    my $ret = 0;
-
-    mkdir($self->{"comainu-temp"}) unless -d $self->{"comainu-temp"};
-
-    # 出力ファイル名の生成
-    my $outputFileName = $self->{"comainu-temp"}."/".File::Basename::basename($arg1, ".KC").".KC2";
-
-    # すでに同じ名前の中間ファイルがあれば削除
-    unlink($outputFileName) if -s $outputFileName;
-
-    my $buff = $self->read_from_file($arg1);
-    if ( $self->{"boundary"} ne "sentence" && $self->{"boundary"} ne "word" ) {
-        $buff =~ s/^EOS.*?\n//mg;
-    }
-
-    $buff = $self->delete_column_long($buff);
-
-    if ( $self->{"boundary"} eq "sentence" ) {
-        $buff =~ s/^\*B.*?\n//mg;
-    }
     if ( $self->{"luwmodel"} eq "SVM" ) {
-        $buff = $self->pp_partial($buff);
-    }
-
-    ## 素性の追加
-    my $AF = new AddFeature();
-    my $NAME = File::Basename::basename($arg2);
-
-    if ( $self->{"luwmodel"} eq "SVM" || $self->{"luwmodel"} eq "CRF" ) {
-        my ($Filename, $Path) = File::Basename::fileparse($arg3);
-        $buff = $AF->add_feature($buff, $NAME, $Path);
+        $self->train_luwmodel_svm($tmp_train_kc, $model_dir);
+    } elsif ( $self->{"luwmodel"} eq "CRF" ) {
+        $self->train_luwmodel_crf($tmp_train_kc, $model_dir);
     } elsif ( $self->{"luwmodel"} eq "MIRA" ) {
-        $buff = $AF->add_feature($buff, $NAME, $arg3);
+        $self->train_luwmodel_mira($tmp_train_kc, $model_dir);
     }
+    if ( $self->{"luwmrph"} eq "with" ) {
+        $self->train_bi_model($tmp_train_kc, $model_dir);
+    }
+    unlink($tmp_train_kc);
 
-    $self->write_to_file($outputFileName, $buff);
-    undef $buff;
-
-    # 不十分な中間ファイルならば、削除しておく
-    unlink($outputFileName) unless -s $outputFileName;
-
-    return $ret;
+    return 0;
 }
 
-# 概要
-# 解析対象KCファイル名とモデルファイル名を受け取り、処理して一時保存ディレクトリへ保存する。
-# yamchaを使う
-#
-# 使用方法
-# _process2.sh （解析対象KCファイル名）（モデルファイル名）
-# _process2_2.sh （解析対象KCファイル名）（モデルファイル名）
-#
-sub _process2 {
-    my ($self, $arg1, $arg2) = @_;
-    print STDERR "_process2\n";
-    my $yamcha_opt = "";
-    if($self->{"boundary"} eq "sentence" || $self->{"boundary"} eq "word") {
-        # sentence/word boundary
-        $yamcha_opt = "-C";
-    }
-    my $ret = 0;
-
-    my $YAMCHA = $self->{"yamcha-dir"}."/yamcha";
-    if($Config{"osname"} eq "MSWin32") {
-        $YAMCHA .= ".exe";
-    }
-
-    if(! -x $YAMCHA) {
-        printf(STDERR "WARNING: %s Not Found or executable YAMCHA module.\n",
-               $YAMCHA);
-        exit 0;
-    }
-
-    # 入力ファイル名の生成
-    my $inputFileName = $self->{"comainu-temp"}."/".File::Basename::basename($arg1, ".KC").".KC2";
-
-    # 出力ファイル名の生成
-    my $outputFileName = $self->{"comainu-temp"}."/".File::Basename::basename($arg1, ".KC").".svmout";
-
-    # すでに同じ名前の中間ファイルがあれば削除
-    unlink($outputFileName) if -s $outputFileName;
-
-    # 入力ファイルの存在確認 (1)
-    exit 0 unless $self->exists_file($arg2);
-
-    # 入力ファイルの存在確認 (2)
-    exit 0 unless $self->exists_file($inputFileName);
-
-    my $buff = $self->read_from_file($inputFileName);
-    # YAMCHA用に明示的に最終行に改行を付けさせる
-    $buff .= "\n";
-    $self->write_to_file($inputFileName, $buff);
-
-    my $yamcha_com = "\"".$YAMCHA."\" ".$yamcha_opt." -m \"".$arg2."\"";
-    printf(STDERR "# YAMCHA_COM: %s\n", $yamcha_com);
-    if ( $self->{"debug"} > 0 ) {
-        printf(STDERR "# YAMCHA_COM: %s\n", $yamcha_com);
-    }
-    $buff = $self->proc_stdin2stdout($yamcha_com, $buff);
-    $buff =~ s/\x0d\x0a/\x0a/sg;
-    $buff =~ s/^\r?\n//mg;
-    $buff = $self->move_future_front($buff);
-    $buff = $self->truncate_last_column($buff);
-    $self->write_to_file($outputFileName, $buff);
-    undef $buff;
-
-    # 不十分な中間ファイルならば、削除しておく
-    unlink($outputFileName) unless -s $outputFileName;
-
-    return $ret;
-}
-
-##############################################
-## for CRF
-##############################################
-sub _crf_process2 {
-    my ($self, $arg1, $arg2) = @_;
-    print STDERR "_process2\n";
-    my $crf_opt = "";
-    my $ret = 0;
-
-    my $CRF = $self->{"crf-dir"}."/crf_test";
-    if ( $Config{"osname"} eq "MSWin32" ) {
-        $CRF .= ".exe";
-    }
-
-    unless ( -x $CRF ) {
-        printf(STDERR "WARNING: %s Not Found or executable CRF module.\n",
-               $CRF);
-        exit 0;
-    }
-
-    # 入力ファイル名の生成
-    my $inputFileName = $self->{"comainu-temp"}."/".File::Basename::basename($arg1, ".KC").".KC2";
-
-    # 出力ファイル名の生成
-    my $outputFileName = $self->{"comainu-temp"}."/".File::Basename::basename($arg1, ".KC").".svmout";
-
-    # すでに同じ名前の中間ファイルがあれば削除
-    unlink($outputFileName) if -s $outputFileName;
-
-    # 入力ファイルの存在確認 (1)
-    exit 0 unless $self->exists_file($arg2);
-
-    # 入力ファイルの存在確認 (2)
-    exit 0 unless $self->exists_file($inputFileName);
-
-    my $buff = $self->read_from_file($inputFileName);
-    $buff =~ s/^EOS.*?//mg;
-    # CRF++用に明示的に最終行に改行を付けさせる
-    $buff .= "\n";
-    $self->write_to_file($inputFileName, $buff);
-
-    my $crf_com = "\"$CRF\" -m \"$arg2\"";
-    printf(STDERR "# CRF_COM: %s\n", $crf_com);
-    if ( $self->{"debug"} > 0 ) {
-        printf(STDERR "# CRF_COM: %s\n", $crf_com);
-    }
-
-    $buff = $self->proc_stdin2stdout($crf_com, $buff);
-    $buff =~ s/\x0d\x0a/\x0a/sg;
-    $buff =~ s/^\r?\n//mg;
-    $buff = $self->move_future_front($buff);
-    $buff = $self->truncate_last_column($buff);
-    $self->write_to_file($outputFileName, $buff);
-    undef $buff;
-
-    # 不十分な中間ファイルならば、削除しておく
-    unlink($outputFileName) unless -s $outputFileName;
-
-    return $ret;
-}
-
-##############################################
-## for MIRA
-##############################################
-sub _mira_process2 {
-    my ($self, $arg1, $arg2) = @_;
-    print STDERR "_process2\n";
-    my $mira_opt = "";
-    my $ret = 0;
-
-    my $MIRA = $self->{"mira-dir"}."/mira-predict";
-    if ( $Config{"osname"} eq "MSWin32" ) {
-        $MIRA .= ".exe";
-    }
-
-    unless ( -x $MIRA ) {
-        printf(STDERR "WARNING: %s Not Found or executable MIRA module.\n",
-               $MIRA);
-        exit 0;
-    }
-
-    # 入力ファイル名の生成
-    my $inputFileName = $self->{"comainu-temp"}."/".File::Basename::basename($arg1, ".KC").".KC2";
-
-    # 出力ファイル名の生成
-    my $outputFileName = $self->{"comainu-temp"}."/".File::Basename::basename($arg1, ".KC").".svmout";
-
-    # すでに同じ名前の中間ファイルがあれば削除
-    unlink($outputFileName) if -s $outputFileName;
-
-    # 入力ディレクトリの存在確認
-    exit 0 unless -d $arg2;
-
-    # 入力ファイルの存在確認
-    exit 0 unless $self->exists_file($inputFileName);
-
-    my $buff = $self->read_from_file($inputFileName);
-    $buff =~ s/ /\t/mg;
-    $buff =~ s/^EOS.*?//mg;
-    # MIRA用に明示的に最終行に改行を付けさせる
-    $buff .= "\n";
-    $self->write_to_file($inputFileName, $buff);
-
-    my $mira_com = "\"$MIRA\" -m \"$arg2\"";
-    printf(STDERR "# MIRA_COM: %s\n", $mira_com);
-    if ( $self->{"debug"} > 0 ) {
-        printf(STDERR "# MIRA_COM: %s\n", $mira_com);
-    }
-    $buff = $self->proc_stdin2stdout($mira_com, $buff);
-    $buff =~ s/\x0d\x0a/\x0a/sg;
-    $buff = $self->move_future_front($buff);
-    $buff =~ s/^ EOS.*\r?\n//mg;
-    $buff = $self->truncate_last_column($buff);
-    $self->write_to_file($outputFileName, $buff);
-    undef $buff;
-
-    # 不十分な中間ファイルならば、削除しておく
-    unlink($outputFileName) unless -s $outputFileName;
-
-    return $ret;
-}
-
-# 概要
-# 辞書用KCファイル名を受け取り、処理して一時保存ディレクトリへ保存する。
-#
-# 使用方法
-# _process3.sh （辞書用KCファイル名）
-#
-sub _process3 {
-    my ($self, $arg1) = @_;
-    print STDERR "_process3\n";
-    my $ret = 0;
-    # databaseファイル名
-    my $databaseFileName = $self->{"comainu-temp"}."/".File::Basename::basename($arg1, ".KC").".database";
-    # 出力ファイル名の生成
-    my $outputFileName = $self->{"comainu-temp"}."/".File::Basename::basename($arg1, ".KC").".db.1";
-
-    # すでにdatabaseファイルが出来ていれば処理しない
-    if ( -s $databaseFileName ) {
-        printf(STDERR "Use Cache '%s'\n", $databaseFileName);
-        return 0;
-    }
-
-    # すでに中間ファイルが出来ていれば処理しない
-    if ( -s $outputFileName ) {
-        printf(STDERR "Use Cache '%s'\n", $outputFileName);
-        return 0;
-    }
-
-    # 入力ファイルの存在確認 (1)
-    exit 0 unless $self->exists_file($arg1);
-
-    # 先頭が'*' で始まる行と、 EOS となる行を削除
-    open(my $fh_in, "<", $arg1) or die "Cannot open '$arg1'";
-    open(my $fh_out, ">", $outputFileName) or die "Cannot open '$outputFileName'";
-    binmode($fh_out);
-    while ( my $line = <$fh_in> ) {
-        $line = Encode::decode("utf-8", $line);
-        $line =~ s/\r?\n/\n/;
-        next if $line =~ /^\*.*$/ or $line =~ /^EOS.*$/;
-        $line = Encode::encode("utf-8", $line);
-        printf($fh_out "%s", $line);
-    }
-    close($fh_out);
-    close($fh_in);
-
-    # 不十分な中間ファイルならば、削除しておく
-    unlink($outputFileName) unless -s $outputFileName;
-
-    return $ret;
-}
-
-# _process4.sh
-#
-# 概要
-# 辞書用KCファイル名を受け取り、処理して一時保存ディレクトリへ保存する。
-#
-# 使用方法
-# _process4.sh （辞書用KCファイル名）
-#
-sub _process4 {
-    my ($self, $arg1) = @_;
-    print STDERR "_process4\n";
-    my $ret = 0;
-    # 入力ファイル名の生成
-    my $inputFileName = $self->{"comainu-temp"}."/".File::Basename::basename($arg1, ".KC").".db.1";
-    # 出力ファイル名の生成
-    my $outputFileName = $self->{"comainu-temp"}."/".File::Basename::basename($arg1, ".KC").".database";
-
-    # すでに中間ファイルが出来ていれば処理しない
-    if ( -s $outputFileName ) {
-        printf(STDERR "Use Cache '%s'\n", $outputFileName);
-        return 0;
-    }
-
-    # 入力ファイルの存在確認 (1)
-    exit 0 unless $self->exists_file($arg1);
-
-    # 入力ファイルの存在確認 (2)
-    exit 0 unless $self->exists_file($inputFileName);
-
-    open(my $fh_ref, "<", $inputFileName) or die "Cannot open '$inputFileName'";
-    open(my $fh_in, "<", $inputFileName) or die "Cannot open '$inputFileName'";
-    open(my $fh_out, ">", $outputFileName) or die "Cannot open '$outputFileName'";
-    binmode($fh_out);
-    $self->add_pivot_to_kc2($fh_ref, $fh_in, $fh_out, 0);
-    close($fh_out);
-    close($fh_in);
-    close($fh_ref);
-
-    # 不十分な中間ファイルならば、削除しておく
-    unlink($outputFileName) unless -s $outputFileName;
-
-    return $ret;
-}
-
-# 概要
-# 辞書用KCファイル名と解析対象KCファイル名と出力ディレクトリ名を受け取り、
-# 処理して指定のディレクトリへ結果を保存する。
-#
-# 使用方法
-# _process5.sh （辞書用KCファイル名）（解析対象KCファイル名）（保存先ディレクトリ名）
-#
-sub _process5 {
-    my ($self, $arg1, $arg2, $arg3) = @_;
-    print STDERR "_process5\n";
-    my $ret = 0;
-    # 入力ファイル名の生成 (1)
-    # my $input1FileName = $self->{"comainu-temp"}."/".File::Basename::basename($arg1, ".KC").".database";
-    # 入力ファイル名の生成 (2)
-    my $input2FileName = $self->{"comainu-temp"}."/".File::Basename::basename($arg2, ".KC").".svmout";
-    # 出力ファイル名の生成
-    my $outputFileName = $arg3."/".File::Basename::basename($arg2).".lout";
-
-    # 入力ファイルの存在確認 (1)
-    # exit 1 unless $self->exists_file($input1FileName);
-    # 入力ファイルの存在確認 (2)
-    exit 1 unless $self->exists_file($input2FileName);
-
-    my $buff = $self->merge_kc_with_svmout($arg2, $input2FileName);
-    $self->write_to_file($outputFileName, $buff);
-    undef $buff;
-
-    # 不十分な中間ファイルならば、削除しておく
-    unlink($outputFileName) unless -s $outputFileName;
-
-    return $ret;
-}
-
-sub _process6 {
-    my ($self, $arg1, $arg2, $arg3, $arg4) = @_;
-    my $ret = 0;
-    print STDERR "_process6\n";
-
-    my $YAMCHA = $self->{"yamcha-dir"}."/yamcha";
-    if($Config{"osname"} eq "MSWin32") {
-        $YAMCHA .= ".exe";
-    }
-    $YAMCHA = sprintf("\"%s\" -C", $YAMCHA);
-
-    my $TRAINNAME = File::Basename::basename($arg3, ".model");
-    my $TESTNAME = File::Basename::basename($arg2);
-    my $loutFile = $arg4."/".$TESTNAME.".lout";
-    my $lout_data = $self->read_from_file($loutFile);
-    my $temp_dir = $self->{"comainu-temp"};
-    my $model_dir = File::Basename::dirname($arg3);
-    my $BIP_model_dir = $self->{"comainu-svm-bip-model"};
-    my $CompFile = $self->{"comainu-home"} . '/suw2luw/Comp.txt';
-
-    my $BIP = BIProcessor->new(debug => $self->{debug});
-    my $buff = $BIP->execute_test($YAMCHA, $TRAINNAME, $TESTNAME, $lout_data,
-                                  $temp_dir, $BIP_model_dir, $arg4, $CompFile);
-    undef $lout_data;
-
-    $buff = $self->create_long_lemma($buff, $CompFile);
-
-    my $outputFileName = $loutFile;
-    $self->write_to_file($outputFileName, $buff);
-    undef $buff;
-
-    return $ret;
-}
-
-#####################
-## for CRF++
-#####################
-sub _crf_process6 {
-    my ($self, $arg1, $arg2, $arg3, $arg4) = @_;
-    my $ret = 0;
-    print STDERR "_process6\n";
-
-    my $CRF = $self->{"crf-dir"}."/crf_test";
-    if ( $Config{"osname"} eq "MSWin32" ) {
-        $CRF .= ".exe";
-    }
-    my $TRAINNAME = File::Basename::basename($arg3, ".model");
-    my $TESTNAME = File::Basename::basename($arg2);
-    my $loutFile = $arg4."/".$TESTNAME.".lout";
-    my $lout_data = $self->read_from_file($loutFile);
-    my $temp_dir = $self->{"comainu-temp"};
-    my $model_dir = File::Basename::dirname($arg3);
-    my $CompFile = $self->{"comainu-home"} . '/suw2luw/Comp.txt';
-
-    my $BIP = BIProcessor->new(model_type => 1);
-    my $buff = $BIP->execute_test($CRF, $TRAINNAME, $TESTNAME, $lout_data,
-                                  $temp_dir, $model_dir, $arg4, $CompFile);
-    undef $lout_data;
-
-    $buff = $self->create_long_lemma($buff, $CompFile);
-
-    my $outputFileName = $loutFile;
-    $self->write_to_file($outputFileName, $buff);
-    undef $buff;
-
-    return $ret;
-}
-
-#######################
-## for MIRA
-#######################
-sub _mira_process6 {
-    my ($self, $arg1, $arg2, $arg3, $arg4) = @_;
-    my $ret = 0;
-    print STDERR "_process6\n";
-
-    my $MIRA = $self->{"mira-dir"}."/mira-predict";
-    if ( $Config{"osname"} eq "MSWin32" ) {
-        $MIRA .= ".exe";
-    }
-    my $TRAINNAME = File::Basename::basename($arg1);
-    my $TESTNAME = File::Basename::basename($arg2);
-    my $loutFile = $arg4."/".$TESTNAME.".lout";
-    my $lout_data = $self->read_from_file($loutFile);
-    my $temp_dir = $self->{"comainu-temp"};
-    my $CompFile = $self->{"comainu-home"} . '/suw2luw/Comp.txt';
-
-    my $BIP = new BIProcessor(model_type => 2);
-    my $buff = $BIP->execute_test($MIRA, $TRAINNAME, $TESTNAME, $lout_data,
-                                  $temp_dir, $arg3, $arg4, $CompFile);
-    undef $lout_data;
-
-    $buff = $self->create_long_lemma($buff, $CompFile);
-
-    my $outputFileName = $loutFile;
-    $self->write_to_file($outputFileName, $buff);
-    undef $buff;
-
-    return $ret;
-}
-
-# 概要
-# 文節解析用ファイルの作成
-#
-sub _bnst_process1 {
-    my ($self, $arg1) = @_;
-    print STDERR "_process1\n";
-    my $ret = 0;
-
-    mkdir($self->{"comainu-temp"}) unless -d $self->{"comainu-temp"};
-
-    # 出力ファイル名の生成
-    my $outputFileName = $self->{"comainu-temp"}."/".File::Basename::basename($arg1, ".KC").".svmdata";
-
-    # すでに同じ名前の中間ファイルがあれば削除
-    unlink($outputFileName) if -s $outputFileName;
-
-    my $buff = $self->read_from_file($arg1);
-    $buff = $self->kc2bnstsvmdata($buff, 0);
-
-    if ( $self->{"bnst_process"} eq "with_luw" ) {
-        ## 長単位解析の出力結果
-        my $svmoutFileName = $self->{"comainu-temp"}."/".File::Basename::basename($arg1, ".KC").".svmout";
-        $buff = $self->pp_partial_bnst_with_luw($buff, $svmoutFileName);
-    } elsif ( $self->{"boundary"} ne "none" ) {
-        $buff = $self->pp_partial_bnst($buff);
-    }
-
-    $self->write_to_file($outputFileName, $buff);
-    undef $buff;
-
-    # 不十分な中間ファイルならば、削除しておく
-    unlink($outputFileName) unless -s $outputFileName;
-
-    return $ret;
-}
-
-# 概要
-# 解析対象KCファイル名とモデルファイル名を受け取り、処理して一時保存ディレクトリへ保存する。
-# yamchaを使う
-#
-#
-sub _bnst_process2 {
-    my ($self, $arg1, $arg2, $save_dir) = @_;
-    print STDERR "_process2\n";
-    my $yamcha_opt = "";
-    if ($self->{"boundary"} eq "sentence" || $self->{"boundary"} eq "word") {
-        # sentence/word boundary
-        $yamcha_opt = "-C";
-    }
-    my $ret = 0;
-
-    my $YAMCHA = $self->{"yamcha-dir"}."/yamcha";
-    if ( $Config{"osname"} eq "MSWin32" ) {
-        $YAMCHA .= ".exe";
-    }
-
-    unless ( -x $YAMCHA ) {
-        printf(STDERR "WARNING: %s Not Found or executable YAMCHA module.\n",
-               $YAMCHA);
-        exit 0;
-    }
-
-    # 入力ファイル名の生成
-    my $inputFileName = $self->{"comainu-temp"}."/".File::Basename::basename($arg1, ".KC").".svmdata";
-
-    # 出力ファイル名の生成
-    my $outputFileName = $save_dir."/".File::Basename::basename($arg1).".bout";
-
-    # すでに同じ名前の中間ファイルがあれば削除
-    unlink($outputFileName) if -s $outputFileName;
-
-    # 入力ファイルの存在確認 (1)
-    exit 0 unless $self->exists_file($arg2);
-
-    # 入力ファイルの存在確認 (2)
-    exit 0 unless $self->exists_file($inputFileName);
-
-    my $buff = $self->read_from_file($inputFileName);
-    # YAMCHA用に明示的に最終行に改行を付けさせる
-    $buff .= "\n";
-    $self->write_to_file($inputFileName, $buff);
-
-    my $yamcha_com = "\"".$YAMCHA."\" ".$yamcha_opt." -m \"".$arg2."\"";
-    if ( $self->{"debug"} > 0 ) {
-        printf(STDERR "# YAMCHA_COM: %s\n", $yamcha_com);
-    }
-    $buff = $self->proc_stdin2stdout($yamcha_com, $buff);
-    $buff =~ s/\x0d\x0a/\x0a/sg;
-    $buff =~ s/^\r?\n//mg;
-    $buff = $self->move_future_front($buff);
-    #$buff = $self->truncate_last_column($buff);
-    $self->write_to_file($outputFileName, $buff);
-
-    $buff = $self->merge_kc_with_bout($arg1, $outputFileName);
-    $self->write_to_file($outputFileName, $buff);
-    undef $buff;
-
-    # 不十分な中間ファイルならば、削除しておく
-    unlink($outputFileName) unless -s $outputFileName;
-
-    return $ret;
-}
-
-
-sub _mid_process1 {
-    my ($self, $arg1) = @_;
-    print STDERR "# mid_process1\n";
-    my $ret = 0;
-
-    mkdir($self->{"comainu-temp"}) unless -d $self->{"comainu-temp"};
-
-    # 出力ファイル名の生成
-    my $outputFileName = $self->{"comainu-temp"}."/".File::Basename::basename($arg1, ".KC").".mstin";
-
-    my $NAME = File::Basename::basename($arg1);
-    my $buff = $self->read_from_file($arg1);
-    $buff = $self->kc2mstin($buff);
-
-    $self->write_to_file($outputFileName, $buff);
-    undef $buff;
-
-    return $ret;
-}
-
-sub _mid_process2 {
-    my ($self, $arg1, $arg2) = @_;
-    print STDERR "# mid_process2\n";
-    my $ret = 0;
-
-    my $java = $self->{"java"};
-    my $mstparser_dir = $self->{"mstparser-dir"};
-
-    my $inputFileName = $self->{"comainu-temp"}."/".File::Basename::basename($arg1, ".KC").".mstin";
-    my $outputFileName = $self->{"comainu-temp"}."/".File::Basename::basename($arg1, ".KC").".mstout";
-
-    my $mst_classpath = $mstparser_dir."/output/classes:".$mstparser_dir."/lib/trove.jar";
-    my $memory = "-Xmx1800m";
-    if ( $Config{"osname"} eq "MSWin32" ) {
-        $mst_classpath = $mstparser_dir."/output/classes;".$mstparser_dir."/lib/trove.jar";
-        $memory = "-Xmx1000m";
-        # remove drive letter for MS-Windows
-        $arg2 =~ s/^[a-zA-Z]\://;
-        $inputFileName =~ s/^[a-zA-Z]\://;
-        $outputFileName =~ s/^[a-zA-Z]\://;
-    }
-    ## 入力ファイルが空だった場合
-    if ( -z $inputFileName ) {
-    	$self->write_to_file($outputFileName, "");
-    	return $ret;
-    }
-    my $cmd = sprintf("\"%s\" -classpath \"%s\" %s mstparser.DependencyParser test model-name:\"%s\" test-file:\"%s\" output-file:\"%s\" order:1",
-                      $java, $mst_classpath, $memory, $arg2, $inputFileName, $outputFileName);
-    print STDERR $cmd,"\n";
-    system($cmd);
-
-    return $ret;
-}
-
-sub _mid_process3 {
-    my ($self, $arg1, $arg2) = @_;
-    print STDERR "# mid_process3\n";
-    my $ret = 0;
-
-    mkdir($arg2) unless -d $arg2;
-
-    my $inputFileName = $self->{"comainu-temp"}."/".File::Basename::basename($arg1, ".KC").".mstout";
-    my $outputFileName = $arg2."/".File::Basename::basename($arg1).".mout";
-
-    my $buff = $self->merge_mout_with_kc_mstout_file($arg1, $inputFileName);
-
-    $self->write_to_file($outputFileName, $buff);
-    undef $buff;
-
-    return $ret;
-}
-
-
-# from unix/bat/subBat/training_process1.sh
-sub training_process1 {
-    my ($self, $arg1, $arg2) = @_;
-    print STDERR "# training_process1\n";
-    my $ret = 0;
-
-    mkdir($arg2) unless -d $arg2;
-
-    my $NAME = File::Basename::basename($arg1);
-    my $buff = $self->read_from_file($arg1);
+# 長単位解析モデル学習用データを作成
+sub make_luw_traindata {
+    my ($self, $tmp_train_kc, $model_dir) = @_;
+    print STDERR "# MAKE TRAIN DATA\n";
+
+    my $basename = File::Basename::basename($tmp_train_kc);
+    my $buff = $self->read_from_file($tmp_train_kc);
     $buff =~ s/^EOS.*?\n|^\*B.*?\n//mg;
     $buff = $self->delete_column_long($buff);
     # $buff = $self->add_column($buff);
 
     ## 辞書の作成
     my $C_Dic = new CreateDictionary();
-    $C_Dic->create_dictionary($arg1, $arg2, $NAME);
+    $C_Dic->create_dictionary($tmp_train_kc, $model_dir, $basename);
     ## 素性の追加
     my $AF = new AddFeature();
-    $buff = $AF->add_feature($buff, $NAME, $arg2);
+    $buff = $AF->add_feature($buff, $basename, $model_dir);
 
-    $self->write_to_file($arg2."/".$NAME.".KC2", $buff);
+    $self->write_to_file($model_dir . "/" . $basename . ".KC2", $buff);
     undef $buff;
 
-    print STDERR "Make ".$arg2."/".$NAME.".KC2\n";
-    return $ret;
+    print STDERR "Make " . $model_dir . "/" . $basename . ".KC2\n";
+
+    return 0;
 }
 
-# from unix/bat/subBat/training_train2.sh
-sub training_train2 {
-    my ($self, $arg1, $arg2, $arg3) = @_;
-    print STDERR "# training_train2\n";
-    my $ret = 0;
+# 長単位学習用のラベルを付与
+# BIのみから構成されるデータを作成
+sub add_luw_label {
+    my ($self, $tmp_train_kc, $model_dir) = @_;
+    print STDERR "# ADD LUW LABEL\n";
 
-    if ( -s $arg3."/".$arg1.".svmin" ) {
+    if ( -s $model_dir . "/" . $tmp_train_kc . ".svmin" ) {
         print "Use Cache '$3/$1.svmin'.\n";
-        return $ret;
+        return 0;
     }
-    mkdir($arg3) unless -d $arg3;
 
-    my $NAME = File::Basename::basename($arg1);
-    my $inputFileName = $arg2."/".$NAME.".KC2";
-    my $outputFileName = $arg3."/".$NAME.".svmin";
+    my $basename = File::Basename::basename($tmp_train_kc);
+    my $kc2_file = $model_dir . "/" . $basename . ".KC2";
+    my $output_file = $model_dir . "/" . $basename .".svmin";
 
-    open(my $fh_ref, "<", $arg1) or die "Cannot open '$arg1'";
-    open(my $fh_in, "<", $inputFileName) or die "Cannot open '$inputFileName'";
-    open(my $fh_out, ">", $outputFileName) or die "Cannot open '$outputFileName'";
+    open(my $fh_ref, "<", $tmp_train_kc) or die "Cannot open '$tmp_train_kc'";
+    open(my $fh_in, "<", $kc2_file)      or die "Cannot open '$kc2_file'";
+    open(my $fh_out, ">", $output_file)  or die "Cannot open '$output_file'";
     binmode($fh_out);
     $self->add_pivot_to_kc2($fh_ref, $fh_in, $fh_out);
     close($fh_out);
@@ -2591,120 +1434,48 @@ sub training_train2 {
 
     ## 後処理用学習データの作成
     {
-        open(my $fh_ref, "<", $arg1) or die "Cannot open '$arg1'";
-        open(my $fh_svmin, "<", $outputFileName) or die "Cannot open'$outputFileName'";
+        open(my $fh_ref, "<", $tmp_train_kc)  or die "Cannot open '$tmp_train_kc'";
+        open(my $fh_svmin, "<", $output_file) or die "Cannot open'$output_file'";
         my $BIP = new BIProcessor();
-        $BIP->extract_from_train($fh_ref, $fh_svmin, $arg3, $NAME);
+        $BIP->extract_from_train($fh_ref, $fh_svmin, $model_dir, $basename);
         close($fh_ref);
         close($fh_svmin);
     }
 
-    unlink($outputFileName) unless -s $outputFileName;
+    unlink $output_file unless -s $output_file;
 
-    return $ret;
+    return 0;
 }
 
-# from unix/bat/subBat/training_train3.sh
-sub training_train3 {
+sub train_luwmodel_svm {
     my ($self, $train_kc, $model_dir) = @_;
-    print STDERR "# training_train3\n";
-    my $ret = 0;
-    my $name = File::Basename::basename($train_kc);
-    my $yamcha = $self->{"yamcha-dir"}."/yamcha";
-    my $yamcha_tool_dir = $self->get_yamcha_tool_dir();
-    my $svm_tool_dir = $self->get_svm_tool_dir();
+    print STDERR "# TRAIN LUWMODEL\n";
 
-    return 1 unless defined $yamcha_tool_dir;
+    my $basename = File::Basename::basename($train_kc);
+    my $svmin = $model_dir . "/" . $basename . ".svmin";
 
-    my $svm_learn = $svm_tool_dir."/svm_learn";
-    my $comainu_home = $self->{"comainu-home"};
-    my $comainu_etc_dir = $comainu_home."/etc";
-    my $yamcha_training_conf_file = $comainu_etc_dir."/yamcha_training.conf";
-    printf(STDERR "# use yamcha_training_conf_file=\"%s\"\n",
-           $yamcha_training_conf_file);
-    my $yamcha_training_conf = $self->load_yamcha_training_conf($yamcha_training_conf_file);
-    my $yamcha_training_makefile_template = $yamcha_tool_dir."/Makefile";
-
-    my $check = $self->check_yamcha_training_makefile_template($yamcha_training_makefile_template);
-    if ( $check == 0 ) {
-        $yamcha_training_makefile_template = $comainu_etc_dir."/yamcha_training.mk";
-    }
-    printf(STDERR "# use yamcha_training_makefile_template=\"%s\"\n",
-           $yamcha_training_makefile_template);
-    my $yamcha_training_makefile = $model_dir."/".$name.".Makefile";
-    my $buff = $self->read_from_file($yamcha_training_makefile_template);
-    if ( $check == 0 ) {
-        $buff =~ s/^(TOOLDIR.*)$/\# $1\nTOOLDIR    = $yamcha_tool_dir/mg;
-        printf(STDERR "# changed TOOLDIR : %s\n", $yamcha_tool_dir);
-        $buff =~ s/^(YAMCHA.*)$/\# $1\nYAMCHA    = $yamcha/mg;
-        printf(STDERR "# changed YAMCHA : %s\n", $yamcha);
-    }
-    if ( $svm_tool_dir ne "" ) {
-        $buff =~ s/^(SVM_LEARN.*)$/\# $1\nSVM_LEARN = $svm_learn/mg;
-        printf(STDERR "# changed SVM_LEARN : %s\n", $svm_learn);
-    }
-    if ( $yamcha_training_conf->{"SVM_PARAM"} ne "" ) {
-        $buff =~ s/^(SVM_PARAM.*)$/\# $1\nSVM_PARAM  = $yamcha_training_conf->{"SVM_PARAM"}/mg;
-        printf(STDERR "# changed SVM_PARAM : %s\n", $yamcha_training_conf->{"SVM_PARAM"});
-    }
-    if ( $yamcha_training_conf->{"FEATURE"} ne "" ) {
-        $buff =~ s/^(FEATURE.*)$/\# $1\nFEATURE    = $yamcha_training_conf->{"FEATURE"}/mg;
-        printf(STDERR "# changed FEATURE : %s\n", $yamcha_training_conf->{"FEATURE"});
-    }
-    if ( $yamcha_training_conf->{"DIRECTION"} ne "" ) {
-        $buff =~ s/^(DIRECTION.*)$/\# $1\nDIRECTION  = $yamcha_training_conf->{"DIRECTION"}/mg;
-        printf(STDERR "# changed DIRECTION : %s\n", $yamcha_training_conf->{"DIRECTION"});
-    }
-    if ( $yamcha_training_conf->{"MULTI_CLASS"} ne "" ) {
-        $buff =~ s/^(MULTI_CLASS.*)$/\# $1\nMULTI_CLASS = $yamcha_training_conf->{"MULTI_CLASS"}/mg;
-        printf(STDERR "# changed MULTI_CLASS : %s\n", $yamcha_training_conf->{"MULTI_CLASS"});
-    }
-
-    {
-        # patch for zip
-        # remove '#' at end of line by svm_light
-        my $patch_for_zip_str = "### patch for zip ###\n\t\$(PERL) -pe 's/#\\r?\$\$//;' \$(MODEL).svmmodel > \$(MODEL).svmmodel.patched\n\tmv -f \$(MODEL).svmmodel.patched \$(MODEL).svmmodel\n#####################\n";
-        $buff =~ s/(zip:\n)/$1$patch_for_zip_str/;
-        printf(STDERR "# patched zip target\n");
-    }
-
-    {
-        # patch for compile
-        # fixed the problem that it uses /bin/gzip in mkmodel.
-        my $patch_for_compile_str = "### patch for compile ###\n\t\$(GZIP) -dc \$(MODEL).txtmodel.gz | \$(PERL) \$(TOOLDIR)/mkmodel -t \$(TOOLDIR) - \$(MODEL).model\n#########################\n";
-        $buff =~ s/(compile:\n)([^\n]+\n)/$1\#$2$patch_for_compile_str/;
-        printf(STDERR "# patched compile target\n");
-    }
-
-    $self->write_to_file($yamcha_training_makefile, $buff);
-    undef $buff;
-
-    my $perl = $self->{"perl"};
-    my $svmin = $model_dir."/".$name.".svmin";
+    my $makefile = $self->create_yamcha_makefile($model_dir, $basename);
+    my $perl = $self->{perl};
     my $com = sprintf("make -f \"%s\" PERL=\"%s\" CORPUS=\"%s\" MODEL=\"%s\" train",
-                      $yamcha_training_makefile, $perl, $svmin, $model_dir."/".$name);
+                      $makefile, $perl, $svmin, $model_dir . "/" . $basename);
     printf(STDERR "# COM: %s\n", $com);
     system($com);
 
-    return $ret;
+    return 0;
 }
 
-## training by crf++
-sub training_crftrain3 {
+sub train_luwmodel_crf {
     my ($self, $train_kc, $model_dir) = @_;
-    print STDERR "# training_crftrain3\n";
-    my $ret = 0;
-    my $name = File::Basename::basename($train_kc);
-    my $crf_dir = $self->get_crf_dir();
-    return 1 unless defined $crf_dir;
+    print STDERR "# TRAIN LUWMODEL\n";
+
+    my $basename = File::Basename::basename($train_kc);
 
     $ENV{"LD_LIBRARY_PATH"} = "/usr/lib;/usr/local/lib";
 
-    my $crf_learn = $crf_dir."/crf_learn";
-    my $comainu_home = $self->{"comainu-home"};
-    my $crf_template = $model_dir."/".$name.".template";
+    my $crf_learn = $self->{"crf-dir"} . "/crf_learn";
+    my $crf_template = $model_dir . "/" . $basename . ".template";
 
-    my $svmin = $model_dir."/".$name.".svmin";
+    my $svmin = $model_dir . "/" . $basename . ".svmin";
     ## 素性数を取得
     open(my $fh_svmin, $svmin);
     my $line = <$fh_svmin>;
@@ -2714,29 +1485,25 @@ sub training_crftrain3 {
 
     $self->create_template($crf_template, $feature_num);
 
-    my $crf_model = $model_dir."/".$name.".model";
+    my $crf_model = $model_dir . "/" . $basename .".model";
     my $com = "\"$crf_learn\" \"$crf_template\" \"$svmin\" \"$crf_model\"";
     printf(STDERR "# COM: %s\n", $com);
     system($com);
 
-    return $ret;
+    return 0;
 }
 
-## training by mira
-sub training_miratrain3 {
+sub train_luwmodel_mira {
     my ($self, $train_kc, $model_dir) = @_;
-    print STDERR "# training_miratrain3\n";
-    my $ret = 0;
-    my $name = File::Basename::basename($train_kc);
-    my $mira_dir = $self->get_mira_dir();
-    return 1 unless defined $mira_dir;
+    print STDERR "# TRAIN LUWMODEL\n";
 
-    my $mira_learn = $mira_dir."/mira-train";
-    my $comainu_home = $self->{"comainu-home"};
-    my $mira_template = $model_dir."/".$name.".template";
+    my $basename = File::Basename::basename($train_kc);
+
+    my $mira_learn = $self->{"mira-dir"} . "/mira-train";
+    my $mira_template = $model_dir . "/" . $basename . ".template";
 
     ## SVMINの修正
-    my $svmin = $model_dir."/".$name.".svmin";
+    my $svmin = $model_dir . "/" . $basename . ".svmin";
     my $svmin_buff = $self->read_from_file($svmin);
     my $svmin_buff2 = "";
     foreach my $line ( split(/\r?\n/, $svmin_buff) ) {
@@ -2754,116 +1521,71 @@ sub training_miratrain3 {
     printf(STDERR "# COM: %s\n", $com);
     system($com);
 
-    return $ret;
+    return 0;
 }
 
 ## BIのみに関する処理（後処理用）
-sub training_train4 {
+sub train_bi_model {
     my ($self, $train_kc, $model_dir) = @_;
-    print STDERR "# training_train4\n";
-    my $ret = 0;
+    print STDERR "# TRAIN BI MODEL\n";
 
-    my $name = File::Basename::basename($train_kc);
-    my $yamcha = $self->{"yamcha-dir"}."/yamcha";
-    my $yamcha_tool_dir = $self->get_yamcha_tool_dir();
-    my $svm_tool_dir = $self->get_svm_tool_dir();
-    return 1 unless defined $yamcha_tool_dir;
+    my $basename = File::Basename::basename($train_kc);
+    my $makefile = $self->create_yamcha_makefile($model_dir, $basename);
+    my $perl = $self->{perl};
 
-    my $svm_learn = $svm_tool_dir."/svm_learn";
-    my $comainu_home = $self->{"comainu-home"};
-    my $comainu_etc_dir = $comainu_home."/etc";
-    my $yamcha_training_conf_file = $comainu_etc_dir."/yamcha_training.conf";
-    printf(STDERR "# use yamcha_training_conf_file=\"%s\"\n",
-           $yamcha_training_conf_file);
-    my $yamcha_training_conf = $self->load_yamcha_training_conf($yamcha_training_conf_file);
-    my $yamcha_training_makefile_template = $yamcha_tool_dir."/Makefile";
-
-    my $check = $self->check_yamcha_training_makefile_template($yamcha_training_makefile_template);
-    if ( $check == 0 ) {
-        $yamcha_training_makefile_template = $comainu_etc_dir."/yamcha_training.mk";
-    }
-    printf(STDERR "# use yamcha_training_makefile_template=\"%s\"\n",
-           $yamcha_training_makefile_template);
-    my $yamcha_training_makefile = $model_dir."/".$name.".Makefile";
-    my $buff = $self->read_from_file($yamcha_training_makefile_template);
-    if ( $check == 0 ) {
-        $buff =~ s/^(TOOLDIR.*)$/\# $1\nTOOLDIR    = $yamcha_tool_dir/mg;
-        printf(STDERR "# changed TOOLDIR : %s\n", $yamcha_tool_dir);
-        $buff =~ s/^(YAMCHA.*)$/\# $1\nYAMCHA    = $yamcha/mg;
-        printf(STDERR "# changed YAMCHA : %s\n", $yamcha);
-    }
-    if ( $svm_tool_dir ne "" ) {
-        $buff =~ s/^(SVM_LEARN.*)$/\# $1\nSVM_LEARN = $svm_learn/mg;
-        printf(STDERR "# changed SVM_LEARN : %s\n", $svm_learn);
-    }
-    if ( $yamcha_training_conf->{"SVM_PARAM"} ne "" ) {
-        $buff =~ s/^(SVM_PARAM.*)$/\# $1\nSVM_PARAM  = $yamcha_training_conf->{"SVM_PARAM"}/mg;
-        printf(STDERR "# changed SVM_PARAM : %s\n", $yamcha_training_conf->{"SVM_PARAM"});
-    }
-    if ( $yamcha_training_conf->{"FEATURE"} ne "" ) {
-        $buff =~ s/^(FEATURE.*)$/\# $1\nFEATURE    = $yamcha_training_conf->{"FEATURE"}/mg;
-        printf(STDERR "# changed FEATURE : %s\n", $yamcha_training_conf->{"FEATURE"});
-    }
-    if ( $yamcha_training_conf->{"DIRECTION"} ne "" ) {
-        $buff =~ s/^(DIRECTION.*)$/\# $1\nDIRECTION  = $yamcha_training_conf->{"DIRECTION"}/mg;
-        printf(STDERR "# changed DIRECTION : %s\n", $yamcha_training_conf->{"DIRECTION"});
-    }
-    if ( $yamcha_training_conf->{"MULTI_CLASS"} ne "" ) {
-        $buff =~ s/^(MULTI_CLASS.*)$/\# $1\nMULTI_CLASS = $yamcha_training_conf->{"MULTI_CLASS"}/mg;
-        printf(STDERR "# changed MULTI_CLASS : %s\n", $yamcha_training_conf->{"MULTI_CLASS"});
-    }
-
-    {
-        # patch for zip
-        # remove '#' at end of line by svm_light
-        my $patch_for_zip_str = "### patch for zip ###\n\t\$(PERL) -pe 's/#\\r?\$\$//;' \$(MODEL).svmmodel > \$(MODEL).svmmodel.patched\n\tmv -f \$(MODEL).svmmodel.patched \$(MODEL).svmmodel\n#####################\n";
-        $buff =~ s/(zip:\n)/$1$patch_for_zip_str/;
-        printf(STDERR "# patched zip target\n");
-    }
-
-    {
-        # patch for compile
-        # fixed the problem that it uses /bin/gzip in mkmodel.
-        my $patch_for_compile_str = "### patch for compile ###\n\t\$(GZIP) -dc \$(MODEL).txtmodel.gz | \$(PERL) \$(TOOLDIR)/mkmodel -t \$(TOOLDIR) - \$(MODEL).model\n#########################\n";
-        $buff =~ s/(compile:\n)([^\n]+\n)/$1\#$2$patch_for_compile_str/;
-        printf(STDERR "# patched compile target\n");
-    }
-
-    $self->write_to_file($yamcha_training_makefile, $buff);
-    my $perl = $self->{"perl"};
-    my $svmin = $model_dir."/".$name.".svmin";
-
+    my $pos_dat = $model_dir . "/pos/" . $basename . ".BI_pos.dat";
+    my $pos_model = $model_dir . "/pos/" . $basename . ".BI_pos";
     my $BI_com1 = sprintf("make -f \"%s\" PERL=\"%s\" MULTI_CLASS=2 FEATURE=\"F:0:0.. \" CORPUS=\"%s\" MODEL=\"%s\" train",
-                          $yamcha_training_makefile,$perl,
-                          $model_dir."/pos/".$name.".BI_pos.dat",
-                          $model_dir."/pos/".$name.".BI_pos");
+                          $makefile, $perl, $pos_dat, $pos_model);
     system($BI_com1);
 
+    my $cType_dat = $model_dir . "/cType/" . $basename . ".BI_cType.dat";
+    my $cType_model = $model_dir . "/cType/" . $basename . ".BI_cType";
     my $BI_com2 = sprintf("make -f \"%s\" PERL=\"%s\" MULTI_CLASS=2 FEATURE=\"F:0:0.. \" CORPUS=\"%s\" MODEL=\"%s\" train",
-                          $yamcha_training_makefile,$perl,
-                          $model_dir."/cType/".$name.".BI_cType.dat",
-                          $model_dir."/cType/".$name.".BI_cType");
+                          $makefile, $perl, $cType_dat, $cType_model);
     system($BI_com2);
 
+    my $cForm_dat = $model_dir . "/cForm/" . $basename . ".BI_cForm.dat";
+    my $cForm_model = $model_dir . "/cForm/" . $basename . ".BI_cForm";
     my $BI_com3 = sprintf("make -f \"%s\" PERL=\"%s\" MULTI_CLASS=2 FEATURE=\"F:0:0.. \" CORPUS=\"%s\" MODEL=\"%s\" train",
-                          $yamcha_training_makefile,$perl,
-                          $model_dir."/cForm/".$name.".BI_cForm.dat",
-                          $model_dir."/cForm/".$name.".BI_cForm");
+                          $makefile, $perl, $cForm_dat, $cForm_model);
     system($BI_com3);
 
-    return $ret;
+    return 0;
 }
 
+# 文節境界解析モデルの学習
+sub USAGE_kc2bnstmodel {
+    my $self = shift;
+    printf("COMAINU-METHOD: kc2bnstmodel\n");
+    printf("  Usage: %s kc2bnstmodel <train-kc> <bnst-model-dir>\n", $0);
+    printf("    This command trains model from <train-kc> into <bnst-model-dir>.\n");
+    printf("\n");
+    printf("  ex.)\n");
+    printf("  \$ perl ./script/comainu.pl kc2bnstmodel sample/sample.KC train\n");
+    printf("    -> train/sample.KC.model\n");
+    printf("\n");
+}
 
-sub training_bnst {
-    my ($self, $arg1, $arg2) = @_;
-    print STDERR "# training_bnst_process\n";
-    my $ret = 0;
-    mkdir($arg2) unless -d $arg2;
+sub METHOD_kc2bnstmodel {
+    my ($self, $train_kc, $model_dir) = @_;
 
-    my $NAME = File::Basename::basename($arg1);
-    my $svmin = $arg2."/".$NAME.".svmin";
-    my $svmin_buff = $self->read_from_file($arg1);
+    $self->check_args(scalar @_ == 3);
+    $model_dir = File::Basename::dirname($train_kc) unless $model_dir;
+    mkdir $model_dir unless -d $model_dir;
+
+    $self->train_bnstmodel($train_kc, $model_dir);
+
+    return 0;
+}
+
+sub train_bnstmodel {
+    my ($self, $train_kc, $model_dir) = @_;
+    print STDERR "# TRAIN BNST MODEL\n";
+
+    my $basename = File::Basename::basename($train_kc);
+    my $svmin = $model_dir . "/" . $basename . ".svmin";
+    my $svmin_buff = $self->read_from_file($train_kc);
     $svmin_buff = $self->trans_dataformat($svmin_buff, "input-kc", "kc");
     $svmin_buff = $self->kc2bnstsvmdata($svmin_buff, 1);
     $svmin_buff = $self->add_bnst_label($svmin_buff);
@@ -2872,84 +1594,18 @@ sub training_bnst {
     $self->write_to_file($svmin, $svmin_buff);
     undef $svmin_buff;
 
-    my $yamcha = $self->{"yamcha-dir"}."/yamcha";
-    my $yamcha_tool_dir = $self->get_yamcha_tool_dir();
-    my $svm_tool_dir = $self->get_svm_tool_dir();
-    return 1 unless defined $yamcha_tool_dir;
-
-    my $svm_learn = $svm_tool_dir."/svm_learn";
-    my $comainu_home = $self->{"comainu-home"};
-    my $comainu_etc_dir = $comainu_home."/etc";
-    my $yamcha_training_conf_file = $comainu_etc_dir."/yamcha_training.conf";
-    printf(STDERR "# use yamcha_training_conf_file=\"%s\"\n",
-           $yamcha_training_conf_file);
-    my $yamcha_training_conf = $self->load_yamcha_training_conf($yamcha_training_conf_file);
-    my $yamcha_training_makefile_template = $yamcha_tool_dir."/Makefile";
-
-    my $check = $self->check_yamcha_training_makefile_template($yamcha_training_makefile_template);
-    if ( $check == 0 ) {
-        $yamcha_training_makefile_template = $comainu_etc_dir."/yamcha_training.mk";
-    }
-    printf(STDERR "# use yamcha_training_makefile_template=\"%s\"\n",
-           $yamcha_training_makefile_template);
-    my $yamcha_training_makefile = $arg2."/".$NAME.".Makefile";
-    my $buff = $self->read_from_file($yamcha_training_makefile_template);
-    if ( $check == 0 ) {
-        $buff =~ s/^(TOOLDIR.*)$/\# $1\nTOOLDIR    = $yamcha_tool_dir/mg;
-        printf(STDERR "# changed TOOLDIR : %s\n", $yamcha_tool_dir);
-        $buff =~ s/^(YAMCHA.*)$/\# $1\nYAMCHA    = $yamcha/mg;
-        printf(STDERR "# changed YAMCHA : %s\n", $yamcha);
-    }
-    if ( $svm_tool_dir ne "" ) {
-        $buff =~ s/^(SVM_LEARN.*)$/\# $1\nSVM_LEARN = $svm_learn/mg;
-        printf(STDERR "# changed SVM_LEARN : %s\n", $svm_learn);
-    }
-    if ( $yamcha_training_conf->{"SVM_PARAM"} ne "" ) {
-        $buff =~ s/^(SVM_PARAM.*)$/\# $1\nSVM_PARAM  = $yamcha_training_conf->{"SVM_PARAM"}/mg;
-        printf(STDERR "# changed SVM_PARAM : %s\n", $yamcha_training_conf->{"SVM_PARAM"});
-    }
-    if ( $yamcha_training_conf->{"FEATURE"} ne "" ) {
-        $buff =~ s/^(FEATURE.*)$/\# $1\nFEATURE    = $yamcha_training_conf->{"FEATURE"}/mg;
-        printf(STDERR "# changed FEATURE : %s\n", $yamcha_training_conf->{"FEATURE"});
-    }
-    if ( $yamcha_training_conf->{"DIRECTION"} ne "" ) {
-        $buff =~ s/^(DIRECTION.*)$/\# $1\nDIRECTION  = $yamcha_training_conf->{"DIRECTION"}/mg;
-        printf(STDERR "# changed DIRECTION : %s\n", $yamcha_training_conf->{"DIRECTION"});
-    }
-    # if ( $yamcha_training_conf->{"MULTI_CLASS"} ne "" ) {
-    #     $buff =~ s/^(MULTI_CLASS.*)$/\# $1\nMULTI_CLASS = $yamcha_training_conf->{"MULTI_CLASS"}/mg;
-    #     printf(STDERR "# changed MULTI_CLASS : %s\n", $yamcha_training_conf->{"MULTI_CLASS"});
-    # }
-
-    {
-        # patch for zip
-        # remove '#' at end of line by svm_light
-        my $patch_for_zip_str = "### patch for zip ###\n\t\$(PERL) -pe 's/#\\r?\$\$//;' \$(MODEL).svmmodel > \$(MODEL).svmmodel.patched\n\tmv -f \$(MODEL).svmmodel.patched \$(MODEL).svmmodel\n#####################\n";
-        $buff =~ s/(zip:\n)/$1$patch_for_zip_str/;
-        printf(STDERR "# patched zip target\n");
-    }
-
-    {
-        # patch for compile
-        # fixed the problem that it uses /bin/gzip in mkmodel.
-        my $patch_for_compile_str = "### patch for compile ###\n\t\$(GZIP) -dc \$(MODEL).txtmodel.gz | \$(PERL) \$(TOOLDIR)/mkmodel -t \$(TOOLDIR) - \$(MODEL).model\n#########################\n";
-        $buff =~ s/(compile:\n)([^\n]+\n)/$1\#$2$patch_for_compile_str/;
-        printf(STDERR "# patched compile target\n");
-    }
-
-    $self->write_to_file($yamcha_training_makefile, $buff);
-    undef $buff;
-
-    my $perl = $self->{"perl"};
+    my $makefile = $self->create_yamcha_makefile($model_dir, $basename);
+    my $perl = $self->{perl};
     my $com = sprintf("make -f \"%s\" PERL=\"%s\" CORPUS=\"%s\" MODEL=\"%s\" train",
-                      $yamcha_training_makefile, $perl, $svmin, $arg2."/".$NAME);
+                      $makefile, $perl, $svmin, $model_dir . "/" . $basename);
 
     printf(STDERR "# COM: %s\n", $com);
     system($com);
 
-    return $ret;
+    return 0;
 }
 
+# 文節境界ラベルを付与
 sub add_bnst_label {
     my ($self, $data) = @_;
     my $res = "";
@@ -2958,26 +1614,20 @@ sub add_bnst_label {
     $data .= "*B\n";
     foreach my $line ( (split(/\r?\n/, $data), undef, undef) ) {
         push(@$buff_list, $line);
-        if ( defined($buff_list->[$curr]) && $buff_list->[$curr] !~ /^EOS/ &&
-                 $buff_list->[$curr] !~ /^\*B/ ) {
-            my $mark = "";
-            if ( $buff_list->[$prev] =~ /^\*B/ ) {
-                $mark = "B";
-            } else {
-                $mark = "I";
-            }
+        if ( defined $buff_list->[$curr] && $buff_list->[$curr] !~ /^EOS|^\*B/ ) {
+            my $mark = $buff_list->[$prev] =~ /^\*B/ ? "B" : "I";
             $buff_list->[$curr] .= " ".$mark;
         }
-        my $new_line = shift(@$buff_list);
-        if ( defined($new_line) && $new_line !~ /^\*B/ ) {
-            $res .= $new_line."\n";
+        my $new_line = shift @$buff_list;
+        if ( defined $new_line && $new_line !~ /^\*B/ ) {
+            $res .= $new_line . "\n";
         }
     }
     undef $data;
 
     while ( my $new_line = shift(@$buff_list) ) {
-        if ( defined($new_line) && $new_line !~ /^\*B/ ) {
-            $res .= $new_line."\n";
+        if ( defined $new_line && $new_line !~ /^\*B/ ) {
+            $res .= $new_line . "\n";
         }
     }
     undef $buff_list;
@@ -2986,42 +1636,66 @@ sub add_bnst_label {
 }
 
 
-## 中単位解析学習用関数
-sub training_mid_train1 {
-    my ($self, $arg1, $arg2) = @_;
-    print STDERR "# training_mid_train1\n";
-    my $ret = 0;
+# 中単位解析モデルの学習
+sub USAGE_kclong2midmodel {
+    my $self = shift;
+    printf("COMAINU-METHOD: kclong2midmodel\n");
+    printf("  Usage: %s kclong2midmodel <train-kc> <mid-model-dir>\n", $0);
+    printf("    This command trains model from <train-kc> into <mid-model-dir>.\n");
+    printf("\n");
+    printf("  ex.)\n");
+    printf("  \$ perl ./script/comainu.pl kclong2midmodel sample/sample.KC train\n");
+    printf("    -> train/sample.KC.model\n");
+    printf("\n");
+}
 
-    mkdir($arg2) unless -d $arg2;
+sub METHOD_kclong2midmodel {
+    my ($self, $train_kc, $model_dir) = @_;
 
-    my $NAME = File::Basename::basename($arg1);
-    my $buff = $self->read_from_file($arg1);
+    $self->check_args(scalar @_ == 3);
+    $model_dir = File::Basename::dirname($train_kc) unless $model_dir;
+    mkdir $model_dir unless -d $model_dir;
+
+    $self->create_mid_traindata($train_kc, $model_dir);
+    $self->train_midmodel($train_kc, $model_dir);
+
+    return 0;
+}
+
+## 中単位解析モデル学習用データの作成
+sub create_mid_traindata {
+    my ($self, $train_kc, $model_dir) = @_;
+    print STDERR "# CREATE MUW TRAINDATA\n";
+
+    my $basename = File::Basename::basename($train_kc);
+    my $buff = $self->read_from_file($train_kc);
     $buff = $self->trans_dataformat($buff, "input-kc", "kc_mid");
     $buff = $self->kc2mstin($buff);
 
-    $self->write_to_file($arg2."/".$NAME.".mstin", $buff);
+    $self->write_to_file($model_dir . "/" . $basename . ".mstin", $buff);
     undef $buff;
 
-    return $ret;
+    return 0;
 }
 
-## 中単位解析学習用関数
-sub training_mid_train2 {
-    my ($self, $arg1, $arg2) = @_;
-    print STDERR "# training_mid_train2\n";
-    my $ret = 0;
+## 中単位解析モデルの学習
+sub train_midmodel {
+    my ($self, $train_kc, $model_dir) = @_;
+    print STDERR "# TRAIN MUW MODEL\n";
 
-    my $java = $self->{"java"};
+    my $java = $self->{java};
     my $mstparser_dir = $self->{"mstparser-dir"};
 
-    my $NAME = File::Basename::basename($arg1);
-    my $inputFile = $arg2."/".$NAME.".mstin";
-    my $outputFile = $arg2."/".$NAME.".model";
+    my $basename   = File::Basename::basename($train_kc);
+    my $inputFile  = $model_dir . "/" . $basename . ".mstin";
+    my $outputFile = $model_dir . "/" . $basename . ".model";
 
-    my $mst_classpath = $mstparser_dir."/output/classes:".$mstparser_dir."/lib/trove.jar";
+    my $mst_classpath = $mstparser_dir . "/output/classes:"
+        . $mstparser_dir . "/lib/trove.jar";
     my $memory = "-Xmx1800m";
-    if ( $Config{"osname"} eq "MSWin32" ) {
-        $mst_classpath = $mstparser_dir."/output/classes;".$mstparser_dir."/lib/trove.jar";
+    if ( $Config{osname} eq "MSWin32" ) {
+        $mst_classpath = $mstparser_dir . "/output/classes;"
+            . $mstparser_dir . "/lib/trove.jar";
         $memory = "-Xmx1000m";
         # remove drive letter for MS-Windows
         $inputFile =~ s/^[a-zA-Z]\://;
@@ -3032,626 +1706,297 @@ sub training_mid_train2 {
     print STDERR $cmd,"\n";
     system($cmd);
 
-    return $ret;
+    return 0;
 }
 
-sub kc2mstin {
-    my ($self, $data) = @_;
-    my $res = "";
 
-    my $short_terms = [];
-    my $pos = 0;
-    foreach my $line ( split(/\r?\n/, $data) ) {
-        next if $line =~ /^\*B/ || $line eq "";
-        if ( $line =~ /^EOS/ ) {
-            $res .= $self->create_mstfeature($short_terms, $pos);
-            $short_terms = [];
-            $pos = 0;
-            next;
-        }
-        my @items = split(/[ \t]/, $line);
-        if ( $items[13] ne "*" ) {
-            $res .= $self->create_mstfeature($short_terms, $pos);
-            $short_terms = [];
-            push @$short_terms, $line;
-        } else {
-            push @$short_terms, $line;
-        }
-        $pos++;
-    }
-
-    undef $data;
-    undef $short_terms;
-
-    return $res;
+############################################################
+# 解析モデルの評価
+############################################################
+# 正解の情報が付与されたKCファイルと、長単位解析結果のKCファイルを比較し、
+# diff結果と精度を出力する。
+# 動作
+# 第１引数をよび第２引数の種類によって解析対象を変える。
+# ・どちらもファイルの場合
+#   それぞれのファイルを使って処理し、解析結果KCファイル名の拡張子を".eval",
+#   ".eval.long"を付けた名前で、第３引数のパスに保存する。
+# ・どちらもディレクトリの場合
+#   第一引数のディレクトリ内に有る"*.KC"ファイル全てを対象として処理を行う。
+#   ".lout"ファイルは、第二引数で与えられたディレクトリ内のファイルで、".KC"ファイル
+#   とペアとなる".lout"ファイルを順次適用する。無ければエラーとする。
+#   処理結果は、".KC"ファイル名から拡張子を除いた文字列に".eval",
+#   ".eval.long"を付けた名前で、第３引数のパスに保存する。
+# ・上記２つの場合に該当しない組合せはエラーとする。
+#
+sub USAGE_kc2longeval {
+    my $self = shift;
+    printf("COMAINU-METHOD: kc2longeval\n");
+    printf("  Usage: %s kc2longeval <ref-kc> <kc-lout> <out-dir>\n", $0);
+    printf("    This command make a evaluation for <kc-lout> with <ref-kc>.\n");
+    printf("    The result is put into <out-dir>.\n");
+    printf("\n");
+    printf("  ex.)\n");
+    printf("  perl ./script/comainu.pl kc2longeval sample/sample.KC out/sample.KC.lout out\n");
+    printf("    -> out/sample.eval.long\n");
+    printf("\n");
 }
 
-sub create_mstfeature {
-    my ($self, $short_terms, $pos) = @_;
-    my $res = "";
+sub METHOD_kc2longeval {
+    my ($self, $correct_kc, $result_kc_lout, $save_dir) = @_;
 
-    my $id = 1;
-    if ( scalar(@$short_terms) > 1 ) {
-        foreach my $line ( @$short_terms ) {
-            my @items = split(/[ \t]/, $line);
-            my $depend = "_";
-            if ( $items[19] =~ /Ｐ/ ) {
-                $depend = "P";
-            }
-            if ( $items[19] ne "*" && $items[19] ne "" ) {
-                $items[19] -= $pos-scalar(@$short_terms)-1;
-            } else {
-                $items[19] = 0;
-            }
-            if ( scalar(@$short_terms) < $items[19] || $items[19] < 0 ) {
-                print STDERR "error: $items[0]: $line\n";
-                print STDERR $pos," ",$items[19]," ",scalar(@$short_terms),"\n";
-            }
-            my @cpos = split(/\-/, $items[3]);
-            my @features;
+    $self->check_args(scalar @_ == 4);
+    mkdir $save_dir unless -d $save_dir;
 
-            foreach my $i ( 3 .. 5 ) {
-                next if $items[$i] eq "*";
-                my @pos = split(/\-/, $items[$i]);
-                foreach my $j ( 0 .. $#pos ) {
-                    next if ($i == 3 && ($j == 0 || $j == $#pos));
-                    push @features, join("-",@pos[0..$j]);
-                }
-            }
-
-            $res .= $id++."\t".$items[0]."\t".$items[2]."\t".$cpos[0]."\t".$items[3]."\t";
-            if ( scalar(@features) > 0 ) {
-                $res .= join("|",@features);
-            } else {
-                $res .= "_";
-            }
-            $res .= "\t".$items[19]."\t".$depend."\t_\n";
-        }
-        $res .= "\n";
-    }
-
-    return $res;
-}
-
-sub merge_mout_with_kc_mstout_file {
-    my ($self, $kc_file, $out_file) = @_;
-    my $res = "";
-
-    my $out_long = [];
-    my $long_word = "";
-    foreach my $line ( split(/\r?\n/, $self->read_from_file($out_file)) ) {
-        if ( $line eq "" ){
-            next if $long_word eq "";
-            push @$out_long, $long_word;
-            $long_word = "";
-        } else {
-            $long_word .= $line."\n";
-        }
-    }
-    push @$out_long, $long_word if $long_word ne "";
-
-    my $pos = 0;
-    my $mid = -1;
-    my $kc_long = [];
-    foreach my $line ( split(/\r?\n/, $self->read_from_file($kc_file)) ) {
-    	next if $line eq "";
-        if ( $line =~ /^EOS/ ) {
-            $res .= $self->create_middle($kc_long, $out_long, \$mid, $pos);
-            $pos = 0;
-            $res .= "EOS\n";
-            $mid = -1;
-            $kc_long = [];
-        } elsif ( $line =~ /^\*B/ ) {
-        } else {
-            my @items = split(/[ \t]/, $line);
-            if ( $items[13] ne "*" ) {
-                $res .= $self->create_middle($kc_long, $out_long, \$mid, $pos);
-                $pos += scalar(@$kc_long);
-                $kc_long = [];
-                push @$kc_long, \@items;
-            } else {
-                push @$kc_long, \@items;
+    if ( -f $result_kc_lout ) {
+        $self->kc2longeval_internal($correct_kc, $result_kc_lout, $save_dir);
+    } elsif ( -d $result_kc_lout ) {
+        opendir(my $dh, $result_kc_lout);
+        while ( my $result_kc_lout_file = readdir($dh) ) {
+            if ( $result_kc_lout_file =~ /.KC$/ ) {
+                $self->kc2longeval_internal($correct_kc, $result_kc_lout_file, $save_dir);
             }
         }
-    }
-
-    undef $out_long;
-    undef $kc_long;
-
-    return $res;
-}
-
-sub create_middle {
-    my ($self, $kc_long, $out_long, $ref_mid, $pos) = @_;
-    my $res = "";
-
-    my %sp_prefix = ("各"=>1, "計"=>1, "現"=>1, "全"=>1, "非"=>1, "約"=>1);
-
-    if ( scalar(@$kc_long) < 1 ) {
-        return "";
-    } elsif ( scalar(@$kc_long) == 1 ) {
-        my @items = split(/[ \t]/, $$kc_long[0]);
-        $$ref_mid++;
-        $res .= join(" ",@{$$kc_long[0]}[0..18])." * ".$$ref_mid." ".join(" ",@{$$kc_long[0]}[0..0])."\n";
-    } elsif ( ${$$kc_long[0]}[13] =~ /^形状詞/ ) {
-        $$ref_mid++;
-        my @out;
-        foreach my $line ( split(/\r?\n/,shift @$out_long) ) {
-            push @out, [ split(/\t/,$line) ];
-        }
-        my @mid_text;
-        for my $i ( 0 .. $#{$kc_long} ) {
-            $mid_text[0] .= ${$$kc_long[$i]}[0];
-        }
-        $res .= join(" ",@{$$kc_long[0]}[0..18])." ".($pos+${$out[0]}[6]-1)." ".$$ref_mid." ".join(" ",@mid_text)."\n";
-        for my $i ( 1 .. $#{$kc_long}-1 ) {
-            $res .= join(" ",@{$$kc_long[$i]}[0..18])." ".($pos+${$out[$i]}[6]-1)." ".$$ref_mid."\n";
-        }
-        $res .= join(" ",@{$$kc_long[$#{$kc_long}]}[0..18])." * ".$$ref_mid."\n";
+        closedir($dh);
     } else {
-        my @out;
-        foreach my $line ( split(/\r?\n/,shift @$out_long) ) {
-            push @out, [split(/\t/,$line)];
-        }
-        my $mid_pos = 0;
-        for my $i ( 0 .. $#out ) {
-            my $long = $$kc_long[$i];
-            @$long[21..25] = ("","","","","");
-            ${$$kc_long[$mid_pos]}[21] .= $$long[0];
-
-            if ( ${$out[$i]}[6] == 0 ) {
-                $$long[19] = "*";
-                $mid_pos = $i+1;
-                next;
-            }
-            if ( $i < $#out && ${$out[$i+1]}[3] eq "補助記号" ) {
-                $mid_pos = $i+1;
-            } elsif ( $i < $#out && ${$out[$i+1]}[3] eq "接頭辞" &&
-                          defined $sp_prefix{${$out[$i+1]}[2]} ) {
-                $mid_pos = $i+1;
-            } elsif ( ${$out[$i]}[3] eq "補助記号" ) {
-                $mid_pos = $i+1;
-            } elsif ( ${$out[$i]}[7] eq "P" ) {
-                if ( ${$out[$i]}[3] ne "接頭辞" ) {
-                    $mid_pos = $i+1;
-                }
-            } elsif ( $$long[3] =~ /^接頭辞/ ) {
-                if ( defined $sp_prefix{$$long[2]} ) {
-                    $mid_pos = $i+1;
-                }
-            } elsif ( $i < $#out-1 && ${$out[$i+1]}[0]!=${$out[$i]}[6] ) {
-                if ( ${$out[$i+2]}[0]==${$out[$i]}[6] &&
-                         ( (${$out[$i+2]}[3] eq "名詞" && ${$out[$i+1]}[3] eq "接頭辞") ||
-                               (${$out[$i+2]}[3] eq "接尾辞" && ${$out[$i+1]}[3] eq "名詞")) ) {
-                    #$mid_pos = $i+1;
-                } else {
-                    $mid_pos = $i+1;
-                }
-            }
-            $$long[19] = $pos+${$out[$i]}[6]-1;
-        }
-        for my $i ( 0 .. scalar(@$kc_long)-1 ) {
-            my $long = $$kc_long[$i];
-            if ( $$long[21] ne "" ) {
-                $$ref_mid++;
-                $res .= join(" ",@$long[0..19])." ".$$ref_mid." ".$$long[21];
-            } else {
-                $res .= join(" ",@$long[0..19])." ".$$ref_mid;
-            }
-            $res .= "\n";
-        }
+        printf(STDERR "# Error: Not found result_kc_lout '%s'\n", $result_kc_lout);
     }
 
-    return $res;
+    return 0;
 }
 
-
-## 入力形式を内部形式に変換
-sub trans_dataformat {
-    my ($self, $input_data, $in_type, $out_type) = @_;
-
-    my $data_format_conf = $self->{"data_format"};
-    exit 0 unless $self->exists_file($data_format_conf);
-
-    my $data = $self->read_from_file($data_format_conf);
-    my %formats;
-    foreach my $line (split(/\r?\n/, $data)) {
-        my ($type, $format) = split(/\t/,$line);
-        $formats{$type} = $format;
-    }
-    $formats{"kc"} = "orthToken,reading,lemma,pos,cType,cForm,form,formBase,formOrthBase,formOrth,charEncloserOpen,charEncloserClose,wType,l_pos,l_cType,l_cForm,l_reading,l_lemma,l_orthToken";
-    $formats{"bccwj"} = "file,start,end,BOS,orthToken,reading,lemma,meaning,pos,cType,cForm,usage,pronToken,pronBase,kana,kanaBase,form,formBase,formOrthBase,formOrth,orthBase,wType,charEncloserOpen,charEncloserClose,originalText,order,BOB,LUW,l_orthToken,l_reading,l_lemma,l_pos,l_cType,l_cForm";
-    $formats{"kc_mid"} = "orthToken,reading,lemma,pos,cType,cForm,form,formBase,formOrthBase,formOrth,charEncloserOpen,charEncloserClose,wType,l_pos,l_cType,l_cForm,l_reading,l_lemma,l_orthToken,depend,MID,m_orthToken";
-
-    my %in_format = ();
-    my @items = split(/,/,$formats{$in_type});
-    for my $i ( 0 .. $#items ) {
-        $in_format{$items[$i]} = $i;
-    }
-
-    # return $input_data if($formats{$in_type} eq $formats{$out_type});
-
-    my @out_format = split(/,/,$formats{$out_type});
-    my @trans_table = ();
-    for my $i ( 0 .. $#out_format ) {
-        $trans_table[$i] = $in_format{$out_format[$i]} // '*';
-    }
-    my $res = [];
-    foreach my $line ( split(/\r?\n/,$input_data) ) {
-        if ( $line =~ /^EOS|^\*B/ ) {
-            push @$res, $line;
-            next;
-        }
-        my @items;
-        if ( $in_type =~ /bccwj/ ) {
-            @items = split(/\t/,$line);
-        } else {
-            @items = split(/ /, $line);
-        }
-        my @tmp_buff = ();
-        for my $i ( 0 .. $#trans_table ) {
-            if ( $trans_table[$i] eq "*" || $trans_table[$i] eq "NULL" ) {
-                $tmp_buff[$i] = "*";
-            } else {
-                my $item = $items[$trans_table[$i]];
-                if($item eq "" || $item eq "NULL" || $item eq "\0") {
-                    $tmp_buff[$i] = "*";
-                } else {
-                    $tmp_buff[$i] = $item;
-                }
-            }
-        }
-        my $out;
-        if ( $out_type eq "kc" ) {
-            $out = join(" ",@tmp_buff);
-        } elsif ( $out_type eq "bccwj" ) {
-            $out = join("\t",@tmp_buff);
-        } elsif ( $out_type eq "kc_mid" ) {
-            $out = join(" ",@tmp_buff);
-        }
-        push @$res, $out;
-    }
-
-    undef $input_data;
-
-    return join "\n", @$res;
+sub kc2longeval_internal {
+    my ($self, $correct_kc, $result_kc_lout, $save_dir) = @_;
+    $self->compare($correct_kc, $result_kc_lout, $save_dir);
 }
 
-## テンプレートの作成
-sub create_template {
-    my ($self, $template_file, $feature_num) = @_;
-
-    my $buff = "";
-    my $index = 1;
-
-    for my $i (0, 2 .. $feature_num) {
-        for my $j (-2..2){ $buff .= "U".$index++.":%x[$j,$i]\n";}
-        for my $k (-2..1){ $buff .= "U".$index++.":%x[$k,$i]/%x[".($k+1).",$i]\n";}
-        for my $l (-2..0){ $buff .= "U".$index++.":%x[$l,$i]/%x[".($l+1).",$i]/%x[".($l+2).",$i]\n";}
-    }
-    $buff .= "\n";
-
-    my @features = qw(2_3_1 2_4_1 2_5_1 2_3_3 2_4_3 2_5_3);
-    foreach my $feature ( @features ) {
-        my ($arg1, $arg2, $type) = split(/\_/, $feature);
-        if ( $type == 0 ) {
-            for my $l ( -2 .. 2 ) {
-                $buff .= "U".$index++.":%x[$l,$arg1]/%x[$l,$arg2]\n";
-            }
-            $buff .= "\n";
-        } elsif ( $type == 1 ) {
-            for my $l ( -2 .. 1 ) {
-                $buff .= "U".$index++.":%x[$l,$arg1]/%x[".($l+1).",$arg2]\n";
-                $buff .= "U".$index++.":%x[$l,$arg2]/%x[".($l+1).",$arg1]\n";
-            }
-            $buff .= "\n";
-        } elsif ( $type == 2 ) {
-            for my $l ( -2 .. 1 ) {
-                $buff .= "U".$index++.":%x[$l,$arg1]/%x[".($l+1).",$arg2]\n";
-                $buff .= "U".$index++.":%x[$l,$arg2]/%x[".($l+1).",$arg1]\n";
-            }
-            for my $l ( -2 .. 0 ) {
-                $buff .= "U".$index++.":%x[$l,$arg1]/%x[".($l+2).",$arg2]\n";
-                $buff .= "U".$index++.":%x[$l,$arg2]/%x[".($l+2).",$arg1]\n";
-            }
-            $buff .= "\n";
-        } elsif ( $type == 3 ) {
-            for my $l ( -2 .. 1 ) {
-                if ( $arg1 > 3 ) {
-                    $buff .= "U".$index++.":%x[$l,$arg1]/%x[$l,$arg2]/%x[".($l+1).",$arg1]\n";
-                    $buff .= "U".$index++.":%x[$l,$arg1]/%x[".($l+1).",$arg1]/%x[".($l+1).",$arg2]\n";
-                }
-                $buff .= "U".$index++.":%x[$l,$arg1]/%x[$l,$arg2]/%x[".($l+1).",$arg2]\n";
-                $buff .= "U".$index++.":%x[$l,$arg2]/%x[".($l+1).",$arg1]/%x[".($l+1).",$arg2]\n";
-            }
-            $buff .= "\n";
-        }
-    }
-
-    $buff .= "\nB\n";
-
-    $self->write_to_file($template_file, $buff);
-    undef $buff;
-}
-
-## テンプレート(後処理用)の作成
-sub create_BI_template {
-    my ($self, $template_file, $feature_num, $num) = @_;
-
-    my $buff = "";
-    my $index = 0;
-    foreach my $i ( 0 .. $feature_num ) {
-        $buff .= "U".$index++.":%x[0,".$i."]\n";
-    }
-    $buff .= "\n";
-    foreach my $i ( 0 .. $feature_num/3 ) {
-        $buff .= "U".$index++.":%x[0,".$i."]/%x[0,".($i+$feature_num/3)."]\n";
-        $buff .= "U".$index++.":%x[0,".($i+$feature_num/3)."]/%x[0,".($i+$feature_num/3*2)."]\n";
-    }
-    for my $i ( 1 .. $num ) {
-        $buff .= "U".$index++.":%x[0,".($feature_num+$i)."]\n";
-    }
-    #$buff .= "\nB\n";
-    $buff .= "\n";
-    $self->write_to_file($template_file, $buff);
-    undef $buff;
-}
-
-## CRFとMIRAでは行毎に改行を追加
-## MIRAではセパレータをスペースからタブに変更
-sub change_format {
-    my ($self, $file, $is_mira) = @_;
-
-    my $buff = $self->read_from_file($file);
-    $buff =~ s/\n\n/\n/g;
-    $buff =~ s/\n/\n\n/g;
-    if ( $is_mira ) {
-        $buff =~ s/ /\t/g;
-    }
-
-    $self->write_to_file($file, $buff);
-    undef $buff;
-}
-
-sub check_luwmodel {
-   my ($self, $luwmodel) = @_;
-
-   if ( $self->{"luwmodel"} eq "SVM" || $self->{"luwmodel"} eq "CRF" ) {
-       unless ( -f $luwmodel ) {
-           printf(STDERR "ERROR: '%s' not found or not a file.\n",
-                  $luwmodel);
-           die;
-       }
-   } elsif ( $self->{"luwmodel"} eq "MIRA" ) {
-       unless ( -d $luwmodel ) {
-           printf(STDERR "ERROR: '%s' not found or not a dir.\n",
-                  $luwmodel);
-           die;
-       }
-   } else {
-       printf(STDERR "ERROR: '%s' not found model name.\n",
-              $self->{"luwmodel"});
-       die;
-   }
-}
-
-sub get_yamcha_tool_dir {
-    my $self = shift;
-    my $yamcha_tool_dir = $self->{"yamcha-dir"}."/libexec/yamcha";
-    unless ( -d $yamcha_tool_dir ) {
-        $yamcha_tool_dir = $self->{"yamcha-dir"}."/../libexec/yamcha";
-    }
-    unless ( -d $yamcha_tool_dir ) {
-        printf(STDERR "# Error: not found YAMCHA TOOL_DIR (libexec/yamcha) '%s'\n",
-               $yamcha_tool_dir);
-        $yamcha_tool_dir = undef;
-    }
-    return $yamcha_tool_dir;
-}
-
-sub get_svm_tool_dir {
-    my $self = shift;
-    my $svm_tool_dir = $self->{"svm-tool-dir"};
-    unless ( -d $svm_tool_dir ) {
-        $svm_tool_dir = undef;
-    }
-    return $svm_tool_dir;
-}
-
-sub get_crf_dir {
-    my $self = shift;
-    my $crf_dir = $self->{"crf-dir"};
-    unless ( -d $crf_dir ) {
-        $crf_dir = undef;
-    }
-    return $crf_dir;
-}
-
-sub get_mira_dir {
-    my $self = shift;
-    my $mira_dir = $self->{"mira-dir"};
-    unless ( -d $mira_dir ) {
-        $mira_dir = undef;
-    }
-    return $mira_dir;
-}
-
-sub get_mstparser_dir {
-    my $self = shift;
-    my $mstparser_dir = $self->{"mstparser-dir"};
-    unless ( -d $mstparser_dir ) {
-        $mstparser_dir = undef;
-    }
-    return $mstparser_dir;
-}
-
-sub load_yamcha_training_conf {
-    my ($self, $file) = @_;
-    my $conf = {};
-    open(my $fh, $file) or die "Cannot open '$file'";
-    while ( my $line = <$fh> ) {
-        $line =~ s/\r?\n$//;
-        if ( $line =~ /^\#/ or $line =~ /^\s*$/ ) {
-            next;
-        }
-        if ( $line =~ /^(.*?)=(.*)/ ) {
-            my ($key, $value) = ($1, $2);
-            $value =~ s/^\s*\"(.*)\"$\s*$/$1/;
-            $value =~ s/^\s*\'(.*)\'$\s*$/$1/;
-            $conf->{$key} = $value;
-        }
-    }
-    close($fh);
-    return $conf;
-}
-
-sub check_yamcha_training_makefile_template {
-    my ($self, $yamcha_training_makefile_template) = @_;
-
-    unless ( -f $yamcha_training_makefile_template ) {
-        printf(STDERR "# Warning: Not found yamcha_training_makefile_template \"%s\"\n", $yamcha_training_makefile_template);
-        return 0;
-    }
-
-    my $buff = $self->read_from_file($yamcha_training_makefile_template);
-    if ( $buff !~ /^train:/ms ) {
-        printf(STDERR "# Warning: Not found \"train:\" target in yamcha_training_makefile_template \"%s\"\n", $yamcha_training_makefile_template);
-        return 0;
-    }
-    return 1;
-}
-
-## KCファイルを文節用の学習データに変換
-sub kc2bnstsvmdata {
-    my ($self, $data, $is_train) = @_;
+# 正解KCファイルと長単位解析結果KCファイルを受け取り、
+# 処理して".eval.long"ファイルを出力する。
+sub compare {
+    my ($self, $kc_file, $lout_file, $save_dir) = @_;
+    print STDERR "_compare\n";
     my $res = "";
 
-    my $parenthetic = 0;
-    foreach my $line ( split(/\r?\n/,$data) ) {
-        if ( $line eq "EOS" ) {
-            if ( $is_train == 1 ) {
-                $res .= $line."\n";
-            } else {
-                $res .= $line."\n*B\n";
-            }
-            $parenthetic = 0;
-        } elsif ( $line =~ /^\*B/ ) {
-            if ( $is_train ) {
-                $res .= $line."\n";
-            }
-        } else {
-            my @items = split(/[ \t]/, $line);
-            my @pos = split(/\-/, $items[3]."-*-*-*");
-            my @cType = split(/\-/, $items[4]."-*-*");
-            my @cForm = split(/\-/, $items[5]."-*-*");
-            $res .= join(" ",@items[0..5]);
-            $res .= " ".join(" ",@pos[0..3])." ".join(" ",@cType[0..2])." ".join(" ",@cForm[0..2]);
-            if ( $items[3] eq "補助記号-括弧開" ) {
-                if ( !$parenthetic ) {
-                    $res .= " B";
-                } else {
-                    $res .= " I";
-                }
-                $parenthetic++;
-            } elsif ( $items[3] eq "補助記号-括弧閉" ) {
-                $parenthetic--;
-                $res .= " I";
-            } elsif ( $parenthetic ) {
-                $res .= " I";
-            } else {
-                $res .= " O";
-            }
-            $res .= "\n";
+    # 中間ファイル
+    my $tmp1_file = $self->{"comainu-temp"} . "/" .
+        File::Basename::basename($kc_file, ".KC").".long";
+
+    # すでに中間ファイルが出来ていれば処理しない
+    if ( -s $tmp1_file ) {
+        print STDERR "Use Cache \'$tmp1_file\'.\n";
+    } else {
+        unless ( -f $kc_file ) {
+            print STDERR "ERROR: \'$1\' not Found.\n";
+            return $res;
         }
+        my $buff = $self->read_from_file($kc_file);
+        $buff = $self->trans_dataformat($buff, "input-kc", "kc");
+        $buff = $self->short2long($buff);
+        $self->write_to_file($tmp1_file, $buff);
+        undef $buff;
     }
 
-    undef $data;
+    unless ( -f $lout_file ) {
+        print STDERR "ERROR: \'$2\' not Found.\n";
+        return $res;
+    }
+
+    # 中間ファイル
+    my $tmp2_file = $self->{"comainu-temp"} . "/" .
+        File::Basename::basename($lout_file, ".lout") . ".svmout_create.long";
+    my $buff = $self->read_from_file($lout_file);
+    $buff = $self->short2long($buff);
+    $self->write_to_file($tmp2_file, $buff);
+    undef $buff;
+
+    my $output_file = $save_dir . "/" .
+        File::Basename::basename($lout_file, ".lout").".eval.long";
+
+    $res = $self->eval_long($tmp1_file, $tmp2_file);
+    $self->write_to_file($output_file, $res);
+    print $res;
 
     return $res;
 }
 
 
-# from unix/perls/bccwj2kc
-# -----------------------------------------------------------------------------
-# BCCWJの形式をComainu長単位解析の入力形式に変換
-# -----------------------------------------------------------------------------
-sub bccwj2kc {
-    my ($self, $data) = @_;
-    return $self->bccwj2kc_internal($data, "");
+# 文節境界モデルの評価
+sub USAGE_kc2bnsteval {
+    my $self = shift;
+    printf("COMAINU-METHOD: kc2bnsteval\n");
+    printf("  Usage: %s kc2bnsteval <ref-kc> <kc-lout> <out-dir>\n", $0);
+    printf("    This command make a evaluation for <kc-lout> with <ref-kc>.\n");
+    printf("    The result is put into <out-dir>.\n");
+    printf("\n");
+    printf("  ex.)\n");
+    printf("  perl ./script/comainu.pl kc2bnsteval sample/sample.KC out/sample.KC.bout out\n");
+    printf("    -> out/sample.eval.bnst\n");
+    printf("\n");
 }
 
-# from unix/perls/bccwj2kc2.perl
-# -----------------------------------------------------------------------------
-# BCCWJの形式をComainu長単位解析の入力形式に変換
-# -----------------------------------------------------------------------------
-sub bccwj2kc2 {
-    my ($self, $data) = @_;
-    return $self->bccwj2kc_internal($data, "2");
-}
+sub METHOD_kc2bnsteval {
+    my ($self, $correct_kc, $result_kc_bout, $save_dir) = @_;
 
-# from unix/perls/bccwj2kc_with_luw.perl
-# -----------------------------------------------------------------------------
-# BCCWJの形式をComainu長単位解析の入力形式に変換
-# -----------------------------------------------------------------------------
-sub bccwj2kc_with_luw {
-    my ($self, $data) = @_;
-    return $self->bccwj2kc_internal($data, "with_luw");
-}
+    $self->check_args(scalar @_ == 4);
+    mkdir $save_dir unless -d $save_dir;
 
-sub bccwj2kc_internal {
-    my ($self, $data, $type) = @_;
-    # my $cn = 17;
-    my $cn = 27;
-    if ( $self->{"boundary"} eq "word" || $type eq "with_luw" ) {
-        # $cn = 24;
-        # $cn = 25;
-        $cn = 34;
+    if ( -f $result_kc_bout ) {
+        $self->kc2bnsteval_internal($correct_kc, $result_kc_bout, $save_dir);
+    } elsif ( -d $result_kc_bout ) {
+        opendir(my $dh, $result_kc_bout);
+        while ( my $result_kc_lout_file = readdir($dh) ) {
+            if ( $result_kc_lout_file =~ /.KC$/ ) {
+                $self->kc2bnsteval_internal($correct_kc, $result_kc_lout_file, $save_dir);
+            }
+        }
+        closedir($dh);
+    } else {
+        printf(STDERR "# Error: Not found result_kc_bout '%s'\n", $result_kc_bout);
     }
+
+    return 0;
+}
+
+sub kc2bnsteval_internal {
+    my ($self, $correct_kc, $result_kc_bout, $save_dir) = @_;
+    $self->compare_bnst($correct_kc, $result_kc_bout, $save_dir);
+}
+
+sub compare_bnst {
+    my ($self, $kc_file, $bout_file, $save_dir) = @_;
+    print STDERR "_compare\n";
     my $res = "";
-    foreach ( split(/\r?\n/, $data) ) {
-        # chomp;
-        my @suw = split(/\t/);
-        if ( $res ne "" && $suw[3] =~ /^B/ ) {
-            $res .= "EOS\n";
-        }
-        if( ($self->{"boundary"} eq "word" || $type eq "with_luw") && $suw[27] =~ /B/ ) {
-            $res .= "*B\n";
-        }
-        if ($suw[6] eq "" || $suw[6] =~ /NULL/) {
-            $suw[6] = $suw[5];
-        }
-        if ($suw[7] eq "" || $suw[7] =~ /NULL/) {
-            $suw[7] = $suw[5];
-        }
-        for my $i ( 0 .. $cn ) {
-            if ( $suw[$i] eq "" || $suw[$i] =~ /NULL/ ) {
-                $suw[$i] = "*";
-            }
-        }
 
-        $res .= "$suw[4] $suw[5] $suw[6] $suw[8] $suw[9] $suw[10] ";
-        $res .= "$suw[16] $suw[17] $suw[18] $suw[19] $suw[22] $suw[23] $suw[21] ";
+    # 中間ファイル
+    my $tmp1_file = $self->{"comainu-temp"} . "/" .
+        File::Basename::basename($kc_file, ".KC") . ".bnst";
 
-        if ( $type eq "with_luw" && $suw[27] =~ /B/ ) {
-            $res .= "$suw[31] $suw[32] $suw[33] $suw[29] $suw[30] $suw[28]\n";
-        } else {
-            $res .= "* * * * * *\n";
+    if ( -s $tmp1_file ) {
+        print STDERR "Use Cache \'$tmp1_file\'.\n";
+    } else {
+        unless ( -f $kc_file ) {
+            print STDERR "ERROR: \'$1\' not Found.\n";
+            return $res;
         }
+        my $buff = $self->read_from_file($kc_file);
+        $buff = $self->short2bnst($buff);
+        $self->write_to_file($tmp1_file, $buff);
+        undef $buff;
     }
 
-    undef $data;
+    unless ( -f $bout_file ) {
+        print STDERR "ERROR: \'$2\' not Found.\n";
+        return $res;
+    }
+
+    # 中間ファイル
+    my $tmp2_file = $self->{"comainu-temp"} . "/" .
+        File::Basename::basename($bout_file, ".bout") . ".svmout_create.bnst";
+    my $buff = $self->read_from_file($bout_file);
+    $buff = $self->short2bnst($buff);
+    $self->write_to_file($tmp2_file, $buff);
+    undef $buff;
+
+    my $output_file = $save_dir . "/" .
+        File::Basename::basename($bout_file, ".bout") . ".eval.bnst";
+
+    $res = $self->eval_long($tmp1_file, $tmp2_file, 1);
+    $self->write_to_file($output_file, $res);
+    print $res;
 
     return $res;
 }
 
-# from unix/perls/eval_long.perl
-# -----------------------------------------------------------------------------
-# *.KC (京大コーパス形式を少し変更したデータ) と *.out (システムの出力)を
-# 比較し、精度を求める
+
+# 中単位解析モデルの評価
+sub USAGE_kclong2mideval {
+    my $self = shift;
+    printf("COMAINU-METHOD: kclong2mideval\n");
+    printf("  Usage: %s kclong2mideval <ref-kc> <kc-mout> <out-dir>\n", $0);
+    printf("    This command make a evaluation for <kc-mout> with <ref-kc>.\n");
+    printf("    The result is put into <out-dir>.\n");
+    printf("\n");
+    printf("  ex.)\n");
+    printf("  perl ./script/comainu.pl kclong2mideval sample/sample.KC out/sample.KC.mout out\n");
+    printf("    -> out/sample.eval.mid\n");
+    printf("\n");
+}
+
+sub METHOD_kclong2mideval {
+    my ($self, $correct_kc, $result_kc_mout, $save_dir) = @_;
+
+    $self->check_args(scalar @_ == 4);
+    mkdir $save_dir unless -d $save_dir;
+
+    if ( -f $result_kc_mout ) {
+        $self->kclong2mideval_internal($correct_kc, $result_kc_mout, $save_dir);
+    } elsif ( -d $result_kc_mout ) {
+        opendir(my $dh, $result_kc_mout);
+        while ( my $result_kc_mout_file = readdir($dh) ) {
+            if ( $result_kc_mout_file =~ /.KC$/ ) {
+                $self->kclong2mideval_internal($correct_kc, $result_kc_mout_file, $save_dir);
+            }
+        }
+        closedir($dh);
+    } else {
+        printf(STDERR "# Error: Not found result_kc_mout '%s'\n", $result_kc_mout);
+    }
+
+    return 0;
+}
+
+sub kclong2mideval_internal {
+    my ($self, $correct_kc, $result_kc_mout, $save_dir) = @_;
+    $self->compare_mid($correct_kc, $result_kc_mout, $save_dir);
+}
+
+sub compare_mid {
+    my ($self, $kc_file, $mout_file, $save_dir) = @_;
+    print STDERR "_compare\n";
+    my $res = "";
+
+    # 中間ファイル
+    my $tmp1_file = $self->{"comainu-temp"} . "/" .
+        File::Basename::basename($kc_file, ".KC") . ".mid";
+
+    if ( -s $tmp1_file ) {
+        print STDERR "Use Cache \'$tmp1_file\'.\n";
+    } else {
+        unless ( -f $kc_file ) {
+            print STDERR "ERROR: \'$1\' not Found.\n";
+            return $res;
+        }
+        my $buff = $self->read_from_file($kc_file);
+        $buff = $self->short2middle($buff);
+        $self->write_to_file($tmp1_file, $buff);
+        undef $buff;
+    }
+
+    unless ( -f $mout_file ) {
+        print STDERR "ERROR: \'$2\' not Found.\n";
+        return $res;
+    }
+
+    my $tmp2_file = $self->{"comainu-temp"} . "/" .
+        File::Basename::basename($mout_file, ".mout") . ".svmout_create.mid";
+    my $buff = $self->read_from_file($mout_file);
+    $buff = $self->short2middle($buff);
+    $self->write_to_file($tmp2_file, $buff);
+    undef $buff;
+
+    my $output_file = $save_dir . "/" .
+        File::Basename::basename($mout_file, ".mout").".eval.mid";
+
+    $res = $self->eval_long($tmp1_file, $tmp2_file, 1);
+    $self->write_to_file($output_file, $res);
+    print $res;
+
+    return $res;
+}
+
+# *.KC と *.out (システムの出力)を比較し、精度を求める
 # segmentaion と POS information (発音を除くすべて)
-# -----------------------------------------------------------------------------
 sub eval_long {
-    my ($self, $gldf, $sysf, $middle) = @_;
+    my ($self, $gldf, $sysf, $is_middle) = @_;
     my $gld;
     my $sys;
     my $agr;
@@ -3671,7 +2016,7 @@ sub eval_long {
         chomp;
         my @morph = split(/\s+/);
         my @pos;
-        if ( $middle ) {
+        if ( $is_middle ) {
             print TMP "$morph[0]\n";
         } else {
             print TMP "$morph[0] $morph[1] $morph[2] $morph[3] $morph[4] $morph[5]\n";
@@ -3692,7 +2037,7 @@ sub eval_long {
         }
         chomp;
         my @morph = split(/\s+/);
-        if ( $middle ) {
+        if ( $is_middle ) {
             print TMP "$morph[0]\n";
         } else {
             print TMP "$morph[0] $morph[1] $morph[2] $morph[3] $morph[4] $morph[5]\n";
@@ -3805,761 +2150,9 @@ sub diff_perl {
     close(DIF);
 }
 
-# from unix/perls/marge_iof.perl
-# from unix/perls/marge_iof2.perl
-# -----------------------------------------------------------------------------
-# bccwj形式のファイルに長単位解析結果をマージ
-# -----------------------------------------------------------------------------
-sub merge_iof {
-    my ($self, $bccwj_data, $lout_data) = @_;
-    my $res = "";
-    my $cn1 = 16;
-    #my $cn1 = 26;
-    if ( $self->{"boundary"} eq "word" ) {
-        #$cn1 = 23;
-        $cn1 = 27;
-        #$cn1 = 34;
-    }
-    my $cn2 = 19;
-    $lout_data =~ s/^EOS.*?\n//mg;
-    my @m = split(/\r?\n/, $lout_data);
-    undef $lout_data;
 
-    my $long_pos = "";
-    foreach ( split(/\r?\n/, $bccwj_data) ) {
-        my @morph = split(/\t/);
-        if ($#morph+1 < $cn1) {
-            print STDERR "Some columns are missing in bccwj_data!\n";
-            print STDERR "  morph(".($#morph+1).") < sn1(".$cn1.")\n";
-        }
-        my $lw = shift(@m);
-        $lw = shift(@m) if($lw =~ /^EOS|^\*B/);
-        my @ml = split(/[ \t]/, $lw);
-        if ($#ml+1 < $cn2) {
-            print STDERR "Some columns are missing in bccwj_data!\n";
-            print STDERR "  ml(".($#ml+1).") < cn2(".$cn2.")\n";
-            print STDERR "$ml[1]\n";
-        }
-        if ($morph[4] ne $ml[1]) {
-            print STDERR "Two files cannot be marged!: '$morph[4]' ; '$ml[1]'\n";
-        }
-        if ($ml[0] =~ /^B/) {
-            $long_pos = $ml[14];
-        }
-        if ( $self->{"boundary"} eq "word" ) {
-            @morph[28..33] = @ml[19,17..18,14..16];
-        } else {
-            @morph[27..33] = @ml[0,19,17..18,14..16];
-        }
-        if ( $morph[8] eq "名詞-普通名詞-形状詞可能" ||
-                 $morph[8] eq "名詞-普通名詞-サ変形状詞可能" ) {
-            if ( $long_pos eq "形状詞-一般" ) {
-                $morph[11] = "形状詞";
-            } else {
-                $morph[11] = "名詞";
-            }
-        } elsif ( $morph[8] eq "名詞-普通名詞-副詞可能" ) {
-            if ( $long_pos eq "副詞" ) {
-                $morph[11] = "副詞";
-            } else {
-                $morph[11] = "名詞";
-            }
-        }
-        my $nm = join("\t", @morph);
-        $res .= "$nm\n";
-    }
-
-    undef $bccwj_data;
-
-    if ( $#m > -1 ) {
-        print STDERR "Two files do not correspond to each other!\n";
-    }
-    return $res;
-}
-
-# from unix/perls/pp_ctype.pl
-# -----------------------------------------------------------------------------
-# 後処理（「動詞」となる長単位の活用型、活用形）
-# アドホックな後処理-->書き換え規則を変更する方針
-# -----------------------------------------------------------------------------
-sub pp_ctype {
-    my ($self, $data) = @_;
-    my $res = "";
-    my @lw;
-    foreach ( split(/\r?\n/, $data) ) {
-        if (/^B/) {
-            if ($#lw > -1) {
-                my @last = split(/[ \t]/, $lw[$#lw]);
-                if ($last[8] ne "*") {
-                    my @first = split(/[ \t]/, shift(@lw));
-                    if ($first[13] eq "*" && $first[12] =~ /^動詞/) {
-                        $first[13] = $last[7];
-                   }
-                    if ($first[14] eq "*" && $first[12] =~ /^動詞/) {
-                        $first[14] = $last[8];
-                    }
-                    unshift(@lw, join(" ", @first));
-                }
-                foreach (@lw) {
-                    # print "$_\n";
-                    $res .= "$_\n";
-                }
-                @lw = ();
-                push(@lw, $_);
-            } else {
-                push(@lw, $_);
-            }
-        } else {
-            push(@lw, $_);
-        }
-    }
-    undef $data;
-
-    if ($#lw > -1) {
-        my @last = split(/[ \t]/, $lw[$#lw]); # fixed by jkawai
-        if ($last[8] ne "*") {
-            my @first = split(/[ \t]/, $lw[0]);
-            if ($first[13] eq "*" && $first[12] =~ /^動詞/) {
-                $first[13] = $last[7];
-            }
-            if ($first[14] eq "*" && $first[12] =~ /^動詞/) {
-                $first[14] = $last[8];
-            }
-        }
-        foreach (@lw) {
-            # print "$_\n";
-            $res .= "$_\n";
-        }
-    }
-    return $res;
-}
-
-
-# -----------------------------------------------------------------------------
-# 前処理（partial chunkingの入力フォーマットへの変換）
-# -----------------------------------------------------------------------------
-sub pp_partial {
-    my ($self, $data) = @_;
-    my $res = "";
-    my ($prev, $curr, $next) = (0, 1, 2);
-    my $buff_list = [undef, undef];
-
-    foreach my $line ((split(/\r?\n/, $data), undef, undef)) {
-        push(@$buff_list, $line);
-        if ( defined($buff_list->[$curr]) && $buff_list->[$curr] !~ /^EOS/ &&
-                 $buff_list->[$curr] !~ /^\*B/) {
-            my $mark = "";
-            if ( $buff_list->[$prev] =~ /^EOS/ || $buff_list->[$prev] =~ /^\*B/) {
-                $mark = "B Ba";
-            } elsif ( !defined $buff_list->[$prev] ) {
-                $mark = "B Ba";
-            } else {
-                if ( $self->{"boundary"} ne "word" ) {
-                    $mark = "B Ba I Ia";
-                } else {
-                    $mark = "I Ia";
-                }
-            }
-            $buff_list->[$curr] .= " ".$mark;
-        }
-        my $new_line = shift(@$buff_list);
-        if ( defined($new_line) and $new_line !~ /^\*B/ ) {
-            $res .= $new_line."\n";
-        }
-    }
-    while ( my $new_line = shift(@$buff_list) ) {
-        if ( defined $new_line && $new_line !~ /^\*B/ ) {
-            $res .= $new_line."\n";
-        }
-    }
-
-    undef $data;
-    undef $buff_list;
-
-    return $res;
-}
-
-sub pp_partial_bnst {
-    my ($self, $data) = @_;
-    my $res = "";
-    my ($prev, $curr, $next) = (0, 1, 2);
-    my $buff_list = [undef, undef];
-
-    foreach my $line ((split(/\r?\n/, $data), undef, undef)) {
-        push(@$buff_list, $line);
-        if ( defined $buff_list->[$curr] && $buff_list->[$curr] !~ /^EOS/ &&
-                 $buff_list->[$curr] !~ /^\*B/) {
-            my $mark = "";
-            if ( $buff_list->[$prev] =~ /^EOS/ || $buff_list->[$prev] =~ /^\*B/) {
-                $mark = "B";
-            } elsif ( !defined $buff_list->[$prev] ) {
-                $mark = "B";
-            } else {
-                $mark = "B I";
-            }
-            $buff_list->[$curr] .= " ".$mark;
-        }
-        my $new_line = shift(@$buff_list);
-        if ( defined $new_line && $new_line !~ /^\*B/ ) {
-            $res .= $new_line."\n";
-        }
-    }
-    while ( my $new_line = shift(@$buff_list) ) {
-        if ( defined $new_line && $new_line !~ /^\*B/ ) {
-            $res .= $new_line."\n";
-        }
-    }
-
-    undef $data;
-    undef $buff_list;
-
-    return $res;
-}
-
-sub pp_partial_bnst_with_luw {
-    my ($self, $data, $svmout_file) = @_;
-    my $res = "";
-    my ($prev, $curr, $next) = (0, 1, 2);
-    my $buff_list = [undef, undef];
-
-    my $svmout_data = $self->read_from_file($svmout_file);
-    my $svmout_item_list = [split(/\r?\n/, $svmout_data)];
-    undef $svmout_data;
-
-    foreach my $line ( (split(/\r?\n/, $data), undef, undef) ) {
-        push(@$buff_list, $line);
-        if ( defined $buff_list->[$curr] && $buff_list->[$curr] !~ /^EOS/ &&
-                 $buff_list->[$curr] !~ /^\*B/) {
-            my $mark = "";
-            my $lw = shift(@$svmout_item_list);
-            my @svmout = split(/[ \t]/,$lw);
-            if ( $buff_list->[$prev] =~ /^EOS/ || $buff_list->[$prev] =~ /^\*B/) {
-                $mark = "B";
-            } elsif ( !defined $buff_list->[$prev] ) {
-                $mark = "B";
-            } else {
-                if ( $svmout[0] =~ /I/ ) {
-                    $mark = "I";
-                } else {
-                    if ( $svmout[4] =~ /^動詞/ ) {
-                        $mark = "B";
-                    } elsif ( $svmout[4] =~ /^名詞|^形容詞|^副詞|^形状詞/ &&
-                                  ($svmout[21] == 1 || $svmout[22] == 1) ) {
-                        $mark = "B";
-                    } else {
-                        $mark = "B I";
-                    }
-                }
-            }
-            $buff_list->[$curr] .= " ".$mark;
-        }
-        my $new_line = shift(@$buff_list);
-        if ( defined $new_line && $new_line !~ /^\*B/ ) {
-            $res .= $new_line."\n";
-        }
-    }
-    while ( my $new_line = shift(@$buff_list) ) {
-        if ( defined $new_line && $new_line !~ /^\*B/ ) {
-            $res .= $new_line."\n";
-        }
-    }
-
-    undef $data;
-    undef $buff_list;
-    undef $svmout_item_list;
-
-    return $res;
-}
-
-
-# from unix/perls/short2long.perl
-# -----------------------------------------------------------------------------
-# *.KCの長単位の情報を短単位に置き換える。
-# -----------------------------------------------------------------------------
-sub short2long_old {
-    my ($self, $data) = @_;
-    my $res = "";
-    my @morph;
-    foreach ( split(/\r?\n/, $data) ) {
-        my @elem = split(/[ \t]/);
-        if ($elem[0] =~ /^[BI]/) { # remove B,Ba,I,Ia field *.lout
-            shift(@elem);
-            $elem[17] = "*" if($elem[17] eq "");
-            $elem[18] = "*" if($elem[18] eq "");
-        }
-        if (/^\*B/ || /^EOS/) {
-            next;
-        } elsif ($elem[11] eq '*') {
-            push(@morph, join(' ', @elem));
-        } else {
-            my $next = join(' ', @elem);
-            my $str;
-            my @com;
-            my @com2;
-            my @longm;
-            my @longm2;
-            my $m;
-            while ($m = shift(@morph)) {
-                my @melem = split(/[ \t]/, $m);
-                my $flag;
-                if ($#melem < 18) {
-                    $m =~ s/\*([^ \t]+)/\* $1/g;
-                }
-                if ($m =~ /^\*B/) {
-                    push(@com, $m);
-                } else {
-                    my @h = split(/[ \t]/, $m);
-                    if (defined($str)) {
-                        $str .= $h[0];
-                        if (@com && $#com > -1) {
-                            push(@com2, @com);
-                            @com = ();
-                        }
-                    } else {
-                        $str = $h[0];
-                        @longm = splice(@h, 11);
-                        @longm2 = splice(@longm, 6);
-                        if ($#longm2 > 1) {
-                            pop(@longm2);
-                        }
-                    }
-                }
-            }
-
-            if ($#com > -1 && $#com2 > -1 && defined($str)) {
-                my $c = join('', @com);
-                my $c2 = join('', @com2);
-                unshift(@longm, $str, @longm2);
-                $res .= "$c2\n@longm\n$c\n";
-            } elsif ($#com > -1 && $#com2 > -1) {
-                my $c = join('', @com);
-                my $c2 = join('', @com2);
-                $res .= "$c$c2\n";
-            } elsif ($#com > -1 && defined($str)) {
-                my $c = join('', @com);
-                unshift(@longm, $str, @longm2);
-                $res .= "@longm\n$c\n";
-            } elsif ($#com2 > -1 && defined($str)) {
-                my $c2 = join('', @com2);
-                unshift(@longm, $str, @longm2);
-                $res .= "$c2\n@longm\n";
-            } elsif ($#com > -1 ) {
-                my $c = join('', @com);
-                $res .= "$c\n";
-            } elsif ($#com2 > -1) {
-                my $c2 = join('', @com2);
-                $res .= "$c2\n";
-            } elsif (defined($str)) {
-                unshift(@longm, $str, @longm2);
-                $res .= "@longm\n";
-            } elsif ($#morph > -1) {
-                print STDERR "ERROR!!: @morph : @elem\n";
-            } else {
-            }
-            @morph = ();
-            push(@morph, $next);
-        }
-    }
-    return $res;
-}
-
-sub short2long {
-    my ($self, $data) = @_;
-    my $res = "";
-
-    foreach ( split(/\r?\n/, $data) ) {
-    	next if /^\*B/ || /^EOS/;
-
-        my @elem = split(/[ \t]/);
-        if ($elem[0] =~ /^[BI]/) { # remove B,Ba,I,Ia field *.lout
-            shift(@elem);
-        }
-        $elem[16] = "*" if($elem[16] eq "");
-        $elem[17] = "*" if($elem[17] eq "");
-        if ($elem[13] ne "" && $elem[13] ne "*") {
-            $res .= join(" ",@elem[18,16,17,13..15])."\n";
-        }
-    }
-    undef $data;
-
-    return $res;
-}
-
-sub short2middle_old {
-    my ($self, $data) = @_;
-    my $res = "";
-
-    foreach ( split(/\r?\n/, $data) ) {
-        my @morph = split(/[ \t]/);
-        next if $morph[0] =~ /^\*B|^EOS/;
-
-        if ( $morph[21] ne "" ) {
-            $res .= $morph[21]."\n";
-        }
-    }
-    return $res;
-}
-
-sub short2middle {
-    my ($self, $data) = @_;
-    my $res = "";
-
-    my @muws;
-    my $muw_id = -1;
-    foreach my $line ( split(/\r?\n/,$data) ) {
-        my $mrph = [split(/[ \t]/, $line)];
-        next if $$mrph[0] =~ /^\*B|^EOS/;
-
-        $muw_id++ if $$mrph[21] ne "" && $$mrph[21] ne "*";
-        push @{$muws[$muw_id]},$mrph;
-    }
-    foreach my $muw (@muws) {
-        if ( scalar(@$muw) > 0 ) {
-            my $first = $$muw[0];
-            $res .= $$first[21]."\n";
-        }
-    }
-
-    undef $data;
-
-    return $res;
-}
-
-sub short2bnst {
-    my ($self, $data) = @_;
-    my $res = "";
-
-    my $BOB = "B";
-    foreach ( split(/\r?\n/, $data) ) {
-        my @morph = split(/[ \t]/);
-        if ( $morph[0] =~ /^\*B|^EOS/ ) {
-            $BOB = "B";
-            next;
-        } elsif ( $morph[0] eq "B" || $morph[0] eq "I" ) {
-            $BOB = shift(@morph);
-        }
-        if ( $BOB eq "B" ) {
-            $BOB = "I";
-            $res .= "\n" if $res ne "";
-        }
-        $res .= $morph[0];
-    }
-
-    undef $data;
-
-    return $res;
-}
-
-
-# from unix/src/longanalyze/src/add_column.cpp
-# 文節情報に基づいたカラムを追加して出力する
-#
-# 付加条件：
-# 前の行に*Bや*Pがある場合は L
-# 後ろの行に*Bや*Pがある場合は R
-# 両方にある場合は B
-# どちらにも無い場合はN
-# ファイル終端行は R または B
-sub add_column {
-    my ($self, $data) = @_;
-    my $res = "";
-    my ($prev, $curr, $next) = (0, 1, 2);
-    my $buff_list = [undef, undef];
-
-    $data .= "*B\n";
-    foreach my $line ((split(/\r?\n/, $data), undef, undef)) {
-        push(@$buff_list, $line);
-        if ( defined $buff_list->[$curr] && $buff_list->[$curr] !~ /^EOS/ &&
-                 $buff_list->[$curr] !~ /^\*B/ ) {
-            my $mark = "";
-            if ( $buff_list->[$prev] =~ /^\*B/ && $buff_list->[$next] =~ /^\*B/) {
-                $mark = "B";
-            } elsif ( $buff_list->[$prev] =~ /^\*B/ ) {
-                $mark = "L";
-            } elsif ( $buff_list->[$next] =~ /^\*B/ ) {
-                $mark = "R";
-            } else {
-                $mark = "N";
-            }
-            $buff_list->[$curr] .= " ".$mark;
-        }
-        my $new_line = shift(@$buff_list);
-        if ( defined $new_line && $new_line !~ /^\*B/ ) {
-            $res .= $new_line."\n";
-        }
-    }
-    while ( my $new_line = shift(@$buff_list) ) {
-        if ( defined $new_line && $new_line !~ /^\*B/ ) {
-            $res .= $new_line."\n";
-        }
-    }
-
-    undef $data;
-    undef $buff_list;
-
-    return $res;
-}
-
-# from unix/src/longanalyze/src/delete_column_long.cpp
-# 動作：ホワイトスペースで区切られた１１カラム以上からなる行を一行ずつ読み、
-# 　　　２カラム目の内容を取り除いて１から１１カラムまでの内容（１０個の要素がスペース
-# 　　　一つで区切られている）の行にして出力する。
-# 　　　元のレコードが１１カラムに満たない場合は、該当箇所のデータをブランクとして扱う。
-sub delete_column_long {
-    my ($self, $data) = @_;
-    my $res = "";
-    my $num_of_column = 11;
-    foreach my $line ( split(/\r?\n/, $data) ) {
-        my $items = [split(/[ \t]/, $line)];
-        if ( scalar(@$items) > 2 ) {
-            $items = [@$items[0 .. 5, 10 .. 12]];
-        }
-        $res .= join(" ", @$items)."\n";
-    }
-    undef $data;
-
-    return $res;
-}
-
-# KC2ファイルに対してpivot(Ba, B, I, Ia)を判定し、
-# 行頭または行末のカラムとして追加する。
-# これは従来のmkep + join_pivot_to_kc2 を置き換える。
-# pivot
-#    Ba  長単位先頭     品詞一致
-#    B   長単位先頭     品詞不一致
-#    Ia  長単位先頭以外 品詞一致
-#    I   長単位先頭以外 品詞不一致
-sub add_pivot_to_kc2 {
-    my ($self, $fh_ref_kc2, $fh_kc2, $fh_out, $flag) = @_;
-    my $front = (defined($flag) && $flag eq "0");
-    my $line_in_list = [<$fh_ref_kc2>];
-    my $curr_long_pos = "";
-
-    foreach my $i ( 0 .. $#{$line_in_list} ) {
-        my $line = Encode::decode("utf-8", $$line_in_list[$i]);
-        $line =~ s/\r?\n$//;
-        next if $line =~ /^\*B/;
-
-        if ( $line =~ /^EOS/ ) {
-            my $res = "\n";
-            $res = Encode::encode("utf-8", $res);
-            print $fh_out $res;
-            next;
-        }
-
-        my $pivot = "";
-        my $items = [split(/ /, $line)];
-        my $short_pos = join(" ", @$items[3 .. 5]);
-        my $long_pos = join(" ", @$items[13 .. 15]);
-
-        if ( $long_pos =~ /^\*/ ) {
-            $pivot = "I";
-        } else {
-            $pivot = "B";
-            $curr_long_pos = $long_pos;
-        }
-
-        my $line_out = <$fh_kc2>;
-        $line_out = Encode::decode("utf-8", $line_out);
-        $line_out =~ s/\r?\n$//;
-
-        if ( $short_pos eq $curr_long_pos ) {
-            if ( $i < $#{$line_in_list} ) {
-                my $next_items = [split(/ /, $$line_in_list[$i+1])];
-                my $next_long_pos = join(" ", @$next_items[13 .. 15]);
-                if ( $next_long_pos !~ /^\*/ ) {
-                    $pivot .= "a";
-                }
-            } else {
-                $pivot .= "a";
-            }
-        }
-        my $res = "";
-        if ( $front ) {
-            $res = $pivot." ".$line_out."\n";
-        } else {
-            $res = $line_out." ".$pivot."\n";
-        }
-        $res = Encode::encode("utf-8", $res);
-        print $fh_out $res;
-    }
-    print $fh_out "\n";
-
-    undef $line_in_list;
-}
-
-# from unix/src/longanalyze/src/move_future_front.cpp
-# 動作：ホワイトスペースで区切られた１２カラム以上からなる行を１行ずつ読み、
-# 　　　次の順に並べなおして出力する。（数字は元のカラム位置。","は説明のために使用。
-# 　　　実際の区切りはスペース一つ）
-# 　　　（順番： 12, 1, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11）
-# 　　　元のレコードが１２カラムに満たない場合は、該当箇所のデータをブランクとして扱う。
-# 　　　ただし、１レコード以下の行は、その存在を無視する。
-sub move_future_front {
-    my ($self, $data) = @_;
-    my $res = "";
-    my $num_of_column = 12;
-    foreach my $line ( split(/\r?\n/, $data) ) {
-        my $items = [ split(/[ \t]/, $line) ];
-        while ( scalar(@$items) < $num_of_column ) {
-            push(@$items, "");
-        }
-        $items = [ @$items[scalar(@$items) - 1, 0 .. scalar(@$items) - 2 ]];
-        $res .= join(" ", @$items)."\n";
-    }
-    undef $data;
-    return $res;
-}
-
-# from unix/src/longanalyze/src/truncate_last_column.cpp
-# 動作：ホワイトスペースで区切られた１２カラム以上からなる行を１行ずつ読み、
-# 　　　１カラム目から１２カラム目までの内容をスペース一つで区切って出力する。
-sub truncate_last_column {
-    my ($self, $data) = @_;
-    my $res = "";
-    my $num_of_column = 12;
-    foreach my $line ( split(/\r?\n/, $data) ) {
-        my $items = [ split(/[ \t]/, $line) ];
-        while ( scalar(@$items) < $num_of_column ) {
-            push(@$items, "");
-        }
-        $res .= join(" ", @$items)."\n";
-    }
-    undef $data;
-    return $res;
-}
-
-#
-# poscreateの代わりの関数
-# 長単位の品詞・活用型・活用形を生成
-#
-sub poscreate {
-    my ($self, $file) = @_;
-    my $res = "";
-
-    my @long;
-    open(IN, $file);
-    while ( my $line = <IN> ) {
-        $line = Encode::decode("utf-8", $line);
-        $line =~ s/\r?\n//;
-        next if $line eq "";
-        my @items = split(/[ \t]/, $line);
-
-        # $items[10] = "*";
-        # $items[11] = "*";
-        @items[10..15] = ("*","*","*","*","*","*");
-
-        if ( $self->{"luwmrph"} ne "without" ) {
-            if ( $items[0] eq "B" || $items[0] eq "Ba" ) {
-                map { $res .= join(" ",@$_)."\n" } @long;
-
-                @long = ();
-                @items[10..15] = @items[4..6,2,3,1];
-            } else {
-                my $first = $long[0];
-                $$first[13] .= $items[2];
-                $$first[14] .= $items[3];
-                $$first[15] .= $items[1];
-                if ( $items[0] eq "Ia" ) {
-                    @$first[10..12] = @items[4..6];
-                }
-            }
-        }
-        push @long, [@items[0..15]];
-    }
-    close(IN);
-    map { $res .= join(" ",@$_)."\n" } @long;
-
-    undef @long;
-
-    return $res;
-}
-
-
-sub merge_kc_with_svmout {
-    my ($self, $kc_file, $svmout_file) = @_;
-
-    my $res = "";
-    my @long;
-    my $kc_data = $self->read_from_file($kc_file);
-    my $svmout_data = $self->read_from_file($svmout_file);
-    my $svmout_data_list = [split(/\r?\n/, $svmout_data)];
-    undef $svmout_data;
-
-    foreach my $kc_data_line ( split(/\r?\n/, $kc_data) ) {
-    	if ( $kc_data_line =~ /^EOS/ && $self->{"luwmrph"} eq "without" ) {
-    	    $res .= "EOS\n";
-    	    next;
-    	}
-    	next if $kc_data_line =~ /^\*B|^EOS/;
-    	my @kc_item_list = split(/[ \t]/, $kc_data_line);
-
-    	my $svmout_line = shift(@$svmout_data_list);
-    	my $svmout_item_list = [split(/[ \t]/, $svmout_line)];
-    	@$svmout_item_list[10..15] = ("*","*","*","*","*","*");
-
-        if ( $$svmout_item_list[0] eq "B" || $$svmout_item_list[0] eq "Ba") {
-            map { $res .= join(" ",@$_)."\n" } @long;
-
-            @long = ();
-            if ( $self->{"luwmrph"} ne "without" ) {
-                @$svmout_item_list[10..15] = @$svmout_item_list[4..6,2,3,1];
-            } else {
-                @$svmout_item_list[13..15] = @$svmout_item_list[2,3,1];
-            }
-        } else {
-            my $first = $long[0];
-            $$first[17] .= $$svmout_item_list[2];
-            $$first[18] .= $$svmout_item_list[3];
-            $$first[19] .= $$svmout_item_list[1];
-            if ( $$svmout_item_list[0] eq "Ia" &&
-                     $self->{"luwmrph"} ne "without") {
-                @$first[14..16] = @$svmout_item_list[4..6];
-            }
-        }
-        push @long, [@$svmout_item_list[0],@kc_item_list[0..12],@$svmout_item_list[10..15]];
-    }
-
-    map { $res .= join(" ",@$_)."\n" } @long;
-
-    undef $kc_data;
-    undef $svmout_data_list;
-    undef @long;
-
-    return $res;
-}
-
-sub merge_kc_with_bout {
-    my ($self, $kc_file, $bout_file) = @_;
-
-    my $res = "";
-    my $kc_data = $self->read_from_file($kc_file);
-    my $bout_data = $self->read_from_file($bout_file);
-    my $bout_data_list = [split(/\r?\n/, $bout_data)];
-    undef $bout_data;
-
-    foreach my $kc_data_line (split(/\r?\n/, $kc_data)) {
-    	next if $kc_data_line =~ /^\*B/;
-
-        if ( $kc_data_line =~ /^EOS/ ) {
-    	    $res .= "EOS\n";
-    	    next;
-    	}
-    	my @kc_item_list = split(/[ \t]/, $kc_data_line);
-    	my $bout_line = shift(@$bout_data_list);
-    	my $bout_item_list = [split(/[ \t]/, $bout_line)];
-    	$res .= $$bout_item_list[0]." ".join(" ",@kc_item_list[0..12])."\n";
-    }
-
-    undef $kc_data;
-    undef $bout_data_list;
-
-    return $res;
-}
-
-#
+########################################
 # 語彙素・語彙素読みを生成
-#
 sub create_long_lemma {
     my ($self, $data, $comp_file) = @_;
 
@@ -4704,18 +2297,1485 @@ sub generate_long_lemma {
     }
 }
 
+# 中単位解析用の素性を生成
+sub create_mstfeature {
+    my ($self, $short_terms, $pos) = @_;
+    my $res = "";
+
+    my $id = 1;
+    if ( scalar(@$short_terms) > 1 ) {
+        foreach my $line ( @$short_terms ) {
+            my @items = split(/[ \t]/, $line);
+            my $depend = "_";
+            if ( $items[19] =~ /Ｐ/ ) {
+                $depend = "P";
+            }
+            if ( $items[19] ne "*" && $items[19] ne "" ) {
+                $items[19] -= $pos-scalar(@$short_terms)-1;
+            } else {
+                $items[19] = 0;
+            }
+            if ( scalar(@$short_terms) < $items[19] || $items[19] < 0 ) {
+                print STDERR "error: $items[0]: $line\n";
+                print STDERR $pos," ",$items[19]," ",scalar(@$short_terms),"\n";
+            }
+            my @cpos = split(/\-/, $items[3]);
+            my @features;
+
+            foreach my $i ( 3 .. 5 ) {
+                next if $items[$i] eq "*";
+                my @pos = split(/\-/, $items[$i]);
+                foreach my $j ( 0 .. $#pos ) {
+                    next if ($i == 3 && ($j == 0 || $j == $#pos));
+                    push @features, join("-",@pos[0..$j]);
+                }
+            }
+
+            $res .= $id++."\t".$items[0]."\t".$items[2]."\t".$cpos[0]."\t".$items[3]."\t";
+            if ( scalar @features > 0 ) {
+                $res .= join("|",@features);
+            } else {
+                $res .= "_";
+            }
+            $res .= "\t".$items[19]."\t".$depend."\t_\n";
+        }
+        $res .= "\n";
+    }
+
+    return $res;
+}
+
+# 中単位境界を判定
+sub create_middle {
+    my ($self, $kc_long, $out_long, $ref_mid, $pos) = @_;
+    my $res = "";
+
+    my %sp_prefix = ("各"=>1, "計"=>1, "現"=>1, "全"=>1, "非"=>1, "約"=>1);
+
+    if ( scalar(@$kc_long) < 1 ) {
+        return "";
+    } elsif ( scalar(@$kc_long) == 1 ) {
+        my @items = split(/[ \t]/, $$kc_long[0]);
+        $$ref_mid++;
+        $res .= join(" ",@{$$kc_long[0]}[0..18])." * ".$$ref_mid." ".join(" ",@{$$kc_long[0]}[0..0])."\n";
+    } elsif ( ${$$kc_long[0]}[13] =~ /^形状詞/ ) {
+        $$ref_mid++;
+        my @out = map {
+            [ split /\t/ ]
+        } split(/\r?\n/, shift @$out_long);
+
+        my @mid_text;
+        for my $i ( 0 .. $#{$kc_long} ) {
+            $mid_text[0] .= ${$$kc_long[$i]}[0];
+        }
+
+        $res .= join(" ",@{$$kc_long[0]}[0..18])." ".($pos+${$out[0]}[6]-1)." ".$$ref_mid." ".join(" ",@mid_text)."\n";
+        for my $i ( 1 .. $#{$kc_long}-1 ) {
+            $res .= join(" ",@{$$kc_long[$i]}[0..18])." ".($pos+${$out[$i]}[6]-1)." ".$$ref_mid."\n";
+        }
+        $res .= join(" ",@{$$kc_long[$#{$kc_long}]}[0..18])." * ".$$ref_mid."\n";
+    } else {
+        my @out = map {
+            [ split /\t/ ]
+        } split(/\r?\n/, shift @$out_long);
+
+        my $mid_pos = 0;
+        for my $i ( 0 .. $#out ) {
+            my $long = $$kc_long[$i];
+            @$long[21..25] = ("","","","","");
+            ${$$kc_long[$mid_pos]}[21] .= $$long[0];
+
+            if ( ${$out[$i]}[6] == 0 ) {
+                $$long[19] = "*";
+                $mid_pos = $i+1;
+                next;
+            }
+            if ( $i < $#out && ${$out[$i+1]}[3] eq "補助記号" ) {
+                $mid_pos = $i+1;
+            } elsif ( $i < $#out && ${$out[$i+1]}[3] eq "接頭辞" &&
+                          defined $sp_prefix{${$out[$i+1]}[2]} ) {
+                $mid_pos = $i+1;
+            } elsif ( ${$out[$i]}[3] eq "補助記号" ) {
+                $mid_pos = $i+1;
+            } elsif ( ${$out[$i]}[7] eq "P" ) {
+                if ( ${$out[$i]}[3] ne "接頭辞" ) {
+                    $mid_pos = $i+1;
+                }
+            } elsif ( $$long[3] =~ /^接頭辞/ ) {
+                if ( defined $sp_prefix{$$long[2]} ) {
+                    $mid_pos = $i+1;
+                }
+            } elsif ( $i < $#out-1 && ${$out[$i+1]}[0] != ${$out[$i]}[6] ) {
+                if ( ${$out[$i+2]}[0] == ${$out[$i]}[6] &&
+                         ( (${$out[$i+2]}[3] eq "名詞" && ${$out[$i+1]}[3] eq "接頭辞") ||
+                               (${$out[$i+2]}[3] eq "接尾辞" && ${$out[$i+1]}[3] eq "名詞")) ) {
+                    #$mid_pos = $i+1;
+                } else {
+                    $mid_pos = $i+1;
+                }
+            }
+            $$long[19] = $pos+${$out[$i]}[6]-1;
+        }
+        for my $i ( 0 .. scalar(@$kc_long)-1 ) {
+            my $long = $$kc_long[$i];
+            if ( $$long[21] ne "" ) {
+                $$ref_mid++;
+                $res .= join(" ",@$long[0..19])." ".$$ref_mid." ".$$long[21];
+            } else {
+                $res .= join(" ",@$long[0..19])." ".$$ref_mid;
+            }
+            $res .= "\n";
+        }
+    }
+
+    return $res;
+}
+
+
+############################################################
+# 形式の変換
+############################################################
+# KC2ファイルに対してpivot(Ba, B, I, Ia)を判定し、
+# 行頭または行末のカラムとして追加する。
+# これは従来のmkep + join_pivot_to_kc2 を置き換える。
+# pivot
+#    Ba  長単位先頭     品詞一致
+#    B   長単位先頭     品詞不一致
+#    Ia  長単位先頭以外 品詞一致
+#    I   長単位先頭以外 品詞不一致
+sub add_pivot_to_kc2 {
+    my ($self, $fh_ref_kc2, $fh_kc2, $fh_out, $flag) = @_;
+    my $front = (defined($flag) && $flag eq "0");
+    my $line_in_list = [<$fh_ref_kc2>];
+    my $curr_long_pos = "";
+
+    foreach my $i ( 0 .. $#{$line_in_list} ) {
+        my $line = Encode::decode("utf-8", $$line_in_list[$i]);
+        $line =~ s/\r?\n$//;
+        next if $line =~ /^\*B/;
+
+        if ( $line =~ /^EOS/ ) {
+            my $res = "\n";
+            $res = Encode::encode("utf-8", $res);
+            print $fh_out $res;
+            next;
+        }
+
+        my $pivot = "";
+        my $items = [split(/ /, $line)];
+        my $short_pos = join(" ", @$items[3 .. 5]);
+        my $long_pos  = join(" ", @$items[13 .. 15]);
+
+        if ( $long_pos =~ /^\*/ ) {
+            $pivot = "I";
+        } else {
+            $pivot = "B";
+            $curr_long_pos = $long_pos;
+        }
+
+        my $line_out = <$fh_kc2>;
+        $line_out = Encode::decode("utf-8", $line_out);
+        $line_out =~ s/\r?\n$//;
+
+        if ( $short_pos eq $curr_long_pos ) {
+            if ( $i < $#{$line_in_list} ) {
+                my $next_items = [split(/ /, $$line_in_list[$i+1])];
+                my $next_long_pos = join(" ", @$next_items[13 .. 15]);
+                if ( $next_long_pos !~ /^\*/ ) {
+                    $pivot .= "a";
+                }
+            } else {
+                $pivot .= "a";
+            }
+        }
+        my $res = $front ? "$pivot $line_out\n" : "$line_out $pivot\n";
+        $res = Encode::encode("utf-8", $res);
+        print $fh_out $res;
+    }
+    print $fh_out "\n";
+
+    undef $line_in_list;
+}
+
+# 動作：ホワイトスペースで区切られた１１カラム以上からなる行を一行ずつ読み、
+# 　　　２カラム目の内容を取り除いて１から１１カラムまでの内容（１０個の要素がスペース
+# 　　　一つで区切られている）の行にして出力する。
+# 　　　元のレコードが１１カラムに満たない場合は、該当箇所のデータをブランクとして扱う。
+sub delete_column_long {
+    my ($self, $data) = @_;
+    my $res = "";
+    my $num_of_column = 11;
+    foreach my $line ( split(/\r?\n/, $data) ) {
+        my $items = [split(/[ \t]/, $line)];
+        if ( scalar(@$items) > 2 ) {
+            $items = [@$items[0 .. 5, 10 .. 12]];
+        }
+        $res .= join(" ", @$items)."\n";
+    }
+    undef $data;
+
+    return $res;
+}
+
+# 動作：ホワイトスペースで区切られた１２カラム以上からなる行を１行ずつ読み、
+# 　　　次の順に並べなおして出力する。（数字は元のカラム位置。","は説明のために使用。
+# 　　　実際の区切りはスペース一つ）
+# 　　　（順番： 12, 1, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11）
+# 　　　元のレコードが１２カラムに満たない場合は、該当箇所のデータをブランクとして扱う。
+# 　　　ただし、１レコード以下の行は、その存在を無視する。
+sub move_future_front {
+    my ($self, $data) = @_;
+    my $res = "";
+    my $num_of_column = 12;
+    foreach my $line ( split(/\r?\n/, $data) ) {
+        my $items = [ split(/[ \t]/, $line) ];
+        while ( scalar(@$items) < $num_of_column ) {
+            push(@$items, "");
+        }
+        $items = [ @$items[scalar(@$items) - 1, 0 .. scalar(@$items) - 2 ]];
+        $res .= join(" ", @$items)."\n";
+    }
+    undef $data;
+    return $res;
+}
+
+# 動作：ホワイトスペースで区切られた１２カラム以上からなる行を１行ずつ読み、
+# 　　　１カラム目から１２カラム目までの内容をスペース一つで区切って出力する。
+sub truncate_last_column {
+    my ($self, $data) = @_;
+    my $res = "";
+    my $num_of_column = 12;
+    foreach my $line ( split(/\r?\n/, $data) ) {
+        my $items = [ split(/[ \t]/, $line) ];
+        while ( scalar(@$items) < $num_of_column ) {
+            push(@$items, "");
+        }
+        $res .= join(" ", @$items)."\n";
+    }
+    undef $data;
+    return $res;
+}
+
+
+############################################################
+# partial chunking
+############################################################
+# 前処理（partial chunkingの入力フォーマットへの変換）
+sub pp_partial {
+    my ($self, $data, $args) = @_;
+    my $res = "";
+    my ($prev, $curr, $next) = (0, 1, 2);
+    my $buff_list = [undef, undef];
+
+    my $B_label  = $args->{is_bnst} ? "B" : "B Ba";
+    my $BI_label = $args->{is_bnst} ? "B I" :
+        $self->{boundary} ne "word" ? "B Ba I Ia" : "I Ia";
+
+    foreach my $line ((split(/\r?\n/, $data), undef, undef)) {
+        push @$buff_list, $line;
+        if ( defined $buff_list->[$curr] && $buff_list->[$curr] !~ /^EOS|^\*B/ ) {
+            my $mark = "";
+            if ( $buff_list->[$prev] =~ /^EOS|^\*B/) {
+                $mark = $B_label;
+            } elsif ( !defined $buff_list->[$prev] ) {
+                $mark = $B_label;
+            } else {
+                $mark = $BI_label;
+            }
+            $buff_list->[$curr] .= " " . $mark;
+        }
+        my $new_line = shift @$buff_list;
+        if ( defined $new_line && $new_line !~ /^\*B/ ) {
+            $res .= $new_line."\n";
+        }
+    }
+    while ( my $new_line = shift(@$buff_list) ) {
+        if ( defined $new_line && $new_line !~ /^\*B/ ) {
+            $res .= $new_line."\n";
+        }
+    }
+
+    undef $data;
+    undef $buff_list;
+
+    return $res;
+}
+
+sub pp_partial_bnst_with_luw {
+    my ($self, $data, $svmout_file) = @_;
+    my $res = "";
+    my ($prev, $curr, $next) = (0, 1, 2);
+    my $buff_list = [undef, undef];
+
+    my $svmout_data = $self->read_from_file($svmout_file);
+    my $svmout_item_list = [split(/\r?\n/, $svmout_data)];
+    undef $svmout_data;
+
+    foreach my $line ( (split(/\r?\n/, $data), undef, undef) ) {
+        push @$buff_list, $line;
+        if ( defined $buff_list->[$curr] && $buff_list->[$curr] !~ /^EOS|^\*B/ ) {
+            my $mark = "";
+            my $lw = shift @$svmout_item_list;
+            my @svmout = split(/[ \t]/,$lw);
+            if ( $buff_list->[$prev] =~ /^EOS|^\*B/) {
+                $mark = "B";
+            } elsif ( !defined $buff_list->[$prev] ) {
+                $mark = "B";
+            } elsif ( $svmout[0] =~ /I/ ) {
+                $mark = "I";
+            } elsif ( $svmout[4] =~ /^動詞/ ) {
+                $mark = "B";
+            } elsif ( $svmout[4] =~ /^名詞|^形容詞|^副詞|^形状詞/ &&
+                          ($svmout[21] == 1 || $svmout[22] == 1) ) {
+                $mark = "B";
+            } else {
+                $mark = "B I";
+            }
+            $buff_list->[$curr] .= " ".$mark;
+        }
+        my $new_line = shift @$buff_list;
+        if ( defined $new_line && $new_line !~ /^\*B/ ) {
+            $res .= $new_line . "\n";
+        }
+    }
+    while ( my $new_line = shift(@$buff_list) ) {
+        if ( defined $new_line && $new_line !~ /^\*B/ ) {
+            $res .= $new_line."\n";
+        }
+    }
+
+    undef $data;
+    undef $buff_list;
+    undef $svmout_item_list;
+
+    return $res;
+}
+
+
+############################################################
+# フォーマットの変換
+############################################################
+# BCCWJの形式をComainu長単位解析の入力形式に変換
+sub bccwj2kc_file {
+    my ($self, $bccwj_file, $kc_file) = @_;
+    my $buff = $self->read_from_file($bccwj_file);
+    $buff = $self->bccwj2kc($buff, "");
+    $self->write_to_file($kc_file, $buff);
+    undef $buff;
+}
+
+sub bccwjlong2kc_file {
+    my ($self, $bccwj_file, $kc_file) = @_;
+    my $buff = $self->read_from_file($bccwj_file);
+    $buff = $self->bccwj2kc($buff, "with_luw");
+    $self->write_to_file($kc_file, $buff);
+    undef $buff;
+}
+
+# BCCWJの形式をComainu長単位解析の入力形式に変換
+sub bccwj2kc {
+    my ($self, $data, $type) = @_;
+    # my $cn = 17;
+    my $cn = 27;
+    if ( $self->{boundary} eq "word" || $type eq "with_luw" ) {
+        # $cn = 24;
+        # $cn = 25;
+        $cn = 34;
+    }
+    my $res = "";
+    foreach ( split(/\r?\n/, $data) ) {
+        # chomp;
+        my @suw = split(/\t/);
+        $res .= "EOS\n" if $res ne "" && $suw[3] =~ /^B/;
+
+        if( ($self->{boundary} eq "word" || $type eq "with_luw") && $suw[27] =~ /B/ ) {
+            $res .= "*B\n";
+        }
+        $suw[6] = $suw[5] if $suw[6] eq "" || $suw[6] =~ /NULL/;
+        $suw[7] = $suw[5] if $suw[7] eq "" || $suw[7] =~ /NULL/;
+
+        for my $i ( 0 .. $cn ) {
+            $suw[$i] = "*" if $suw[$i] eq "" || $suw[$i] =~ /NULL/;
+        }
+
+        $res .= "$suw[4] $suw[5] $suw[6] $suw[8] $suw[9] $suw[10] ";
+        $res .= "$suw[16] $suw[17] $suw[18] $suw[19] $suw[22] $suw[23] $suw[21] ";
+
+        if ( $type eq "with_luw" && $suw[27] =~ /B/ ) {
+            $res .= "$suw[31] $suw[32] $suw[33] $suw[29] $suw[30] $suw[28]\n";
+        } else {
+            $res .= "* * * * * *\n";
+        }
+    }
+
+    undef $data;
+
+    return $res;
+}
+
+## KCファイルを文節用の学習データに変換
+sub kc2bnstsvmdata {
+    my ($self, $data, $is_train) = @_;
+    my $res = "";
+
+    my $parenthetic = 0;
+    foreach my $line ( split(/\r?\n/,$data) ) {
+        if ( $line eq "EOS" ) {
+            if ( $is_train == 1 ) {
+                $res .= $line."\n";
+            } else {
+                $res .= $line."\n*B\n";
+            }
+            $parenthetic = 0;
+        } elsif ( $line =~ /^\*B/ ) {
+            $res .= $line."\n" if $is_train;
+        } else {
+            my @items = split(/[ \t]/, $line);
+            my @pos   = split(/\-/, $items[3]."-*-*-*");
+            my @cType = split(/\-/, $items[4]."-*-*");
+            my @cForm = split(/\-/, $items[5]."-*-*");
+            $res .= join(" ",@items[0..5]);
+            $res .= " ".join(" ",@pos[0..3])." ".join(" ",@cType[0..2])." ".join(" ",@cForm[0..2]);
+            if ( $items[3] eq "補助記号-括弧開" ) {
+                $res .= $parenthetic ? " I" : " B";
+                $parenthetic++;
+            } elsif ( $items[3] eq "補助記号-括弧閉" ) {
+                $parenthetic--;
+                $res .= " I";
+            } elsif ( $parenthetic ) {
+                $res .= " I";
+            } else {
+                $res .= " O";
+            }
+            $res .= "\n";
+        }
+    }
+
+    undef $data;
+
+    return $res;
+}
+
+sub kc2mstin {
+    my ($self, $data) = @_;
+    my $res = "";
+
+    my $short_terms = [];
+    my $pos = 0;
+    foreach my $line ( split(/\r?\n/, $data) ) {
+        next if $line =~ /^\*B/ || $line eq "";
+        if ( $line =~ /^EOS/ ) {
+            $res .= $self->create_mstfeature($short_terms, $pos);
+            $short_terms = [];
+            $pos = 0;
+            next;
+        }
+        my @items = split(/[ \t]/, $line);
+        if ( $items[13] ne "*" ) {
+            $res .= $self->create_mstfeature($short_terms, $pos);
+            $short_terms = [];
+        }
+        push @$short_terms, $line;
+        $pos++;
+    }
+
+    undef $data;
+    undef $short_terms;
+
+    return $res;
+}
+
+sub lout2kc4mid_file {
+    my ($self, $kc_lout_file, $kc_file) = @_;
+
+    my $kc_lout_data = $self->read_from_file($kc_lout_file);
+    my $kc_buff = "";
+    foreach my $line ( split(/\r?\n/, $kc_lout_data) ) {
+        my @items = split(/[ \t]/, $line);
+        if ( $items[0] =~ /^EOS/ ) {
+            $kc_buff .= "EOS\n";
+            next;
+        }
+        $kc_buff .= join(" ", @items[1..$#items-1])."\n";
+    }
+    $self->write_to_file($kc_file, $kc_buff);
+
+    undef $kc_lout_data;
+    undef $kc_buff;
+}
+
+# convert chasen(unidic) to mecab(unidic)
+sub chasen2mecab_file {
+    my ($self, $chasen_file, $kc_file) = @_;
+    my $buff = $self->read_from_file($chasen_file);
+    $buff = $self->chasen2mecab($buff);
+    $self->write_to_file($kc_file, $buff);
+    undef $buff;
+}
+
+# convert chasen(unidic) to mecab(unidic)
+sub chasen2mecab {
+    my ($self, $buff) = @_;
+
+    my $table = $MECAB_CHASEN_TABLE;
+    my $res_str = "";
+    my $item_name_list = [map {$table->{$_};} keys %$table];
+    $buff =~ s/\r?\n$//;
+
+    foreach my $line ( split(/\r?\n/, $buff) ) {
+        if ( $line =~ /^EOS/ ) {
+            $res_str .= $line."\n";
+            next;
+        }
+        next if $line !~ /<cha:W1.*?<\/cha:W1>/;
+
+        my $item_map = {};
+        foreach my $item_name (@$item_name_list) {
+            my ($item_value) = ($line =~ / $item_name=\"(.*?)\"/);
+            if(($item_name eq "cType" || $item_name eq "cForm") && !defined($item_value)) {
+                $item_value = "";
+            }
+            $item_value =~ s/\&lt;/\</gs;
+            $item_value =~ s/\&gt;/\>/gs;
+            $item_value =~ s/\&quot;/\'/gs;
+            $item_value =~ s/\&apos;/\"/gs;
+            $item_value =~ s/\&amp;/\&/gs;
+            $item_map->{$item_name} = $item_value;
+        }
+        my $value_list = [ map {
+            $item_map->{$table->{$_}};
+        } sort {$a <=> $b} keys %$table ];
+        $res_str .= sprintf("%s\n", join("\t", @$value_list));
+    }
+    $res_str .= "EOS\n" if $res_str !~ /EOS\s*$/;
+
+    undef $buff;
+    undef $item_name_list;
+
+    return $res_str;
+}
+
+sub mecab2kc {
+    my ($self, $buff) = @_;
+    my $table = $KC_MECAB_TABLE;
+    my $res_str = "";
+    my $first_flag = 0;
+    my $item_name_list = [keys %$table];
+    $buff =~ s/\r?\n$//;
+
+    foreach my $line ( split(/\r?\n/, $buff) ) {
+        if ( $line =~ /^EOS/ ) {
+            $first_flag = 1;
+            next;
+        }
+        my $item_list = [ split(/\t/, $line) ];
+        $item_list->[2] = $item_list->[1] if $item_list->[2] eq "";
+        $item_list->[3] = $item_list->[1] if $item_list->[3] eq "";
+        $item_list->[5] = "*"             if $item_list->[5] eq "";
+        $item_list->[6] = "*"             if $item_list->[6] eq "";
+        $item_list->[7] = "*"             if $item_list->[7] eq "";
+
+        my $value_list = [ map {
+            $table->{$_} eq "*" ? "*" : $item_list->[$table->{$_}];
+        } sort {$a <=> $b} keys %$table ];
+        $value_list = [ @$value_list, "*", "*", "*", "*", "*", "*", "*", "*" ];
+        if ( $first_flag == 1 ) {
+            $first_flag = 0;
+            $res_str .= "EOS\n";
+        }
+        $res_str .= sprintf("%s\n", join(" ", @$value_list));
+    }
+    $res_str .= "EOS\n";
+
+    undef $buff;
+    undef $item_name_list;
+
+    return $res_str;
+}
+
+# 入力用のフォーマットに変換
+sub format_inputdata {
+    my ($self, $test_kc, $tmp_test_kc, $input_type, $output_type) = @_;
+
+    my $buff = $self->read_from_file($test_kc);
+    $buff = $self->trans_dataformat($buff, $input_type, $output_type);
+    $self->write_to_file($tmp_test_kc, $buff);
+    undef $buff;
+}
+
+# 入力形式を内部形式に変換
+sub trans_dataformat {
+    my ($self, $input_data, $in_type, $out_type) = @_;
+
+    my $data_format_conf = $self->{data_format};
+    $self->check_file($data_format_conf);
+
+    my $data = $self->read_from_file($data_format_conf);
+    my %formats;
+    foreach my $line (split(/\r?\n/, $data)) {
+        my ($type, $format) = split(/\t/,$line);
+        $formats{$type} = $format;
+    }
+    $formats{kc} = "orthToken,reading,lemma,pos,cType,cForm,form,formBase,formOrthBase,formOrth,charEncloserOpen,charEncloserClose,wType,l_pos,l_cType,l_cForm,l_reading,l_lemma,l_orthToken";
+    $formats{bccwj} = "file,start,end,BOS,orthToken,reading,lemma,meaning,pos,cType,cForm,usage,pronToken,pronBase,kana,kanaBase,form,formBase,formOrthBase,formOrth,orthBase,wType,charEncloserOpen,charEncloserClose,originalText,order,BOB,LUW,l_orthToken,l_reading,l_lemma,l_pos,l_cType,l_cForm";
+    $formats{kc_mid} = "orthToken,reading,lemma,pos,cType,cForm,form,formBase,formOrthBase,formOrth,charEncloserOpen,charEncloserClose,wType,l_pos,l_cType,l_cForm,l_reading,l_lemma,l_orthToken,depend,MID,m_orthToken";
+
+    my %in_format = ();
+    my @items = split(/,/,$formats{$in_type});
+    for my $i ( 0 .. $#items ) {
+        $in_format{$items[$i]} = $i;
+    }
+
+    return $input_data if($formats{$in_type} eq $formats{$out_type});
+
+    my @out_format = split(/,/,$formats{$out_type});
+    my @trans_table = ();
+    for my $i ( 0 .. $#out_format ) {
+        $trans_table[$i] = $in_format{$out_format[$i]} // '*';
+    }
+    my $res = [];
+    foreach my $line ( split(/\r?\n/,$input_data) ) {
+        if ( $line =~ /^EOS|^\*B/ ) {
+            push @$res, $line;
+            next;
+        }
+        my @items = $in_type =~ /bccwj/ ? split(/\t/, $line) : split(/ /, $line);
+
+        my @tmp_buff = ();
+        for my $i ( 0 .. $#trans_table ) {
+            if ( $trans_table[$i] eq "*" || $trans_table[$i] eq "NULL" ) {
+                $tmp_buff[$i] = "*";
+            } else {
+                my $item = $items[$trans_table[$i]];
+                if($item eq "" || $item eq "NULL" || $item eq "\0") {
+                    $tmp_buff[$i] = "*";
+                } else {
+                    $tmp_buff[$i] = $item;
+                }
+            }
+        }
+        my $out;
+        if ( $out_type eq "kc" ) {
+            $out = join(" ",@tmp_buff);
+        } elsif ( $out_type eq "bccwj" ) {
+            $out = join("\t",@tmp_buff);
+        } elsif ( $out_type eq "kc_mid" ) {
+            $out = join(" ",@tmp_buff);
+        }
+        push @$res, $out;
+    }
+
+    undef $input_data;
+
+    return join "\n", @$res;
+}
+
+sub short2long {
+    my ($self, $data) = @_;
+    my $res = "";
+
+    foreach ( split(/\r?\n/, $data) ) {
+    	next if /^\*B/ || /^EOS/;
+
+        my @elem = split(/[ \t]/);
+        if ($elem[0] =~ /^[BI]/) { # remove B,Ba,I,Ia field *.lout
+            shift(@elem);
+        }
+        $elem[16] = "*" if($elem[16] eq "");
+        $elem[17] = "*" if($elem[17] eq "");
+        if ($elem[13] ne "" && $elem[13] ne "*") {
+            $res .= join(" ",@elem[18,16,17,13..15])."\n";
+        }
+    }
+    undef $data;
+
+    return $res;
+}
+
+sub short2bnst {
+    my ($self, $data) = @_;
+    my $res = "";
+
+    my $BOB = "B";
+    foreach ( split(/\r?\n/, $data) ) {
+        my @morph = split(/[ \t]/);
+        if ( $morph[0] =~ /^\*B|^EOS/ ) {
+            $BOB = "B";
+            next;
+        } elsif ( $morph[0] eq "B" || $morph[0] eq "I" ) {
+            $BOB = shift(@morph);
+        }
+        if ( $BOB eq "B" ) {
+            $BOB = "I";
+            $res .= "\n" if $res ne "";
+        }
+        $res .= $morph[0];
+    }
+
+    undef $data;
+
+    return $res;
+}
+
+sub short2middle {
+    my ($self, $data) = @_;
+    my $res = "";
+
+    my @muws;
+    my $muw_id = -1;
+    foreach my $line ( split(/\r?\n/,$data) ) {
+        my $mrph = [split(/[ \t]/, $line)];
+        next if $$mrph[0] =~ /^\*B|^EOS/;
+
+        $muw_id++ if $$mrph[21] ne "" && $$mrph[21] ne "*";
+        push @{$muws[$muw_id]},$mrph;
+    }
+    foreach my $muw (@muws) {
+        if ( scalar(@$muw) > 0 ) {
+            my $first = $$muw[0];
+            $res .= $$first[21]."\n";
+        }
+    }
+
+    undef $data;
+
+    return $res;
+}
+
+
+############################################################
+# ファイルのマージ
+############################################################
+sub merge_bccwj_with_kc_lout_file {
+    my ($self, $bccwj_file, $kc_lout_file, $lout_file) = @_;
+    my $bccwj_data = $self->read_from_file($bccwj_file);
+    my $kc_lout_data = $self->read_from_file($kc_lout_file);
+    my $lout_data = $self->merge_iof($bccwj_data, $kc_lout_data);
+    undef $bccwj_data;
+    undef $kc_lout_data;
+
+    $self->write_to_file($lout_file, $lout_data);
+    undef $lout_data;
+}
+
+# bccwj形式のファイルに長単位解析結果をマージ
+sub merge_iof {
+    my ($self, $bccwj_data, $lout_data) = @_;
+    my $res = "";
+    my $cn1 = 16;
+    #my $cn1 = 26;
+    if ( $self->{"boundary"} eq "word" ) {
+        #$cn1 = 23;
+        $cn1 = 27;
+        #$cn1 = 34;
+    }
+    my $cn2 = 19;
+    $lout_data =~ s/^EOS.*?\n//mg;
+    my @m = split(/\r?\n/, $lout_data);
+    undef $lout_data;
+
+    my $long_pos = "";
+    foreach ( split(/\r?\n/, $bccwj_data) ) {
+        my @morph = split(/\t/);
+        if ($#morph+1 < $cn1) {
+            print STDERR "Some columns are missing in bccwj_data!\n";
+            print STDERR "  morph(".($#morph+1).") < sn1(".$cn1.")\n";
+        }
+        my $lw = shift(@m);
+        $lw = shift(@m) if($lw =~ /^EOS|^\*B/);
+        my @ml = split(/[ \t]/, $lw);
+        if ($#ml+1 < $cn2) {
+            print STDERR "Some columns are missing in bccwj_data!\n";
+            print STDERR "  ml(".($#ml+1).") < cn2(".$cn2.")\n";
+            print STDERR "$ml[1]\n";
+        }
+        if ($morph[4] ne $ml[1]) {
+            print STDERR "Two files cannot be marged!: '$morph[4]' ; '$ml[1]'\n";
+        }
+        if ($ml[0] =~ /^B/) {
+            $long_pos = $ml[14];
+        }
+        if ( $self->{boundary} eq "word" ) {
+            @morph[28..33] = @ml[19,17..18,14..16];
+        } else {
+            @morph[27..33] = @ml[0,19,17..18,14..16];
+        }
+        if ( $morph[8] eq "名詞-普通名詞-形状詞可能" ||
+                 $morph[8] eq "名詞-普通名詞-サ変形状詞可能" ) {
+            if ( $long_pos eq "形状詞-一般" ) {
+                $morph[11] = "形状詞";
+            } else {
+                $morph[11] = "名詞";
+            }
+        } elsif ( $morph[8] eq "名詞-普通名詞-副詞可能" ) {
+            if ( $long_pos eq "副詞" ) {
+                $morph[11] = "副詞";
+            } else {
+                $morph[11] = "名詞";
+            }
+        }
+        my $nm = join("\t", @morph);
+        $res .= "$nm\n";
+    }
+
+    undef $bccwj_data;
+
+    if ( $#m > -1 ) {
+        print STDERR "Two files do not correspond to each other!\n";
+    }
+    return $res;
+}
+
+sub merge_bccwj_with_kc_bout_file {
+    my ($self, $bccwj_file, $kc_bout_file, $bout_file) = @_;
+    my $bccwj_data = $self->read_from_file($bccwj_file);
+    my $kc_bout_data = $self->read_from_file($kc_bout_file);
+    my @m = split(/\r?\n/, $kc_bout_data);
+    undef $kc_bout_data;
+
+    my $bout_data = "";
+    foreach ( split(/\r?\n/, $bccwj_data) ) {
+        my $item_list = [split(/\t/)];
+        my $lw = shift(@m);
+        $lw = shift(@m) if $lw =~ /^EOS|^\*B/;
+        my @ml = split(/[ \t]/, $lw);
+        $$item_list[26] = $ml[0];
+        $bout_data .= join("\t",@$item_list)."\n";
+    }
+    undef $bccwj_data;
+
+    $self->write_to_file($bout_file, $bout_data);
+    undef $bout_data;
+}
+
+sub merge_bccwj_with_kc_mout_file {
+    my ($self, $bccwj_file, $kc_mout_file, $mout_file) = @_;
+    my $bccwj_data = $self->read_from_file($bccwj_file);
+    my $kc_mout_data = $self->read_from_file($kc_mout_file);
+    my @m = split(/\r?\n/, $kc_mout_data);
+    undef $kc_mout_data;
+
+    my $mout_data = "";
+    foreach ( split(/\r?\n/, $bccwj_data) ) {
+        my $item_list = [split(/\t/)];
+        my $lw = shift(@m);
+        $lw = shift(@m) if $lw =~ /^EOS|^\*B/;
+        my @ml = split(/[ \t]/, $lw);
+        @$item_list[34..36] = @ml[19..21];
+        $mout_data .= join("\t",@$item_list)."\n";
+    }
+    undef $bccwj_data;
+
+    $self->write_to_file($mout_file, $mout_data);
+    undef $mout_data;
+}
+
+sub merge_mecab_with_kc_lout_file {
+    my ($self, $mecab_file, $kc_lout_file, $lout_file) = @_;
+    my $mecab_data = $self->read_from_file($mecab_file);
+    my $kc_lout_data = $self->read_from_file($kc_lout_file);
+    my $kc_lout_data_list = [ split(/\r?\n/, $kc_lout_data) ];
+    undef $kc_lout_data;
+
+    my $lout_data = "";
+    foreach my $mecab_line ( split(/\r?\n/, $mecab_data) ) {
+        if ( $mecab_line =~ /^EOS|^\*B/ ) {
+            $lout_data .= $mecab_line."\n";
+            next;
+        }
+        my $mecab_item_list = [ split(/\t/, $mecab_line, -1) ];
+        my $kc_lout_line = shift(@$kc_lout_data_list);
+        $kc_lout_line = shift(@$kc_lout_data_list) if $kc_lout_line =~ /^EOS/;
+        my $kc_lout_item_list = [ split(/[ \t]/, $kc_lout_line) ];
+        push(@$mecab_item_list, splice(@$kc_lout_item_list, 14, 6));
+        $lout_data .= sprintf("%s\n", join("\t", @$mecab_item_list));
+    }
+    undef $mecab_data;
+    undef $kc_lout_data_list;
+
+    $self->write_to_file($lout_file, $lout_data);
+    undef $lout_data;
+}
+
+sub merge_mecab_with_kc_bout_file {
+    my ($self, $mecab_file, $kc_bout_file, $bout_file) = @_;
+    my $mecab_data = $self->read_from_file($mecab_file);
+    my $kc_bout_data = $self->read_from_file($kc_bout_file);
+    my $kc_bout_data_list = [split(/\r?\n/, $kc_bout_data)];
+    undef $kc_bout_data;
+
+    my $bout_data = "";
+    foreach my $mecab_line ( split(/\r?\n/, $mecab_data) ) {
+        my $kc_bout_line = shift @$kc_bout_data_list;
+        $bout_data .= "*B\n" if $kc_bout_line =~ /B/;
+        $bout_data .= $mecab_line."\n" if $mecab_line !~ /^\*B/;
+    }
+    undef $mecab_data;
+    undef $kc_bout_data_list;
+
+    $self->write_to_file($bout_file, $bout_data);
+    undef $bout_data;
+}
+
+sub merge_mecab_with_kc_mout_file {
+    my ($self, $mecab_file, $kc_mout_file, $mout_file) = @_;
+    my $mecab_data = $self->read_from_file($mecab_file);
+    my $kc_mout_data = $self->read_from_file($kc_mout_file);
+    my $kc_mout_data_list = [split(/\r?\n/, $kc_mout_data)];
+    undef $kc_mout_data;
+
+    my $mout_data = "";
+    foreach my $mecab_line ( split(/\r?\n/, $mecab_data) ) {
+        if ( $mecab_line =~ /^EOS|^\*B/ ) {
+            $mout_data .= $mecab_line."\n";
+            next;
+        }
+        my $mecab_item_list = [ split(/\t/, $mecab_line, -1) ];
+        my $kc_mout_line = shift @$kc_mout_data_list;
+        $kc_mout_line = shift @$kc_mout_data_list if $kc_mout_line =~ /^EOS/;
+        my $kc_mout_item_list = [ split(/[ \t]/, $kc_mout_line) ];
+        push(@$mecab_item_list, splice(@$kc_mout_item_list, 14, 9));
+        $mout_data .= sprintf("%s\n", join("\t", @$mecab_item_list));
+    }
+    undef $mecab_data;
+    undef $kc_mout_data_list;
+
+    $self->write_to_file($mout_file, $mout_data);
+    undef $mout_data;
+}
+
+sub merge_mout_with_kc_mstout_file {
+    my ($self, $kc_file, $out_file) = @_;
+    my $res = "";
+
+    my $out_long = [];
+    my $long_word = "";
+    foreach my $line ( split(/\r?\n/, $self->read_from_file($out_file)) ) {
+        if ( $line eq "" ){
+            next if $long_word eq "";
+            push @$out_long, $long_word;
+            $long_word = "";
+        } else {
+            $long_word .= $line."\n";
+        }
+    }
+    push @$out_long, $long_word if $long_word ne "";
+
+    my $pos = 0;
+    my $mid = -1;
+    my $kc_long = [];
+    foreach my $line ( split(/\r?\n/, $self->read_from_file($kc_file)) ) {
+    	next if $line eq "";
+        if ( $line =~ /^EOS/ ) {
+            $res .= $self->create_middle($kc_long, $out_long, \$mid, $pos);
+            $pos = 0;
+            $res .= "EOS\n";
+            $mid = -1;
+            $kc_long = [];
+        } elsif ( $line =~ /^\*B/ ) {
+        } else {
+            my @items = split(/[ \t]/, $line);
+            if ( $items[13] ne "*" ) {
+                $res .= $self->create_middle($kc_long, $out_long, \$mid, $pos);
+                $pos += scalar(@$kc_long);
+                $kc_long = [];
+                push @$kc_long, \@items;
+            } else {
+                push @$kc_long, \@items;
+            }
+        }
+    }
+
+    undef $out_long;
+    undef $kc_long;
+
+    return $res;
+}
+
+sub merge_kc_with_svmout {
+    my ($self, $kc_file, $svmout_file) = @_;
+
+    my $res = "";
+    my @long;
+    my $kc_data = $self->read_from_file($kc_file);
+    my $svmout_data = $self->read_from_file($svmout_file);
+    my $svmout_data_list = [split(/\r?\n/, $svmout_data)];
+    undef $svmout_data;
+
+    foreach my $kc_data_line ( split(/\r?\n/, $kc_data) ) {
+    	if ( $kc_data_line =~ /^EOS/ && $self->{luwmrph} eq "without" ) {
+    	    $res .= "EOS\n";
+    	    next;
+    	}
+    	next if $kc_data_line =~ /^\*B|^EOS/;
+    	my @kc_item_list = split(/[ \t]/, $kc_data_line);
+
+    	my $svmout_line = shift(@$svmout_data_list);
+    	my $svmout_item_list = [split(/[ \t]/, $svmout_line)];
+    	@$svmout_item_list[10..15] = ("*","*","*","*","*","*");
+
+        if ( $$svmout_item_list[0] eq "B" || $$svmout_item_list[0] eq "Ba") {
+            map { $res .= join(" ",@$_)."\n" } @long;
+
+            @long = ();
+            if ( $self->{"luwmrph"} ne "without" ) {
+                @$svmout_item_list[10..15] = @$svmout_item_list[4..6,2,3,1];
+            } else {
+                @$svmout_item_list[13..15] = @$svmout_item_list[2,3,1];
+            }
+        } else {
+            my $first = $long[0];
+            $$first[17] .= $$svmout_item_list[2];
+            $$first[18] .= $$svmout_item_list[3];
+            $$first[19] .= $$svmout_item_list[1];
+            if ( $$svmout_item_list[0] eq "Ia" &&
+                     $self->{"luwmrph"} ne "without") {
+                @$first[14..16] = @$svmout_item_list[4..6];
+            }
+        }
+        push @long, [@$svmout_item_list[0],@kc_item_list[0..12],@$svmout_item_list[10..15]];
+    }
+
+    map { $res .= join(" ",@$_)."\n" } @long;
+
+    undef $kc_data;
+    undef $svmout_data_list;
+    undef @long;
+
+    return $res;
+}
+
+sub merge_kc_with_bout {
+    my ($self, $kc_file, $bout_file) = @_;
+
+    my $res = "";
+    my $kc_data = $self->read_from_file($kc_file);
+    my $bout_data = $self->read_from_file($bout_file);
+    my $bout_data_list = [split(/\r?\n/, $bout_data)];
+    undef $bout_data;
+
+    foreach my $kc_data_line (split(/\r?\n/, $kc_data)) {
+    	next if $kc_data_line =~ /^\*B/;
+
+        if ( $kc_data_line =~ /^EOS/ ) {
+    	    $res .= "EOS\n";
+    	    next;
+    	}
+    	my @kc_item_list = split(/[ \t]/, $kc_data_line);
+    	my $bout_line = shift(@$bout_data_list);
+    	my $bout_item_list = [split(/[ \t]/, $bout_line)];
+    	$res .= $$bout_item_list[0]." ".join(" ",@kc_item_list[0..12])."\n";
+    }
+
+    undef $kc_data;
+    undef $bout_data_list;
+
+    return $res;
+}
+
+
+############################################################
+# Tool関連
+############################################################
+# CRF++用のテンプレート作成
+sub create_template {
+    my ($self, $template_file, $feature_num) = @_;
+
+    my $buff = "";
+    my $index = 1;
+
+    for my $i (0, 2 .. $feature_num) {
+        for my $j (-2..2) { $buff .= "U".$index++.":%x[$j,$i]\n"; }
+        for my $k (-2..1) { $buff .= "U".$index++.":%x[$k,$i]/%x[".($k+1).",$i]\n"; }
+        for my $l (-2..0) { $buff .= "U".$index++.":%x[$l,$i]/%x[".($l+1).",$i]/%x[".($l+2).",$i]\n"; }
+    }
+    $buff .= "\n";
+
+    my @features = qw(2_3_1 2_4_1 2_5_1 2_3_3 2_4_3 2_5_3);
+    foreach my $feature ( @features ) {
+        my ($arg1, $arg2, $type) = split(/\_/, $feature);
+        if ( $type == 0 ) {
+            for my $l ( -2 .. 2 ) {
+                $buff .= "U".$index++.":%x[$l,$arg1]/%x[$l,$arg2]\n";
+            }
+            $buff .= "\n";
+        } elsif ( $type == 1 ) {
+            for my $l ( -2 .. 1 ) {
+                $buff .= "U".$index++.":%x[$l,$arg1]/%x[".($l+1).",$arg2]\n";
+                $buff .= "U".$index++.":%x[$l,$arg2]/%x[".($l+1).",$arg1]\n";
+            }
+            $buff .= "\n";
+        } elsif ( $type == 2 ) {
+            for my $l ( -2 .. 1 ) {
+                $buff .= "U".$index++.":%x[$l,$arg1]/%x[".($l+1).",$arg2]\n";
+                $buff .= "U".$index++.":%x[$l,$arg2]/%x[".($l+1).",$arg1]\n";
+            }
+            for my $l ( -2 .. 0 ) {
+                $buff .= "U".$index++.":%x[$l,$arg1]/%x[".($l+2).",$arg2]\n";
+                $buff .= "U".$index++.":%x[$l,$arg2]/%x[".($l+2).",$arg1]\n";
+            }
+            $buff .= "\n";
+        } elsif ( $type == 3 ) {
+            for my $l ( -2 .. 1 ) {
+                if ( $arg1 > 3 ) {
+                    $buff .= "U".$index++.":%x[$l,$arg1]/%x[$l,$arg2]/%x[".($l+1).",$arg1]\n";
+                    $buff .= "U".$index++.":%x[$l,$arg1]/%x[".($l+1).",$arg1]/%x[".($l+1).",$arg2]\n";
+                }
+                $buff .= "U".$index++.":%x[$l,$arg1]/%x[$l,$arg2]/%x[".($l+1).",$arg2]\n";
+                $buff .= "U".$index++.":%x[$l,$arg2]/%x[".($l+1).",$arg1]/%x[".($l+1).",$arg2]\n";
+            }
+            $buff .= "\n";
+        }
+    }
+
+    $buff .= "\nB\n";
+
+    $self->write_to_file($template_file, $buff);
+    undef $buff;
+}
+
+## テンプレート(後処理用)の作成
+sub create_BI_template {
+    my ($self, $template_file, $feature_num, $num) = @_;
+
+    my $buff = "";
+    my $index = 0;
+    foreach my $i ( 0 .. $feature_num ) {
+        $buff .= "U".$index++.":%x[0,".$i."]\n";
+    }
+    $buff .= "\n";
+    foreach my $i ( 0 .. $feature_num/3 ) {
+        $buff .= "U".$index++.":%x[0,".$i."]/%x[0,".($i+$feature_num/3)."]\n";
+        $buff .= "U".$index++.":%x[0,".($i+$feature_num/3)."]/%x[0,".($i+$feature_num/3*2)."]\n";
+    }
+    for my $i ( 1 .. $num ) {
+        $buff .= "U".$index++.":%x[0,".($feature_num+$i)."]\n";
+    }
+    $buff .= "\n";
+    $self->write_to_file($template_file, $buff);
+    undef $buff;
+}
+
+
+sub check_luwmodel {
+   my ($self, $luwmodel) = @_;
+
+   if ( $self->{luwmodel} eq "SVM" || $self->{luwmodel} eq "CRF" ) {
+       unless ( -f $luwmodel ) {
+           printf(STDERR "ERROR: '%s' not found or not a file.\n",
+                  $luwmodel);
+           die;
+       }
+   } elsif ( $self->{uwmodel} eq "MIRA" ) {
+       unless ( -d $luwmodel ) {
+           printf(STDERR "ERROR: '%s' not found or not a dir.\n",
+                  $luwmodel);
+           die;
+       }
+   } else {
+       printf(STDERR "ERROR: '%s' not found model name.\n",
+              $self->{luwmodel});
+       die;
+   }
+}
+
+# yamchaのMakefileを作成
+sub create_yamcha_makefile {
+    my ($self, $model_dir, $basename) = @_;
+
+    my $yamcha = $self->{"yamcha-dir"} . "/yamcha";
+    my $yamcha_tool_dir = $self->get_yamcha_tool_dir;
+    my $svm_tool_dir = $self->{"svm-tool-dir"};
+    my $svm_learn = $svm_tool_dir . "/svm_learn";
+
+    my $comainu_etc_dir = $self->{"comainu-home"} . "/etc";
+    my $conf_file = $comainu_etc_dir . "/yamcha_training.conf";
+
+    printf(STDERR "# use yamcha_training_conf_file=\"%s\"\n", $conf_file);
+    my $conf = $self->load_yamcha_training_conf($conf_file);
+    my $makefile_template = $yamcha_tool_dir . "/Makefile";
+    my $check = $self->check_yamcha_training_makefile_template($makefile_template);
+
+    if ( $check == 0 ) {
+        $makefile_template = $comainu_etc_dir . "/yamcha_training.mk";
+    }
+    printf(STDERR "# use yamcha_training_makefile_template=\"%s\"\n",
+           $makefile_template);
+    my $makefile = $model_dir . "/" . $basename . ".Makefile";
+
+    my $buff = $self->read_from_file($makefile_template);
+
+    if ( $check == 0 ) {
+        $buff =~ s/^(TOOLDIR.*)$/\# $1\nTOOLDIR    = $yamcha_tool_dir/mg;
+        printf(STDERR "# changed TOOLDIR : %s\n", $yamcha_tool_dir);
+        $buff =~ s/^(YAMCHA.*)$/\# $1\nYAMCHA    = $yamcha/mg;
+        printf(STDERR "# changed YAMCHA : %s\n", $yamcha);
+    }
+
+    if ( $svm_tool_dir ne "" ) {
+        $buff =~ s/^(SVM_LEARN.*)$/\# $1\nSVM_LEARN = $svm_learn/mg;
+        printf(STDERR "# changed SVM_LEARN : %s\n", $svm_learn);
+    }
+    if ( $conf->{SVM_PARAM} ne "" ) {
+        $buff =~ s/^(SVM_PARAM.*)$/\# $1\nSVM_PARAM  = $conf->{"SVM_PARAM"}/mg;
+        printf(STDERR "# changed SVM_PARAM : %s\n", $conf->{"SVM_PARAM"});
+    }
+    if ( $conf->{FEATURE} ne "" ) {
+        $buff =~ s/^(FEATURE.*)$/\# $1\nFEATURE    = $conf->{"FEATURE"}/mg;
+        printf(STDERR "# changed FEATURE : %s\n", $conf->{"FEATURE"});
+    }
+    if ( $conf->{DIRECTION} ne "" ) {
+        $buff =~ s/^(DIRECTION.*)$/\# $1\nDIRECTION  = $conf->{"DIRECTION"}/mg;
+        printf(STDERR "# changed DIRECTION : %s\n", $conf->{"DIRECTION"});
+    }
+    if ( $self->{method} ne 'kc2bnstmodel' && $conf->{"MULTI_CLASS"} ne "" ) {
+        $buff =~ s/^(MULTI_CLASS.*)$/\# $1\nMULTI_CLASS = $conf->{"MULTI_CLASS"}/mg;
+        printf(STDERR "# changed MULTI_CLASS : %s\n", $conf->{"MULTI_CLASS"});
+    }
+
+    {
+        # patch for zip
+        # remove '#' at end of line by svm_light
+        my $patch_for_zip_str = "### patch for zip ###\n\t\$(PERL) -pe 's/#\\r?\$\$//;' \$(MODEL).svmmodel > \$(MODEL).svmmodel.patched\n\tmv -f \$(MODEL).svmmodel.patched \$(MODEL).svmmodel\n#####################\n";
+        $buff =~ s/(zip:\n)/$1$patch_for_zip_str/;
+        printf(STDERR "# patched zip target\n");
+    }
+
+    {
+        # patch for compile
+        # fixed the problem that it uses /bin/gzip in mkmodel.
+        my $patch_for_compile_str = "### patch for compile ###\n\t\$(GZIP) -dc \$(MODEL).txtmodel.gz | \$(PERL) \$(TOOLDIR)/mkmodel -t \$(TOOLDIR) - \$(MODEL).model\n#########################\n";
+        $buff =~ s/(compile:\n)([^\n]+\n)/$1\#$2$patch_for_compile_str/;
+        printf(STDERR "# patched compile target\n");
+    }
+
+    $self->write_to_file($makefile, $buff);
+    undef $buff;
+
+    return $makefile;
+}
+
+sub get_yamcha_tool_dir {
+    my $self = shift;
+    my $yamcha_tool_dir = $self->{"yamcha-dir"}."/libexec/yamcha";
+    unless ( -d $yamcha_tool_dir ) {
+        $yamcha_tool_dir = $self->{"yamcha-dir"}."/../libexec/yamcha";
+    }
+    unless ( -d $yamcha_tool_dir ) {
+        printf(STDERR "# Error: not found YAMCHA TOOL_DIR (libexec/yamcha) '%s'\n",
+               $yamcha_tool_dir);
+        $yamcha_tool_dir = undef;
+    }
+    return $yamcha_tool_dir;
+}
+
+sub load_yamcha_training_conf {
+    my ($self, $file) = @_;
+    my $conf = {};
+    open(my $fh, $file) or die "Cannot open '$file'";
+    while ( my $line = <$fh> ) {
+        $line =~ s/\r?\n$//;
+        next if $line =~ /^\#|^\s*$/;
+
+        if ( $line =~ /^(.*?)=(.*)/ ) {
+            my ($key, $value) = ($1, $2);
+            $value =~ s/^\s*\"(.*)\"$\s*$/$1/;
+            $value =~ s/^\s*\'(.*)\'$\s*$/$1/;
+            $conf->{$key} = $value;
+        }
+    }
+    close($fh);
+    return $conf;
+}
+
+sub check_yamcha_training_makefile_template {
+    my ($self, $yamcha_training_makefile_template) = @_;
+
+    unless ( -f $yamcha_training_makefile_template ) {
+        printf(STDERR "# Warning: Not found yamcha_training_makefile_template \"%s\"\n", $yamcha_training_makefile_template);
+        return 0;
+    }
+
+    my $buff = $self->read_from_file($yamcha_training_makefile_template);
+    if ( $buff !~ /^train:/ms ) {
+        printf(STDERR "# Warning: Not found \"train:\" target in yamcha_training_makefile_template \"%s\"\n", $yamcha_training_makefile_template);
+        return 0;
+    }
+    undef $buff;
+    return 1;
+}
+
+############################################################
+# 使ってない関数
+############################################################
+# 文節情報に基づいたカラムを追加して出力する
+# 付加条件：
+# 前の行に*Bや*Pがある場合は L
+# 後ろの行に*Bや*Pがある場合は R
+# 両方にある場合は B
+# どちらにも無い場合はN
+# ファイル終端行は R または B
+sub add_column {
+    my ($self, $data) = @_;
+    my $res = "";
+    my ($prev, $curr, $next) = (0, 1, 2);
+    my $buff_list = [undef, undef];
+
+    $data .= "*B\n";
+    foreach my $line ((split(/\r?\n/, $data), undef, undef)) {
+        push(@$buff_list, $line);
+        if ( defined $buff_list->[$curr] && $buff_list->[$curr] !~ /^EOS/ &&
+                 $buff_list->[$curr] !~ /^\*B/ ) {
+            my $mark = "";
+            if ( $buff_list->[$prev] =~ /^\*B/ && $buff_list->[$next] =~ /^\*B/) {
+                $mark = "B";
+            } elsif ( $buff_list->[$prev] =~ /^\*B/ ) {
+                $mark = "L";
+            } elsif ( $buff_list->[$next] =~ /^\*B/ ) {
+                $mark = "R";
+            } else {
+                $mark = "N";
+            }
+            $buff_list->[$curr] .= " ".$mark;
+        }
+        my $new_line = shift(@$buff_list);
+        if ( defined $new_line && $new_line !~ /^\*B/ ) {
+            $res .= $new_line."\n";
+        }
+    }
+    while ( my $new_line = shift(@$buff_list) ) {
+        if ( defined $new_line && $new_line !~ /^\*B/ ) {
+            $res .= $new_line."\n";
+        }
+    }
+
+    undef $data;
+    undef $buff_list;
+
+    return $res;
+}
+
+#
+# poscreateの代わりの関数
+# 長単位の品詞・活用型・活用形を生成
+#
+sub poscreate {
+    my ($self, $file) = @_;
+    my $res = "";
+
+    my @long;
+    open(IN, $file);
+    while ( my $line = <IN> ) {
+        $line = Encode::decode("utf-8", $line);
+        $line =~ s/\r?\n//;
+        next if $line eq "";
+        my @items = split(/[ \t]/, $line);
+
+        # $items[10] = "*";
+        # $items[11] = "*";
+        @items[10..15] = ("*","*","*","*","*","*");
+
+        if ( $self->{"luwmrph"} ne "without" ) {
+            if ( $items[0] eq "B" || $items[0] eq "Ba" ) {
+                map { $res .= join(" ",@$_)."\n" } @long;
+
+                @long = ();
+                @items[10..15] = @items[4..6,2,3,1];
+            } else {
+                my $first = $long[0];
+                $$first[13] .= $items[2];
+                $$first[14] .= $items[3];
+                $$first[15] .= $items[1];
+                if ( $items[0] eq "Ia" ) {
+                    @$first[10..12] = @items[4..6];
+                }
+            }
+        }
+        push @long, [@items[0..15]];
+    }
+    close(IN);
+    map { $res .= join(" ",@$_)."\n" } @long;
+
+    undef @long;
+
+    return $res;
+}
+
+# 後処理（「動詞」となる長単位の活用型、活用形）
+# アドホックな後処理-->書き換え規則を変更する方針
+sub pp_ctype {
+    my ($self, $data) = @_;
+    my $res = "";
+    my @lw;
+    foreach ( split(/\r?\n/, $data) ) {
+        if (/^B/) {
+            if ($#lw > -1) {
+                my @last = split(/[ \t]/, $lw[$#lw]);
+                if ($last[8] ne "*") {
+                    my @first = split(/[ \t]/, shift(@lw));
+                    if ($first[13] eq "*" && $first[12] =~ /^動詞/) {
+                        $first[13] = $last[7];
+                   }
+                    if ($first[14] eq "*" && $first[12] =~ /^動詞/) {
+                        $first[14] = $last[8];
+                    }
+                    unshift(@lw, join(" ", @first));
+                }
+                foreach (@lw) {
+                    # print "$_\n";
+                    $res .= "$_\n";
+                }
+                @lw = ();
+                push(@lw, $_);
+            } else {
+                push(@lw, $_);
+            }
+        } else {
+            push(@lw, $_);
+        }
+    }
+    undef $data;
+
+    if ($#lw > -1) {
+        my @last = split(/[ \t]/, $lw[$#lw]); # fixed by jkawai
+        if ($last[8] ne "*") {
+            my @first = split(/[ \t]/, $lw[0]);
+            if ($first[13] eq "*" && $first[12] =~ /^動詞/) {
+                $first[13] = $last[7];
+            }
+            if ($first[14] eq "*" && $first[12] =~ /^動詞/) {
+                $first[14] = $last[8];
+            }
+        }
+        foreach (@lw) {
+            # print "$_\n";
+            $res .= "$_\n";
+        }
+    }
+    return $res;
+}
+
 
 ############################################################
 # Utilities
 ############################################################
+sub check_args {
+    my ($self, $args_ok) = @_;
 
-sub exists_file {
-    my ($self, $file) = @_;
-    my $flag = (-f $file);
-    unless ($flag) {
-        printf(STDERR "WARNING: '%s' not Found.\n", $file);
+    unless ( $args_ok ) {
+        printf(STDERR "Error: invalid arg\n");
+        my $method = "USAGE_" . $self->{method};
+        $self->$method;
+        exit 0;
     }
-    return $flag;
+}
+
+sub check_file {
+    my ($self, $file) = @_;
+    unless ( -f $file ) {
+        printf(STDERR "Error: '%s' not Found.\n", $file);
+        die;
+    }
 }
 
 sub read_from_file {
@@ -4739,13 +3799,6 @@ sub write_to_file {
     print $fh $data;
     close($fh);
     undef $data;
-}
-
-sub copy_file {
-    my ($self, $src_file, $dest_file) = @_;
-    my $buff = $self->read_from_file($src_file);
-    $self->write_to_file($dest_file, $buff);
-    undef $buff;
 }
 
 sub proc_stdin2stdout {
