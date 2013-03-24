@@ -137,6 +137,8 @@ sub execute_test {
     undef $long_units;
     undef $BI_units;
 
+    unlink $kc2file if !$self->{debug} && -f $kc2file;
+
     return $res."\n";
 }
 
@@ -343,6 +345,7 @@ sub exec_test {
     }
     print STDERR "# $com1\n";
     system($com1);
+    unlink $pos if !$self->{debug} && -f $pos;
 
     my $cType = $temp_dir."/cType/".$TESTNAME.".BI_cType.dat";
     my $cType_out = $temp_dir."/cType/".$TESTNAME.".BI_cType.out";
@@ -356,6 +359,7 @@ sub exec_test {
     }
     print STDERR "# $com2\n";
     system($com2);
+    unlink $cType if !$self->{debug} && -f $cType;
 
     my $cForm = $temp_dir."/cForm/".$TESTNAME.".BI_cForm.dat";
     my $cForm_out = $temp_dir."/cForm/".$TESTNAME.".BI_cForm.out";
@@ -369,6 +373,7 @@ sub exec_test {
     }
     print STDERR "# $com3\n";
     system($com3);
+    unlink $cForm if !$self->{debug} && -f $cForm;
 }
 
 
@@ -412,6 +417,10 @@ sub merge_data {
     undef %h_label;
     undef %k1_label;
     undef %k2_label;
+
+    unlink $pos_file   if !$self->{debug} && -f $pos_file;
+    unlink $cType_file if !$self->{debug} && -f $cType_file;
+    unlink $cForm_file if !$self->{debug} && -f $cForm_file;
 }
 
 sub create_cType_dat {

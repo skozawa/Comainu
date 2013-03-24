@@ -176,6 +176,9 @@ sub kc2longout_internal {
         if $self->{luwmodel} eq "MIRA";
     $self->merge_chunk_result($tmp_test_kc, $save_dir);
     $self->post_process($train_kc, $tmp_test_kc, $luwmodel, $save_dir);
+
+    unlink $tmp_test_kc if !$self->{debug} &&
+        -f $tmp_test_kc && $self->{bnst_process} ne 'with_luw';
 }
 
 # 解析用KC２ファイルへ素性追加
@@ -252,7 +255,7 @@ sub chunk_luw {
 
     my $buff = $self->read_from_file($input_file);
     $buff =~ s/ /\t/mg if $self->{luwmodel} eq 'MIRA';
-    $buff =~ s/^EOS.*?//mg if $self->{luwmodel} eq 'CRF' || $self->{luwmodel} eq 'MIRA';
+    $buff =~ s/^EOS.*?//mg if $self->{luwmodel} ~~ ['CRF', 'MIRA'];
     # yamchaやCRF++のために、明示的に最終行に改行を付与
     $buff .= "\n";
     $self->write_to_file($input_file, $buff);
@@ -301,6 +304,9 @@ sub merge_chunk_result {
 
     # 不十分な中間ファイルならば、削除しておく
     unlink $lout_file unless -s $lout_file;
+
+    unlink $svmout_file if !$self->{debug} && -f $svmout_file &&
+        $self->{bnst_process} ne 'with_luw';
 
     return 0;
 }
@@ -390,6 +396,8 @@ sub kc2bnstout_internal {
     $self->format_inputdata($test_kc, $tmp_test_kc, "input-kc", "kc");
     $self->format_bnstdata($tmp_test_kc);
     $self->chunk_bnst($tmp_test_kc, $bnstmodel, $save_dir);
+
+    unlink $tmp_test_kc if !$self->{debug} && -f $tmp_test_kc;
 }
 
 # 文節解析用の形式に変換
@@ -409,6 +417,7 @@ sub format_bnstdata {
         ## 長単位解析の出力結果
         my $svmout_file = $self->{"comainu-temp"} . "/" . $basename . ".svmout";
         $buff = $self->pp_partial_bnst_with_luw($buff, $svmout_file);
+        unlink $svmout_file if !$self->{debug} && -f $svmout_file;
     } elsif ( $self->{boundary} ne "none" ) {
         $buff = $self->pp_partial($buff, {is_bnst => 1});
     }
@@ -468,6 +477,8 @@ sub chunk_bnst {
     # 不十分な中間ファイルならば、削除しておく
     unlink $output_file unless -s $output_file;
 
+    unlink $svmdata_file if !$self->{debug} && -f $svmdata_file;
+
     return $ret;
 }
 
@@ -519,17 +530,19 @@ sub kclong2midout_internal {
     $self->create_mstin($tmp_test_kc);
     $self->parse_muw($tmp_test_kc, $muwmodel);
     $self->merge_mst_result($tmp_test_kc, $save_dir);
+
+    unlink $tmp_test_kc if !$self->{debug} && -f $tmp_test_kc;
 }
 
 # 中単位解析(MST)用のデータを作成
 sub create_mstin {
-    my ($self, $tmp_test_kc) = @_;
+    my ($self, $test_kc) = @_;
     print STDERR "# CREATE MSTIN\n";
 
     my $output_file = $self->{"comainu-temp"} . "/" .
-        File::Basename::basename($tmp_test_kc, ".KC") . ".mstin";
+        File::Basename::basename($test_kc, ".KC") . ".mstin";
 
-    my $buff = $self->read_from_file($tmp_test_kc);
+    my $buff = $self->read_from_file($test_kc);
     $buff = $self->kc2mstin($buff);
 
     $self->write_to_file($output_file, $buff);
@@ -540,13 +553,13 @@ sub create_mstin {
 
 # mstparserを利用して中単位解析
 sub parse_muw {
-    my ($self, $tmp_test_kc, $muwmodel) = @_;
+    my ($self, $test_kc, $muwmodel) = @_;
     print STDERR "# PARSE MUW\n";
 
     my $java = $self->{"java"};
     my $mstparser_dir = $self->{"mstparser-dir"};
 
-    my $basename = File::Basename::basename($tmp_test_kc, ".KC");
+    my $basename = File::Basename::basename($test_kc, ".KC");
     my $mstin = $self->{"comainu-temp"} . "/" . $basename . ".mstin";
     my $output_file = $self->{"comainu-temp"} . "/" . $basename . ".mstout";
 
@@ -570,22 +583,26 @@ sub parse_muw {
     print STDERR $cmd,"\n" if $self->{debug};
     system($cmd);
 
+    unlink $mstin if !$self->{debug} && -f $mstin;
+
     return 0;
 }
 
 sub merge_mst_result {
-    my ($self, $tmp_test_kc, $save_dir) = @_;
+    my ($self, $test_kc, $save_dir) = @_;
     print STDERR "# MERGE RESULT\n";
     my $ret = 0;
 
     my $mstout_file = $self->{"comainu-temp"} . "/" .
-        File::Basename::basename($tmp_test_kc, ".KC") . ".mstout";
+        File::Basename::basename($test_kc, ".KC") . ".mstout";
     my $output_file = $save_dir . "/" .
-        File::Basename::basename($tmp_test_kc) . ".mout";
+        File::Basename::basename($test_kc) . ".mout";
 
-    my $buff = $self->merge_mout_with_kc_mstout_file($tmp_test_kc, $mstout_file);
+    my $buff = $self->merge_mout_with_kc_mstout_file($test_kc, $mstout_file);
     $self->write_to_file($output_file, $buff);
     undef $buff;
+
+    unlink $mstout_file if !$self->{debug} && -f $mstout_file;
 
     return $ret;
 }
@@ -652,6 +669,9 @@ sub bccwj2longout_internal {
     $self->METHOD_kc2longout($train_kc, $kc_file, $luwmodel, $tmp_dir);
     $self->merge_bccwj_with_kc_lout_file($tmp_test_bccwj, $kc_lout_file, $bccwj_lout_file);
 
+    unlink $kc_lout_file   if !$self->{debug} && -f $kc_lout_file;
+    unlink $tmp_test_bccwj if !$self->{debug} && -f $tmp_test_bccwj;
+
     return 0;
 }
 
@@ -707,6 +727,9 @@ sub bccwj2bnstout_internal {
     $self->bccwj2kc_file($tmp_test_bccwj, $kc_file);
     $self->METHOD_kc2bnstout($kc_file, $bnstmodel, $tmp_dir);
     $self->merge_bccwj_with_kc_bout_file($tmp_test_bccwj, $kc_bout_file, $bccwj_bout_file);
+
+    unlink $kc_bout_file   if !$self->{debug} && -f $kc_bout_file;
+    unlink $tmp_test_bccwj if !$self->{debug} && -f $tmp_test_bccwj;
 
     return 0;
 }
@@ -770,6 +793,10 @@ sub bccwj2longbnstout_internal {
     $self->merge_bccwj_with_kc_lout_file($tmp_test_bccwj, $kc_lout_file, $bccwj_lbout_file);
     $self->merge_bccwj_with_kc_bout_file($bccwj_lbout_file, $kc_bout_file, $bccwj_lbout_file);
 
+    unlink $kc_lout_file   if !$self->{debug} && -f $kc_lout_file;
+    unlink $kc_bout_file   if !$self->{debug} && -f $kc_bout_file;
+    unlink $tmp_test_bccwj if !$self->{debug} && -f $tmp_test_bccwj;
+
     return 0;
 }
 
@@ -783,7 +810,7 @@ sub USAGE_bccwj2midout {
     printf("    The result is put into <out-dir>.\n");
     printf("\n");
     printf("  ex.)\n");
-    printf("  \$ perl ./script/comainu.pl bccwj2midout train.KC sample/sample.bccwj.txt trian/SVM/train.KC.model train/MST/train.KC.model out\n");
+    printf("  \$ perl ./script/comainu.pl bccwj2midout train.KC sample/sample.bccwj.txt trian/CRF/train.KC.model train/MST/train.KC.model out\n");
     printf("    -> out/sample.bccwj.txt.mout\n");
     printf("\n");
 }
@@ -830,6 +857,10 @@ sub bccwj2midout_internal {
     $self->METHOD_kclong2midout($kc_file, $muwmodel, $tmp_dir);
     $self->merge_bccwj_with_kc_lout_file($tmp_test_bccwj, $kc_lout_file, $bccwj_mout_file);
     $self->merge_bccwj_with_kc_mout_file($bccwj_mout_file, $kc_mout_file, $bccwj_mout_file);
+
+    unlink $kc_lout_file   if !$self->{debug} && -f $kc_lout_file;
+    unlink $kc_mout_file   if !$self->{debug} && -f $kc_mout_file;
+    unlink $tmp_test_bccwj if !$self->{debug} && -f $tmp_test_bccwj;
 
     return 0;
 }
@@ -898,6 +929,11 @@ sub bccwj2midbnstout_internal {
     $self->merge_bccwj_with_kc_bout_file($bccwj_mbout_file, $kc_bout_file, $bccwj_mbout_file);
     $self->merge_bccwj_with_kc_mout_file($bccwj_mbout_file, $kc_mout_file, $bccwj_mbout_file);
 
+    unlink $kc_lout_file   if !$self->{debug} && -f $kc_lout_file;
+    unlink $kc_mout_file   if !$self->{debug} && -f $kc_mout_file;
+    unlink $kc_bout_file   if !$self->{debug} && -f $kc_bout_file;
+    unlink $tmp_test_bccwj if !$self->{debug} && -f $tmp_test_bccwj;
+
     return 0;
 }
 
@@ -953,6 +989,9 @@ sub bccwjlong2midout_internal {
     $self->bccwjlong2kc_file($tmp_test_bccwj, $kc_file);
     $self->METHOD_kclong2midout($kc_file, $muwmodel, $tmp_dir);
     $self->merge_bccwj_with_kc_mout_file($tmp_test_bccwj, $kc_mout_file, $bccwj_mout_file);
+
+    unlink $kc_mout_file   if !$self->{debug} && -f $kc_mout_file;
+    unlink $tmp_test_bccwj if !$self->{debug} && -f $tmp_test_bccwj;
 
     return 0;
 }
@@ -1014,6 +1053,13 @@ sub plain2longout_internal {
     $self->mecab2kc_file($mecab_file, $kc_file);
     $self->METHOD_kc2longout($train_kc, $kc_file, $luwmodel, $tmp_dir);
     $self->merge_mecab_with_kc_lout_file($mecab_file, $kc_lout_file, $mecab_lout_file);
+
+    unless ( $self->{debug} ) {
+        for ($chasen_file, $mecab_file, $kc_lout_file) {
+            unlink $_ if -f $_;
+        }
+    }
+
     return;
 }
 
@@ -1069,6 +1115,12 @@ sub plain2bnstout_internal {
     $self->mecab2kc_file($mecab_file, $kc_file);
     $self->METHOD_kc2bnstout($kc_file, $bnstmodel, $tmp_dir);
     $self->merge_mecab_with_kc_bout_file($mecab_file, $kc_bout_file, $bout_file);
+
+    unless ( $self->{debug} ) {
+        for ($chasen_file, $mecab_file, $kc_bout_file) {
+            unlink $_ if -f $_;
+        }
+    }
 
     return 0;
 }
@@ -1132,6 +1184,12 @@ sub plain2longbnstout_internal {
     $self->merge_mecab_with_kc_lout_file($mecab_file, $kc_lout_file, $lbout_file);
     $self->merge_mecab_with_kc_bout_file($lbout_file, $kc_bout_file, $lbout_file);
 
+    unless ( $self->{debug} ) {
+        for ($chasen_file, $mecab_file, $kc_lout_file, $kc_bout_file) {
+            unlink $_ if -f $_;
+        }
+    }
+
     return 0;
 }
 
@@ -1191,6 +1249,12 @@ sub plain2midout_internal {
     $self->lout2kc4mid_file($kc_lout_file, $kc_file);
     $self->METHOD_kclong2midout($kc_file, $muwmodel, $tmp_dir);
     $self->merge_mecab_with_kc_mout_file($mecab_file, $kc_mout_file, $mout_file);
+
+    unless ( $self->{debug} ) {
+        for ($chasen_file, $mecab_file, $kc_lout_file, $kc_mout_file) {
+            unlink $_ if -f $_;
+        }
+    }
 
     return 0;
 }
@@ -1257,6 +1321,12 @@ sub plain2midbnstout_internal {
     $self->METHOD_kclong2midout($kc_file, $muwmodel, $tmp_dir);
     $self->merge_mecab_with_kc_mout_file($mecab_file, $kc_mout_file, $mbout_file);
     $self->merge_mecab_with_kc_bout_file($mbout_file, $kc_bout_file, $mbout_file);
+
+    unless ( $self->{debug} ) {
+        for ($chasen_file, $mecab_file, $kc_lout_file, $kc_mout_file, $kc_bout_file) {
+            unlink $_ if -f $_;
+        }
+    }
 
     return 0;
 }
@@ -1331,6 +1401,8 @@ sub mecab2kc_file {
     my $buff = $self->read_from_file($chasen_ext_file);
     $buff = $self->mecab2kc($buff);
     $self->write_to_file($kc_file, $buff);
+
+    unlink $chasen_ext_file if !$self->{debug} && -f $chasen_ext_file;
 
     undef $buff;
 }
