@@ -148,41 +148,41 @@ COMAINU-METHOD: bccwj2bnstout
     -> out/sample.bccwj.txt.bout
 
 COMAINU-METHOD: bccwj2longbnstout
-  Usage: ./script/comainu.pl bccwj2longbnstout <long-train-kc> <test-bccwj> <long-model-file> <bnst-model-file> <out-dir>
-    This command analyzes <test-bccwj> with <long-train-kc>, <long-model-file> and <bnst-model-file>.
+  Usage: ./script/comainu.pl bccwj2longbnstout <test-bccwj> <long-model-file> <bnst-model-file> <out-dir>
+    This command analyzes <test-bccwj> with <long-model-file> and <bnst-model-file>.
     The result is put into <out-dir>.
 
   ex.)
-  $ perl ./script/comainu.pl bccwj2longbnstout train.KC sample/sample.bccwj.txt train/CRF/train.KC.model train/bnst.model out
+  $ perl ./script/comainu.pl bccwj2longbnstout sample/sample.bccwj.txt train/CRF/train.KC.model train/bnst.model out
     -> out/sample.bccwj.txt.lbout
 
 COMAINU-METHOD: bccwj2longout
-  Usage: ./script/comainu.pl bccwj2longout <train-kc> <test-bccwj> <long-model-file> <out-dir>
-    This command analyzes <test-bccwj> with <train-kc> and <long-model-file>.
+  Usage: ./script/comainu.pl bccwj2longout <test-bccwj> <long-model-file> <out-dir>
+    This command analyzes <test-bccwj> with <long-model-file>.
     The result is put into <out-dir>.
 
   ex.)
-  $ perl ./script/comainu.pl bccwj2longout train.KC sample/sample.bccwj.txt train/CRF/sample.KC.model out
+  $ perl ./script/comainu.pl bccwj2longout sample/sample.bccwj.txt train/CRF/sample.KC.model out
     -> out/sample.bccwj.txt.lout
-  $ perl ./script/comainu.pl bccwj2longout --luwmodel=SVM train.KC sample/sample.bccwj.txt train/SVM/sample.KC.model out
+  $ perl ./script/comainu.pl bccwj2longout --luwmodel=SVM sample/sample.bccwj.txt train/SVM/sample.KC.model out
     -> out/sample.bccwj.txt.lout
 
 COMAINU-METHOD: bccwj2midbnstout
-  Usage: ./script/comainu.pl bccwj2midbnstout <long-train-kc> <test-kc> <long-model-file> <mid-model-file> <bnst-model-file> <out-dir>
-    This command analyzes <test-kc> with <long-train-kc>, <long-model-file>, <mid-model-file> and <bnst-model-file>.
+  Usage: ./script/comainu.pl bccwj2midbnstout <test-kc> <long-model-file> <mid-model-file> <bnst-model-file> <out-dir>
+    This command analyzes <test-kc> with <long-model-file>, <mid-model-file> and <bnst-model-file>.
     The result is put into <out-dir>.
 
   ex.)
-  $ perl ./script/comainu.pl bccwj2midbnstout train.KC sample/sample.bccwj.txt trian/SVM/train.KC.model train/MST/train.KC.model train/bnst.model out
+  $ perl ./script/comainu.pl bccwj2midbnstout sample/sample.bccwj.txt trian/SVM/train.KC.model train/MST/train.KC.model train/bnst.model out
     -> out/sample.bccwj.txt.mbout
 
 COMAINU-METHOD: bccwj2midout
-  Usage: ./script/comainu.pl bccwj2midout <long-train-kc> <test-kc> <long-model-file> <mid-model-file> <out-dir>
-    This command analyzes <test-kc> with <long-train-kc>, <long-model-file> and <mid-model-file>.
+  Usage: ./script/comainu.pl bccwj2midout <test-kc> <long-model-file> <mid-model-file> <out-dir>
+    This command analyzes <test-kc> with <long-model-file> and <mid-model-file>.
     The result is put into <out-dir>.
 
   ex.)
-  $ perl ./script/comainu.pl bccwj2midout train.KC sample/sample.bccwj.txt trian/SVM/train.KC.model train/MST/train.KC.model out
+  $ perl ./script/comainu.pl bccwj2midout sample/sample.bccwj.txt trian/SVM/train.KC.model train/MST/train.KC.model out
     -> out/sample.bccwj.txt.mout
 
 COMAINU-METHOD: bccwjlong2midout
@@ -238,14 +238,14 @@ COMAINU-METHOD: kc2longmodel
     -> train/sample.KC.model
 
 COMAINU-METHOD: kc2longout
-  Usage: ./script/comainu.pl kc2longout <train-kc> <test-kc> <long-model-file> <out-dir>
-    This command analyzes <test-kc> with <train-kc> and <long-model-file>.
+  Usage: ./script/comainu.pl kc2longout <test-kc> <long-model-file> <out-dir>
+    This command analyzes <test-kc> with <long-model-file>.
     The result is put into <out-dir>.
 
   ex.)
-  $ perl ./script/comainu.pl kc2longout sample/sample.KC sample/sample.KC sample/sample.KC.model out
+  $ perl ./script/comainu.pl kc2longout sample/sample.KC train/CRF/train.KC.model out
     -> out/sample.lout
-  $ perl ./script/comainu.pl kc2longout --luwmodel=SVM sample/sample.KC sample/sample.KC sample/sample.KC.model out
+  $ perl ./script/comainu.pl kc2longout --luwmodel=SVM sample/sample.KC sample/SVM/train.KC.model out
     -> out/sample.KC.lout
 
 COMAINU-METHOD: kclong2mideval
@@ -271,7 +271,7 @@ COMAINU-METHOD: kclong2midout
     The result is put into <out-dir>.
 
   ex.)
-  $ perl ./script/comainu.pl kclong2midout sample/sample.KC train/sample.KC.model out
+  $ perl ./script/comainu.pl kclong2midout sample/sample.KC train/MST/train.KC.model out
     -> out/sample.KC.mout
 
 COMAINU-METHOD: plain2bnstout
@@ -284,41 +284,41 @@ COMAINU-METHOD: plain2bnstout
     -> out/sample.txt.bout
 
 COMAINU-METHOD: plain2longbnstout
-  Usage: ./script/comainu.pl plain2longbnstout <long-train-kc> <test-text> <long-model-file> <bnst-model-file> <out-dir>
-    This command analyzes <test-text> with Mecab or ChaSen and <long-train-kc> and <long-model-file> and <bnst-model-file>.
+  Usage: ./script/comainu.pl plain2longbnstout <test-text> <long-model-file> <bnst-model-file> <out-dir>
+    This command analyzes <test-text> with Mecab or ChaSen and <long-model-file> and <bnst-model-file>.
     The result is put into <out-dir>.
 
   ex.)
-  $ perl ./script/comainu.pl plain2longbnstout train.KC sample/plain/sample.txt train/CRF/train.KC.model train/bnst.model out
+  $ perl ./script/comainu.pl plain2longbnstout sample/plain/sample.txt train/CRF/train.KC.model train/bnst.model out
     -> out/sample.txt.lbout
 
 COMAINU-METHOD: plain2longout
-  Usage: ./script/comainu.pl plain2longout <train-kc> <test-text> <long-model-file> <out-dir>
-    This command analyzes <test-text> with MeCab or Chasen and <train-kc> and <long-model-file>.
+  Usage: ./script/comainu.pl plain2longout <test-text> <long-model-file> <out-dir>
+    This command analyzes <test-text> with MeCab or Chasen and <long-model-file>.
     The result is put into <out-dir>.
 
   ex.)
-  $ perl ./script/comainu.pl plain2longout train.KC sample/plain/sample.txt train/CRF/train.KC.model out
+  $ perl ./script/comainu.pl plain2longout sample/plain/sample.txt train/CRF/train.KC.model out
     -> out/sample.txt.lout
-  $ perl ./script/comainu.pl plain2longout --suwmodel=chasen train.KC sample/plain/sample.txt train/CRF/train.KC.model out
+  $ perl ./script/comainu.pl plain2longout --suwmodel=chasen sample/plain/sample.txt train/CRF/train.KC.model out
     -> out/sample.txt.lout
 
 COMAINU-METHOD: plain2midbnstout
-  Usage: ./script/comainu.pl plain2midbnstout <long-train-kc> <test-text> <long-model-file> <mid-model-file> <bnst-model-file> <out-dir>
-    This command analyzes <test-text> with Mecab or ChaSen and <long-train-kc> and <long-model-file>, <mid-model-file> and <bnst-model-file>.
+  Usage: ./script/comainu.pl plain2midbnstout <test-text> <long-model-file> <mid-model-file> <bnst-model-file> <out-dir>
+    This command analyzes <test-text> with Mecab or ChaSen and <long-model-file>, <mid-model-file> and <bnst-model-file>.
     The result is put into <out-dir>.
 
   ex.)
-  $ perl ./script/comainu.pl plain2midbnstout train.KC sample/plain/sample.txt train/CRF/train.KC.model train/MST/train.KC.model train/bnst.model out
+  $ perl ./script/comainu.pl plain2midbnstout sample/plain/sample.txt train/CRF/train.KC.model train/MST/train.KC.model train/bnst.model out
     -> out/sample.txt.mbout
 
 COMAINU-METHOD: plain2midout
-  Usage: ./script/comainu.pl plain2midout <long-train-kc> <test-text> <long-model-file> <mid-model-file> <out-dir>
-    This command analyzes <test-text> with Mecab or ChaSen and <long-train-kc> and <long-model-file> and <mid-model-file>.
+  Usage: ./script/comainu.pl plain2midout <test-text> <long-model-file> <mid-model-file> <out-dir>
+    This command analyzes <test-text> with Mecab or ChaSen and <long-model-file> and <mid-model-file>.
     The result is put into <out-dir>.
 
   ex.)
-  $ perl ./script/comainu.pl plain2midout train.KC sample/plain/sample.txt train/CRF/train.KC.model train/MST/train.KC.model out
+  $ perl ./script/comainu.pl plain2midout sample/plain/sample.txt train/CRF/train.KC.model train/MST/train.KC.model out
     -> out/sample.txt.mout
 
 ------------------------------------------------------------

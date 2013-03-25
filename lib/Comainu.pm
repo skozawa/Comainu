@@ -121,37 +121,37 @@ sub new {
 # KCファイルからの解析
 ############################################################
 # 長単位解析
-# 訓練用KCファイル、解析対象KCファイル、モデルファイルの３つを用いて
+# 解析対象KCファイル、モデルファイルの３つを用いて
 # 解析対象KCファイルに長単位情報を付与する。
 sub USAGE_kc2longout {
     my $self = shift;
     printf("COMAINU-METHOD: kc2longout\n");
-    printf("  Usage: %s kc2longout <train-kc> <test-kc> <long-model-file> <out-dir>\n", $0);
-    printf("    This command analyzes <test-kc> with <train-kc> and <long-model-file>.\n");
+    printf("  Usage: %s kc2longout <test-kc> <long-model-file> <out-dir>\n", $0);
+    printf("    This command analyzes <test-kc> with <long-model-file>.\n");
     printf("    The result is put into <out-dir>.\n");
     printf("\n");
     printf("  ex.)\n");
-    printf("  \$ perl ./script/comainu.pl kc2longout train.KC sample/sample.KC train/CRF/train.KC.model out\n");
+    printf("  \$ perl ./script/comainu.pl kc2longout sample/sample.KC train/CRF/train.KC.model out\n");
     printf("    -> out/sample.lout\n");
-    printf("  \$ perl ./script/comainu.pl kc2longout --luwmodel=SVM train.KC sample/sample.KC train/SVM/train.KC.model out\n");
+    printf("  \$ perl ./script/comainu.pl kc2longout --luwmodel=SVM sample/sample.KC train/SVM/train.KC.model out\n");
     printf("    -> out/sample.KC.lout\n");
     printf("\n");
 }
 
 sub METHOD_kc2longout {
-    my ($self, $train_kc, $test_kc, $luwmodel, $save_dir ) = @_;
+    my ($self, $test_kc, $luwmodel, $save_dir ) = @_;
 
-    $self->check_args(scalar @_ == 5);
+    $self->check_args(scalar @_ == 4);
     $self->check_luwmodel($luwmodel);
     mkdir $save_dir unless -d $save_dir;
 
     if ( -f $test_kc ) {
-        $self->kc2longout_internal($train_kc, $test_kc, $luwmodel, $save_dir);
+        $self->kc2longout_internal($test_kc, $luwmodel, $save_dir);
     } elsif ( -d $test_kc ) {
         opendir(my $dh, $test_kc);
         while ( my $test_kc_file = readdir($dh) ) {
             if ( $test_kc_file =~ /.KC$/ ) {
-                $self->kc2longout_internal($train_kc, $test_kc_file, $luwmodel, $save_dir);
+                $self->kc2longout_internal($test_kc_file, $luwmodel, $save_dir);
             }
         }
         closedir($dh);
@@ -161,16 +161,16 @@ sub METHOD_kc2longout {
 }
 
 sub kc2longout_internal {
-    my ($self, $train_kc, $test_kc, $luwmodel, $save_dir ) = @_;
+    my ($self, $test_kc, $luwmodel, $save_dir ) = @_;
 
     my $tmp_test_kc = $self->{"comainu-temp"}."/".File::Basename::basename($test_kc);
     $self->format_inputdata($test_kc, $tmp_test_kc, 'input-kc', 'kc');
 
-    $self->create_features($tmp_test_kc, $train_kc, $luwmodel);
+    $self->create_features($tmp_test_kc, $luwmodel);
 
     $self->chunk_luw($tmp_test_kc, $luwmodel);
     $self->merge_chunk_result($tmp_test_kc, $save_dir);
-    $self->post_process($train_kc, $tmp_test_kc, $luwmodel, $save_dir);
+    $self->post_process($tmp_test_kc, $luwmodel, $save_dir);
 
     unlink $tmp_test_kc if !$self->{debug} &&
         -f $tmp_test_kc && $self->{bnst_process} ne 'with_luw';
@@ -178,7 +178,7 @@ sub kc2longout_internal {
 
 # 解析用KC２ファイルへ素性追加
 sub create_features {
-    my ($self, $tmp_test_kc, $train_kc, $luwmodel) = @_;
+    my ($self, $tmp_test_kc, $luwmodel) = @_;
     print STDERR "# CREATE FEATURE DATA\n";
 
     # 出力ファイル名の生成
@@ -198,7 +198,7 @@ sub create_features {
     $buff = $self->pp_partial($buff) if $self->{luwmodel} eq "SVM";
 
     # 素性の追加
-    my $AF = new AddFeature();
+    my $AF = AddFeature->new;
     my $basename = File::Basename::basename($luwmodel, ".model");
     my ($filename, $path) = File::Basename::fileparse($luwmodel);
     $buff = $AF->add_feature($buff, $basename, $path);
@@ -296,7 +296,7 @@ sub merge_chunk_result {
 
 # 後処理:BIのみのチャンクを再処理
 sub post_process {
-    my ($self, $train_kc, $tmp_test_kc, $luwmodel, $save_dir) = @_;
+    my ($self, $tmp_test_kc, $luwmodel, $save_dir) = @_;
     my $ret = 0;
     print STDERR "# POST PROCESS\n";
 
@@ -593,37 +593,37 @@ sub merge_mst_result {
 # BCCWJファイルからの解析
 ############################################################
 # 長単位解析 BCCWJ
-# 辞書用KCファイル、解析対象BCCWJファイル、モデルファイルの３つを用いて
+# 解析対象BCCWJファイル、モデルファイルの３つを用いて
 # 解析対象BCCWJファイルに長単位情報を付与する。
 sub USAGE_bccwj2longout {
     my $self = shift;
     printf("COMAINU-METHOD: bccwj2longout\n");
-    printf("  Usage: %s bccwj2longout <train-kc> <test-bccwj> <long-model-file> <out-dir>\n", $0);
-    printf("    This command analyzes <test-bccwj> with <train-kc> and <long-model-file>.\n");
+    printf("  Usage: %s bccwj2longout <test-bccwj> <long-model-file> <out-dir>\n", $0);
+    printf("    This command analyzes <test-bccwj> with <long-model-file>.\n");
     printf("    The result is put into <out-dir>.\n");
     printf("\n");
     printf("  ex.)\n");
-    printf("  \$ perl ./script/comainu.pl bccwj2longout train.KC sample/sample.bccwj.txt train/CRF/train.KC.model out\n");
+    printf("  \$ perl ./script/comainu.pl bccwj2longout sample/sample.bccwj.txt train/CRF/train.KC.model out\n");
     printf("    -> out/sample.bccwj.txt.lout\n");
-    printf("  \$ perl ./script/comainu.pl bccwj2longout --luwmodel=SVM train.KC sample/sample.bccwj.txt train/SVM/train.KC.model out\n");
+    printf("  \$ perl ./script/comainu.pl bccwj2longout --luwmodel=SVM sample/sample.bccwj.txt train/SVM/train.KC.model out\n");
     printf("    -> out/sample.bccwj.txt.lout\n");
     printf("\n");
 }
 
 sub METHOD_bccwj2longout {
-    my ($self, $train_kc, $test_bccwj, $luwmodel, $save_dir) = @_;
+    my ($self, $test_bccwj, $luwmodel, $save_dir) = @_;
 
-    $self->check_args(scalar @_ == 5);
+    $self->check_args(scalar @_ == 4);
     $self->check_luwmodel($luwmodel);
     mkdir $save_dir unless -d $save_dir;
 
     if ( -f $test_bccwj ) {
-        $self->bccwj2longout_internal($train_kc, $test_bccwj, $luwmodel, $save_dir);
+        $self->bccwj2longout_internal($test_bccwj, $luwmodel, $save_dir);
     } elsif ( -d $test_bccwj ) {
         opendir(my $dh, $test_bccwj);
         while ( my $test_bccwj_file = readdir($dh) ) {
             if ( $test_bccwj_file =~ /.txt$/ ) {
-                $self->bccwj2longout_internal($train_kc, $test_bccwj_file, $luwmodel, $save_dir);
+                $self->bccwj2longout_internal($test_bccwj_file, $luwmodel, $save_dir);
             }
         }
         closedir($dh);
@@ -633,7 +633,7 @@ sub METHOD_bccwj2longout {
 }
 
 sub bccwj2longout_internal {
-    my ($self, $train_kc, $test_bccwj, $luwmodel, $save_dir) = @_;
+    my ($self, $test_bccwj, $luwmodel, $save_dir) = @_;
 
     my $tmp_dir = $self->{"comainu-temp"};
     my $basename = File::Basename::basename($test_bccwj);
@@ -645,7 +645,7 @@ sub bccwj2longout_internal {
     my $bccwj_lout_file = $save_dir . "/" . $basename . ".lout";
 
     $self->bccwj2kc_file($tmp_test_bccwj, $kc_file);
-    $self->METHOD_kc2longout($train_kc, $kc_file, $luwmodel, $tmp_dir);
+    $self->METHOD_kc2longout($kc_file, $luwmodel, $tmp_dir);
     $self->merge_bccwj_with_kc_lout_file($tmp_test_bccwj, $kc_lout_file, $bccwj_lout_file);
 
     unlink $kc_lout_file   if !$self->{debug} && -f $kc_lout_file;
@@ -670,7 +670,7 @@ sub USAGE_bccwj2bnstout {
 }
 
 sub METHOD_bccwj2bnstout {
-    my ($self, $test_bccwj, $bnstmodel, $save_dir ) = @_;
+    my ($self, $test_bccwj, $bnstmodel, $save_dir) = @_;
 
     $self->check_args(scalar @_ == 4);
     $self->check_file($bnstmodel);
@@ -718,31 +718,31 @@ sub bccwj2bnstout_internal {
 sub USAGE_bccwj2longbnstout {
     my $self = shift;
     printf("COMAINU-METHOD: bccwj2longbnstout\n");
-    printf("  Usage: %s bccwj2longbnstout <long-train-kc> <test-bccwj> <long-model-file> <bnst-model-file> <out-dir>\n", $0);
-    printf("    This command analyzes <test-bccwj> with <long-train-kc>, <long-model-file> and <bnst-model-file>.\n");
+    printf("  Usage: %s bccwj2longbnstout <test-bccwj> <long-model-file> <bnst-model-file> <out-dir>\n", $0);
+    printf("    This command analyzes <test-bccwj> with <long-model-file> and <bnst-model-file>.\n");
     printf("    The result is put into <out-dir>.\n");
     printf("\n");
     printf("  ex.)\n");
-    printf("  \$ perl ./script/comainu.pl bccwj2longbnstout train.KC sample/sample.bccwj.txt train/CRF/train.KC.model train/bnst.model out\n");
+    printf("  \$ perl ./script/comainu.pl bccwj2longbnstout sample/sample.bccwj.txt train/CRF/train.KC.model train/bnst.model out\n");
     printf("    -> out/sample.bccwj.txt.lbout\n");
     printf("\n");
 }
 
 sub METHOD_bccwj2longbnstout {
-    my ($self, $long_train_kc, $test_bccwj, $luwmodel, $bnstmodel, $save_dir) = @_;
+    my ($self, $test_bccwj, $luwmodel, $bnstmodel, $save_dir) = @_;
 
-    $self->check_args(scalar @_ == 6);
+    $self->check_args(scalar @_ == 5);
     $self->check_luwmodel($luwmodel);
     $self->check_file($bnstmodel);
     mkdir $save_dir unless -d $save_dir;
 
     if ( -f $test_bccwj ) {
-        $self->bccwj2longbnstout_internal($long_train_kc, $test_bccwj, $luwmodel, $bnstmodel, $save_dir);
+        $self->bccwj2longbnstout_internal($test_bccwj, $luwmodel, $bnstmodel, $save_dir);
     } elsif ( -d $test_bccwj ) {
         opendir(my $dh, $test_bccwj);
         while ( my $test_bccwj_file = readdir($dh) ) {
             if ( $test_bccwj_file =~ /.txt$/ ) {
-                $self->bccwj2longbnstout_internal($long_train_kc, $test_bccwj_file, $luwmodel, $bnstmodel, $save_dir);
+                $self->bccwj2longbnstout_internal($test_bccwj_file, $luwmodel, $bnstmodel, $save_dir);
             }
         }
         closedir($dh);
@@ -752,7 +752,7 @@ sub METHOD_bccwj2longbnstout {
 }
 
 sub bccwj2longbnstout_internal {
-    my ($self, $long_train_kc, $test_bccwj, $luwmodel, $bnstmodel, $save_dir) = @_;
+    my ($self, $test_bccwj, $luwmodel, $bnstmodel, $save_dir) = @_;
 
     my $tmp_dir = $self->{"comainu-temp"};
     my $basename = File::Basename::basename($test_bccwj);
@@ -767,7 +767,7 @@ sub bccwj2longbnstout_internal {
     $self->{"bnst_process"} = "with_luw";
 
     $self->bccwj2kc_file($tmp_test_bccwj, $kc_file);
-    $self->METHOD_kc2longout($long_train_kc, $kc_file, $luwmodel, $tmp_dir);
+    $self->METHOD_kc2longout($kc_file, $luwmodel, $tmp_dir);
     $self->METHOD_kc2bnstout($kc_file, $bnstmodel, $tmp_dir);
     $self->merge_bccwj_with_kc_lout_file($tmp_test_bccwj, $kc_lout_file, $bccwj_lbout_file);
     $self->merge_bccwj_with_kc_bout_file($bccwj_lbout_file, $kc_bout_file, $bccwj_lbout_file);
@@ -784,31 +784,31 @@ sub bccwj2longbnstout_internal {
 sub USAGE_bccwj2midout {
     my $self = shift;
     printf("COMAINU-METHOD: bccwj2midout\n");
-    printf("  Usage: %s bccwj2midout <long-train-kc> <test-kc> <long-model-file> <mid-model-file> <out-dir>\n", $0);
-    printf("    This command analyzes <test-kc> with <long-train-kc>, <long-model-file> and <mid-model-file>.\n");
+    printf("  Usage: %s bccwj2midout <test-kc> <long-model-file> <mid-model-file> <out-dir>\n", $0);
+    printf("    This command analyzes <test-kc> with <long-model-file> and <mid-model-file>.\n");
     printf("    The result is put into <out-dir>.\n");
     printf("\n");
     printf("  ex.)\n");
-    printf("  \$ perl ./script/comainu.pl bccwj2midout train.KC sample/sample.bccwj.txt trian/CRF/train.KC.model train/MST/train.KC.model out\n");
+    printf("  \$ perl ./script/comainu.pl bccwj2midout sample/sample.bccwj.txt trian/CRF/train.KC.model train/MST/train.KC.model out\n");
     printf("    -> out/sample.bccwj.txt.mout\n");
     printf("\n");
 }
 
 sub METHOD_bccwj2midout {
-    my ($self, $long_train_kc, $test_bccwj, $luwmodel, $muwmodel, $save_dir) = @_;
+    my ($self, $test_bccwj, $luwmodel, $muwmodel, $save_dir) = @_;
 
-    $self->check_args(scalar @_ == 6);
+    $self->check_args(scalar @_ == 5);
     $self->check_luwmodel($luwmodel);
     $self->check_file($muwmodel);
     mkdir $save_dir unless -d $save_dir;
 
     if ( -f $test_bccwj ) {
-        $self->bccwj2midout_internal($long_train_kc, $test_bccwj, $luwmodel, $muwmodel, $save_dir);
+        $self->bccwj2midout_internal($test_bccwj, $luwmodel, $muwmodel, $save_dir);
     } elsif ( -d $test_bccwj ) {
         opendir(my $dh, $test_bccwj);
         while ( my $test_bccwj_file = readdir($dh) ) {
             if ( $test_bccwj_file =~ /.txt$/ ) {
-                $self->bccwj2midout_internal($long_train_kc, $test_bccwj_file, $luwmodel, $muwmodel, $save_dir);
+                $self->bccwj2midout_internal($test_bccwj_file, $luwmodel, $muwmodel, $save_dir);
             }
         }
         closedir($dh);
@@ -818,7 +818,7 @@ sub METHOD_bccwj2midout {
 }
 
 sub bccwj2midout_internal {
-    my ($self, $long_train_kc, $test_bccwj, $luwmodel, $muwmodel, $save_dir) = @_;
+    my ($self, $test_bccwj, $luwmodel, $muwmodel, $save_dir) = @_;
 
     my $basename = File::Basename::basename($test_bccwj);
     my $tmp_dir = $self->{"comainu-temp"};
@@ -831,7 +831,7 @@ sub bccwj2midout_internal {
     my $bccwj_mout_file = $save_dir . "/" . $basename . ".mout";
 
     $self->bccwj2kc_file($tmp_test_bccwj, $kc_file);
-    $self->METHOD_kc2longout($long_train_kc, $kc_file, $luwmodel, $tmp_dir);
+    $self->METHOD_kc2longout($kc_file, $luwmodel, $tmp_dir);
     $self->lout2kc4mid_file($kc_lout_file, $kc_file);
     $self->METHOD_kclong2midout($kc_file, $muwmodel, $tmp_dir);
     $self->merge_bccwj_with_kc_lout_file($tmp_test_bccwj, $kc_lout_file, $bccwj_mout_file);
@@ -849,32 +849,32 @@ sub bccwj2midout_internal {
 sub USAGE_bccwj2midbnstout {
     my $self = shift;
     printf("COMAINU-METHOD: bccwj2midbnstout\n");
-    printf("  Usage: %s bccwj2midbnstout <long-train-kc> <test-kc> <long-model-file> <mid-model-file> <bnst-model-file> <out-dir>\n", $0);
-    printf("    This command analyzes <test-kc> with <long-train-kc>, <long-model-file>, <mid-model-file> and <bnst-model-file>.\n");
+    printf("  Usage: %s bccwj2midbnstout <test-kc> <long-model-file> <mid-model-file> <bnst-model-file> <out-dir>\n", $0);
+    printf("    This command analyzes <test-kc> with <long-model-file>, <mid-model-file> and <bnst-model-file>.\n");
     printf("    The result is put into <out-dir>.\n");
     printf("\n");
     printf("  ex.)\n");
-    printf("  \$ perl ./script/comainu.pl bccwj2midbnstout train.KC sample/sample.bccwj.txt trian/SVM/train.KC.model train/MST/train.KC.model train/bnst.model out\n");
+    printf("  \$ perl ./script/comainu.pl bccwj2midbnstout sample/sample.bccwj.txt trian/SVM/train.KC.model train/MST/train.KC.model train/bnst.model out\n");
     printf("    -> out/sample.bccwj.txt.mbout\n");
     printf("\n");
 }
 
 sub METHOD_bccwj2midbnstout {
-    my ($self, $long_train_kc, $test_bccwj, $luwmodel, $muwmodel, $bnstmodel, $save_dir) = @_;
+    my ($self, $test_bccwj, $luwmodel, $muwmodel, $bnstmodel, $save_dir) = @_;
 
-    $self->check_args(scalar @_ == 7);
+    $self->check_args(scalar @_ == 6);
     $self->check_luwmodel($luwmodel);
     $self->check_file($muwmodel);
     $self->check_file($bnstmodel);
     mkdir $save_dir unless -d $save_dir;
 
     if ( -f $test_bccwj ) {
-        $self->bccwj2midbnstout_internal($long_train_kc, $test_bccwj, $luwmodel, $muwmodel, $bnstmodel, $save_dir);
+        $self->bccwj2midbnstout_internal($test_bccwj, $luwmodel, $muwmodel, $bnstmodel, $save_dir);
     } elsif ( -d $test_bccwj ) {
         opendir(my $dh, $test_bccwj);
         while ( my $test_bccwj_file = readdir($dh) ) {
             if ( $test_bccwj_file =~ /.txt$/ ) {
-                $self->bccwj2midbnstout_internal($long_train_kc, $test_bccwj_file, $luwmodel, $muwmodel, $bnstmodel, $save_dir);
+                $self->bccwj2midbnstout_internal($test_bccwj_file, $luwmodel, $muwmodel, $bnstmodel, $save_dir);
             }
         }
         closedir($dh);
@@ -884,7 +884,7 @@ sub METHOD_bccwj2midbnstout {
 }
 
 sub bccwj2midbnstout_internal {
-    my ($self, $long_train_kc, $test_bccwj, $luwmodel, $muwmodel, $bnstmodel, $save_dir) = @_;
+    my ($self, $test_bccwj, $luwmodel, $muwmodel, $bnstmodel, $save_dir) = @_;
 
     my $tmp_dir = $self->{"comainu-temp"};
     my $basename = File::Basename::basename($test_bccwj);
@@ -900,7 +900,7 @@ sub bccwj2midbnstout_internal {
     $self->{"bnst_process"} = "with_luw";
 
     $self->bccwj2kc_file($tmp_test_bccwj, $kc_file);
-    $self->METHOD_kc2longout($long_train_kc, $kc_file, $luwmodel, $tmp_dir);
+    $self->METHOD_kc2longout($kc_file, $luwmodel, $tmp_dir);
     $self->METHOD_kc2bnstout($kc_file, $bnstmodel, $tmp_dir);
     $self->lout2kc4mid_file($kc_lout_file, $kc_file);
     $self->METHOD_kclong2midout($kc_file, $muwmodel, $tmp_dir);
@@ -983,32 +983,32 @@ sub bccwjlong2midout_internal {
 sub USAGE_plain2longout {
     my $self = shift;
     printf("COMAINU-METHOD: plain2longout\n");
-    printf("  Usage: %s plain2longout <train-kc> <test-text> <long-model-file> <out-dir>\n", $0);
-    printf("    This command analyzes <test-text> with MeCab or Chasen and <train-kc> and <long-model-file>.\n");
+    printf("  Usage: %s plain2longout <test-text> <long-model-file> <out-dir>\n", $0);
+    printf("    This command analyzes <test-text> with MeCab or Chasen and <long-model-file>.\n");
     printf("    The result is put into <out-dir>.\n");
     printf("\n");
     printf("  ex.)\n");
-    printf("  \$ perl ./script/comainu.pl plain2longout train.KC sample/plain/sample.txt train/CRF/train.KC.model out\n");
+    printf("  \$ perl ./script/comainu.pl plain2longout sample/plain/sample.txt train/CRF/train.KC.model out\n");
     printf("    -> out/sample.txt.lout\n");
-    printf("  \$ perl ./script/comainu.pl plain2longout --suwmodel=chasen train.KC sample/plain/sample.txt train/CRF/train.KC.model out\n");
+    printf("  \$ perl ./script/comainu.pl plain2longout --suwmodel=chasen sample/plain/sample.txt train/CRF/train.KC.model out\n");
     printf("    -> out/sample.txt.lout\n");
     printf("\n");
 }
 
 sub METHOD_plain2longout {
-    my ($self, $train_kc, $test_file, $luwmodel, $save_dir) = @_;
+    my ($self, $test_file, $luwmodel, $save_dir) = @_;
 
-    $self->check_args(scalar @_ == 5);
+    $self->check_args(scalar @_ == 4);
     $self->check_luwmodel($luwmodel);
     mkdir $save_dir unless -d $save_dir;
 
     if ( -f $test_file ) {
-        $self->plain2longout_internal($train_kc, $test_file, $luwmodel, $save_dir);
+        $self->plain2longout_internal($test_file, $luwmodel, $save_dir);
     } elsif ( -d $test_file ) {
         opendir(my $dh, $test_file);
         while ( my $test_file2 = readdir($dh) ) {
             if ( $test_file2 =~ /.txt$/ ) {
-                $self->plain2longout_internal($train_kc, $test_file2, $luwmodel, $save_dir);
+                $self->plain2longout_internal($test_file2, $luwmodel, $save_dir);
             }
         }
         closedir($dh);
@@ -1018,7 +1018,7 @@ sub METHOD_plain2longout {
 }
 
 sub plain2longout_internal {
-    my ($self, $train_kc, $test_file, $luwmodel, $save_dir) = @_;
+    my ($self, $test_file, $luwmodel, $save_dir) = @_;
 
     my $tmp_dir = $self->{"comainu-temp"};
     my $basename = File::Basename::basename($test_file);
@@ -1030,7 +1030,7 @@ sub plain2longout_internal {
 
     $self->plain2mecab_file($test_file, $chasen_file, $mecab_file);
     $self->mecab2kc_file($mecab_file, $kc_file);
-    $self->METHOD_kc2longout($train_kc, $kc_file, $luwmodel, $tmp_dir);
+    $self->METHOD_kc2longout($kc_file, $luwmodel, $tmp_dir);
     $self->merge_mecab_with_kc_lout_file($mecab_file, $kc_lout_file, $mecab_lout_file);
 
     unless ( $self->{debug} ) {
@@ -1109,31 +1109,31 @@ sub plain2bnstout_internal {
 sub USAGE_plain2longbnstout {
     my $self = shift;
     printf("COMAINU-METHOD: plain2longbnstout\n");
-    printf("  Usage: %s plain2longbnstout <long-train-kc> <test-text> <long-model-file> <bnst-model-file> <out-dir>\n", $0);
-    printf("    This command analyzes <test-text> with Mecab or ChaSen and <long-train-kc> and <long-model-file> and <bnst-model-file>.\n");
+    printf("  Usage: %s plain2longbnstout <test-text> <long-model-file> <bnst-model-file> <out-dir>\n", $0);
+    printf("    This command analyzes <test-text> with Mecab or ChaSen and <long-model-file> and <bnst-model-file>.\n");
     printf("    The result is put into <out-dir>.\n");
     printf("\n");
     printf("  ex.)\n");
-    printf("  \$ perl ./script/comainu.pl plain2longbnstout train.KC sample/plain/sample.txt train/CRF/train.KC.model train/bnst.model out\n");
+    printf("  \$ perl ./script/comainu.pl plain2longbnstout sample/plain/sample.txt train/CRF/train.KC.model train/bnst.model out\n");
     printf("    -> out/sample.txt.lbout\n");
     printf("\n");
 }
 
 sub METHOD_plain2longbnstout {
-    my ($self, $long_train_kc, $test_file, $luwmodel, $bnstmodel, $save_dir) = @_;
+    my ($self, $test_file, $luwmodel, $bnstmodel, $save_dir) = @_;
 
-    $self->check_args(scalar @_ == 6);
+    $self->check_args(scalar @_ == 5);
     $self->check_luwmodel($luwmodel);
     $self->check_file($bnstmodel);
     mkdir $save_dir unless -d $save_dir;
 
     if ( -f $test_file ) {
-        $self->plain2longbnstout_internal($long_train_kc, $test_file, $luwmodel, $bnstmodel, $save_dir);
+        $self->plain2longbnstout_internal($test_file, $luwmodel, $bnstmodel, $save_dir);
     } elsif ( -d $test_file ) {
         opendir(my $dh, $test_file);
         while ( my $test_file2 = readdir($dh) ) {
             if ( $test_file2 =~ /.txt$/ ) {
-                $self->plain2longbnstout_internal($long_train_kc, $test_file2, $luwmodel, $bnstmodel, $save_dir);
+                $self->plain2longbnstout_internal($test_file2, $luwmodel, $bnstmodel, $save_dir);
             }
         }
         closedir($dh);
@@ -1143,7 +1143,7 @@ sub METHOD_plain2longbnstout {
 }
 
 sub plain2longbnstout_internal {
-    my ($self, $long_train_kc, $test_file, $luwmodel, $bnstmodel, $save_dir) = @_;
+    my ($self, $test_file, $luwmodel, $bnstmodel, $save_dir) = @_;
 
     my $tmp_dir = $self->{"comainu-temp"};
     my $basename = File::Basename::basename($test_file);
@@ -1158,7 +1158,7 @@ sub plain2longbnstout_internal {
 
     $self->plain2mecab_file($test_file, $chasen_file, $mecab_file);
     $self->mecab2kc_file($mecab_file, $kc_file);
-    $self->METHOD_kc2longout($long_train_kc, $kc_file, $luwmodel, $tmp_dir);
+    $self->METHOD_kc2longout($kc_file, $luwmodel, $tmp_dir);
     $self->METHOD_kc2bnstout($kc_file, $bnstmodel, $tmp_dir);
     $self->merge_mecab_with_kc_lout_file($mecab_file, $kc_lout_file, $lbout_file);
     $self->merge_mecab_with_kc_bout_file($lbout_file, $kc_bout_file, $lbout_file);
@@ -1177,31 +1177,31 @@ sub plain2longbnstout_internal {
 sub USAGE_plain2midout {
     my $self = shift;
     printf("COMAINU-METHOD: plain2midout\n");
-    printf("  Usage: %s plain2midout <long-train-kc> <test-text> <long-model-file> <mid-model-file> <out-dir>\n", $0);
-    printf("    This command analyzes <test-text> with Mecab or ChaSen and <long-train-kc> and <long-model-file> and <mid-model-file>.\n");
+    printf("  Usage: %s plain2midout <test-text> <long-model-file> <mid-model-file> <out-dir>\n", $0);
+    printf("    This command analyzes <test-text> with Mecab or ChaSen and <long-model-file> and <mid-model-file>.\n");
     printf("    The result is put into <out-dir>.\n");
     printf("\n");
     printf("  ex.)\n");
-    printf("  \$ perl ./script/comainu.pl plain2midout train.KC sample/plain/sample.txt train/CRF/train.KC.model train/MST/train.KC.model out\n");
+    printf("  \$ perl ./script/comainu.pl plain2midout sample/plain/sample.txt train/CRF/train.KC.model train/MST/train.KC.model out\n");
     printf("    -> out/sample.txt.mout\n");
     printf("\n");
 }
 
 sub METHOD_plain2midout {
-    my ($self, $long_train_kc, $test_file, $luwmodel, $muwmodel, $save_dir) = @_;
+    my ($self, $test_file, $luwmodel, $muwmodel, $save_dir) = @_;
 
-    $self->check_args(scalar @_ == 6);
+    $self->check_args(scalar @_ == 5);
     $self->check_luwmodel($luwmodel);
     $self->check_file($muwmodel);
     mkdir $save_dir unless -d $save_dir;
 
     if ( -f $test_file ) {
-        $self->plain2midout_internal($long_train_kc, $test_file, $luwmodel, $muwmodel, $save_dir);
+        $self->plain2midout_internal($test_file, $luwmodel, $muwmodel, $save_dir);
     } elsif ( -d $test_file ) {
         opendir(my $dh, $test_file);
         while ( my $test_file2 = readdir($dh) ) {
             if ( $test_file2 =~ /.txt$/ ) {
-                $self->plain2midout_internal($long_train_kc, $test_file2, $luwmodel, $muwmodel, $save_dir);
+                $self->plain2midout_internal($test_file2, $luwmodel, $muwmodel, $save_dir);
             }
         }
         closedir($dh);
@@ -1211,7 +1211,7 @@ sub METHOD_plain2midout {
 }
 
 sub plain2midout_internal {
-    my ($self, $long_train_kc, $test_file, $luwmodel, $muwmodel, $save_dir) = @_;
+    my ($self, $test_file, $luwmodel, $muwmodel, $save_dir) = @_;
 
     my $tmp_dir = $self->{"comainu-temp"};
     my $basename = File::Basename::basename($test_file);
@@ -1224,7 +1224,7 @@ sub plain2midout_internal {
 
     $self->plain2mecab_file($test_file, $chasen_file, $mecab_file);
     $self->mecab2kc_file($mecab_file, $kc_file);
-    $self->METHOD_kc2longout($long_train_kc, $kc_file, $luwmodel, $tmp_dir);
+    $self->METHOD_kc2longout($kc_file, $luwmodel, $tmp_dir);
     $self->lout2kc4mid_file($kc_lout_file, $kc_file);
     $self->METHOD_kclong2midout($kc_file, $muwmodel, $tmp_dir);
     $self->merge_mecab_with_kc_mout_file($mecab_file, $kc_mout_file, $mout_file);
@@ -1243,32 +1243,32 @@ sub plain2midout_internal {
 sub USAGE_plain2midbnstout {
     my $self = shift;
     printf("COMAINU-METHOD: plain2midbnstout\n");
-    printf("  Usage: %s plain2midbnstout <long-train-kc> <test-text> <long-model-file> <mid-model-file> <bnst-model-file> <out-dir>\n", $0);
-    printf("    This command analyzes <test-text> with Mecab or ChaSen and <long-train-kc> and <long-model-file>, <mid-model-file> and <bnst-model-file>.\n");
+    printf("  Usage: %s plain2midbnstout <test-text> <long-model-file> <mid-model-file> <bnst-model-file> <out-dir>\n", $0);
+    printf("    This command analyzes <test-text> with Mecab or ChaSen and <long-model-file>, <mid-model-file> and <bnst-model-file>.\n");
     printf("    The result is put into <out-dir>.\n");
     printf("\n");
     printf("  ex.)\n");
-    printf("  \$ perl ./script/comainu.pl plain2midbnstout train.KC sample/plain/sample.txt train/CRF/train.KC.model train/MST/train.KC.model train/bnst.model out\n");
+    printf("  \$ perl ./script/comainu.pl plain2midbnstout sample/plain/sample.txt train/CRF/train.KC.model train/MST/train.KC.model train/bnst.model out\n");
     printf("    -> out/sample.txt.mbout\n");
     printf("\n");
 }
 
 sub METHOD_plain2midbnstout {
-    my ($self, $long_train_kc, $test_file, $luwmodel, $muwmodel, $bnstmodel, $save_dir) = @_;
+    my ($self, $test_file, $luwmodel, $muwmodel, $bnstmodel, $save_dir) = @_;
 
-    $self->check_args(scalar @_ == 7);
+    $self->check_args(scalar @_ == 6);
     $self->check_luwmodel($luwmodel);
     $self->check_file($muwmodel);
     $self->check_file($bnstmodel);
     mkdir $save_dir unless -d $save_dir;
 
     if ( -f $test_file ) {
-        $self->plain2midbnstout_internal($long_train_kc, $test_file, $luwmodel, $muwmodel, $bnstmodel, $save_dir);
+        $self->plain2midbnstout_internal($test_file, $luwmodel, $muwmodel, $bnstmodel, $save_dir);
     } elsif ( -d $test_file ) {
         opendir(my $dh, $test_file);
         while ( my $test_file2 = readdir($dh) ) {
             if ( $test_file2 =~ /.txt$/ ) {
-                $self->plain2midbnstout_internal($long_train_kc, $test_file2, $luwmodel, $muwmodel, $bnstmodel, $save_dir);
+                $self->plain2midbnstout_internal($test_file2, $luwmodel, $muwmodel, $bnstmodel, $save_dir);
             }
         }
         closedir($dh);
@@ -1278,7 +1278,7 @@ sub METHOD_plain2midbnstout {
 }
 
 sub plain2midbnstout_internal {
-    my ($self, $long_train_kc, $test_file, $luwmodel, $muwmodel, $bnstmodel, $save_dir) = @_;
+    my ($self, $test_file, $luwmodel, $muwmodel, $bnstmodel, $save_dir) = @_;
 
     my $tmp_dir = $self->{"comainu-temp"};
     my $basename = File::Basename::basename($test_file);
@@ -1294,7 +1294,7 @@ sub plain2midbnstout_internal {
 
     $self->plain2mecab_file($test_file, $chasen_file, $mecab_file);
     $self->mecab2kc_file($mecab_file, $kc_file);
-    $self->METHOD_kc2longout($long_train_kc, $kc_file, $luwmodel, $tmp_dir);
+    $self->METHOD_kc2longout($kc_file, $luwmodel, $tmp_dir);
     $self->METHOD_kc2bnstout($kc_file, $bnstmodel, $tmp_dir);
     $self->lout2kc4mid_file($kc_lout_file, $kc_file);
     $self->METHOD_kclong2midout($kc_file, $muwmodel, $tmp_dir);
@@ -1443,10 +1443,10 @@ sub make_luw_traindata {
     # $buff = $self->add_column($buff);
 
     ## 辞書の作成
-    my $C_Dic = new CreateDictionary();
+    my $C_Dic = CreateDictionary->new;
     $C_Dic->create_dictionary($tmp_train_kc, $model_dir, $basename);
     ## 素性の追加
-    my $AF = new AddFeature();
+    my $AF = AddFeature->new;
     $buff = $AF->add_feature($buff, $basename, $model_dir);
 
     $self->write_to_file($model_dir . "/" . $basename . ".KC2", $buff);
@@ -1485,7 +1485,7 @@ sub add_luw_label {
     {
         open(my $fh_ref, "<", $tmp_train_kc)  or die "Cannot open '$tmp_train_kc'";
         open(my $fh_svmin, "<", $output_file) or die "Cannot open'$output_file'";
-        my $BIP = new BIProcessor();
+        my $BIP = BIProcessor->new;
         $BIP->extract_from_train($fh_ref, $fh_svmin, $model_dir, $basename);
         close($fh_ref);
         close($fh_svmin);

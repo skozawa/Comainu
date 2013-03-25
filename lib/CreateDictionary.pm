@@ -34,7 +34,7 @@ sub new {
 #
 sub create_dictionary{
     my $self = shift;
-    my ($train_kc,$dir,$NAME) = @_;
+    my ($train_kc, $dir, $NAME) = @_;
 
     #my %noun_ippan;
     #my %noun_sahen;
@@ -60,9 +60,9 @@ sub create_dictionary{
 	    $state = 0;
 	    next;
 	}
-	
+
 	my @items = split(/ /,$line);
-	
+
 	## 長単位の先頭の短単位でない場合
 	if($items[13] eq '*'){
 	    #if($state == 1 && $items[3] =~ /^名詞-普通名詞|^動詞/){

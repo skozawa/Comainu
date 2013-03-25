@@ -89,9 +89,7 @@ my $CONFIGURATION_VIEW = [
         "name" => "STR_COMAINU",
         "options" => [
             ["comainu-home", "dirname"],
-            ["comainu-crf-train", "string", {"-list" => ["train.KC"]}],
             ["comainu-crf-model", "pathname"],
-            ["comainu-svm-train", "string", {"-list" => ["train.KC"]}],
             ["comainu-svm-model", "pathname"],
             ["comainu-svm-bnst-model", "pathname"],
             ["comainu-svm-bip-model", "dirname"],
@@ -1784,9 +1782,7 @@ sub execute_analysis_data {
     my $java = $app_conf->get("java");
     my $mstparser_dir = $app_conf->get("mstparser-dir");
     my $comainu_home = $app_conf->get("comainu-home");
-    my $comainu_crf_train = $app_conf->get("comainu-crf-train");
     my $comainu_crf_model = $app_conf->get("comainu-crf-model");
-    my $comainu_svm_train = $app_conf->get("comainu-svm-train");
     my $comainu_svm_model = $app_conf->get("comainu-svm-model");
     my $comainu_svm_bnst_model = $app_conf->get("comainu-svm-bnst-model");
     my $comainu_svm_bip_model = $app_conf->get("comainu-svm-bip-model");
@@ -1826,14 +1822,8 @@ sub execute_analysis_data {
     }
 
     my $comainu_long_model = $comainu_crf_model;
-    my $comainu_train_kc = $comainu_crf_train;
     if ($comainu_long_model_type =~ /svm/) {
         $comainu_long_model = $comainu_svm_model;
-        $comainu_train_kc = $comainu_svm_train;
-    }
-    if ($comainu_train_kc eq "") {
-        $comainu_train_kc = $comainu_long_model;
-        $comainu_train_kc =~ s/.model$//;
     }
 
     my $comainu_mid_model = $comainu_mst_model;
@@ -1857,7 +1847,6 @@ sub execute_analysis_data {
     $unidic_db = File::Spec->rel2abs($unidic_db);
     $comainu_home = File::Spec->rel2abs($comainu_home);
     $comainu_long_model = File::Spec->rel2abs($comainu_long_model);
-    $comainu_train_kc = File::Spec->rel2abs($comainu_train_kc);
     $comainu_mid_model = File::Spec->rel2abs($comainu_mid_model);
     $tmp_dir = File::Spec->rel2abs($tmp_dir);
     $comainu_test = File::Spec->rel2abs($comainu_test);
@@ -1888,11 +1877,10 @@ sub execute_analysis_data {
         "luwmrph" => $luwmrph,
     };
     my $comainu_opts_str = join(" ", map {"--".$_." \"".$comainu_opts->{$_}."\"";} keys %$comainu_opts);
-    my $comainu_com = sprintf("\"%s\" \"%s/script/comainu.pl\" %s \"%s\" \"%s\" \"%s\" \"%s\" \"%s\"",
+    my $comainu_com = sprintf("\"%s\" \"%s/script/comainu.pl\" %s \"%s\" \"%s\" \"%s\" \"%s\"",
                               $runcom,
                               $comainu_home, $comainu_opts_str,
                               $comainu_method,
-                              $comainu_train_kc,
                               $comainu_test, $comainu_long_model, $tmp_dir
                           );
     if($comainu_method =~ /(plain|bccwj|kc)2bnstout/) {
@@ -1906,36 +1894,33 @@ sub execute_analysis_data {
     }
     if($comainu_method =~ /(plain|bccwj|kc)2longbnstout/) {
         # Long & BunSetsu Analysis
-        $comainu_com = sprintf("\"%s\" \"%s/script/comainu.pl\" %s \"%s\" \"%s\" \"%s\" \"%s\" \"%s\" \"%s\"",
+        $comainu_com = sprintf("\"%s\" \"%s/script/comainu.pl\" %s \"%s\" \"%s\" \"%s\" \"%s\" \"%s\"",
                                $runcom,
                                $comainu_home, $comainu_opts_str,
                                $comainu_method,
-                               $comainu_train_kc, # just for name
                                $comainu_test, $comainu_long_model, $comainu_bnst_model, $tmp_dir
                            );
     }
     if($comainu_method =~ /(plain|bccwj|kc)2midout/) {
         # Mid Analysis
-        $comainu_com = sprintf("\"%s\" \"%s/script/comainu.pl\" %s \"%s\" \"%s\" \"%s\" \"%s\" \"%s\" \"%s\"",
+        $comainu_com = sprintf("\"%s\" \"%s/script/comainu.pl\" %s \"%s\" \"%s\" \"%s\" \"%s\" \"%s\"",
 			       $runcom,
                                $comainu_home, $comainu_opts_str,
                                $comainu_method,
-                               $comainu_train_kc, # just for name
                                $comainu_test, $comainu_long_model, $comainu_mid_model, $tmp_dir
                            );
     }
     if($comainu_method =~ /(plain|bccwj|kc)2midbnstout/) {
         # Long & Mid Analysis % BunSetsu
-        $comainu_com = sprintf("\"%s\" \"%s/script/comainu.pl\" %s \"%s\" \"%s\" \"%s\" \"%s\" \"%s\" \"%s\" \"%s\"",
+        $comainu_com = sprintf("\"%s\" \"%s/script/comainu.pl\" %s \"%s\" \"%s\" \"%s\" \"%s\" \"%s\" \"%s\"",
                                $runcom,
                                $comainu_home, $comainu_opts_str,
                                $comainu_method,
-                               $comainu_train_kc, # just for name
                                $comainu_test, $comainu_long_model, $comainu_mid_model, $comainu_bnst_model, $tmp_dir
                            );
     }
     if($comainu_method =~ /(bccwjlong|kclong)2midout/) {
-        # Long & Mid Analysis
+        # Mid Analysis
         $comainu_com = sprintf("\"%s\" \"%s/script/comainu.pl\" %s \"%s\" \"%s\" \"%s\" \"%s\" \"%s\"",
                                $runcom,
                                $comainu_home, $comainu_opts_str,
