@@ -247,11 +247,9 @@ build-model-compil32:
 	echo
 
 train-sample: train-sample-crf \
-	train-sample-mira \
 	train-sample-svm
 
 clean-train-sample: clean-train-sample-crf \
-	clean-train-sample-mira \
 	clean-train-sample-svm
 
 train-sample-crf:
@@ -264,17 +262,6 @@ train-sample-crf:
 
 clean-train-sample-crf:
 	rm -fr ./train/CRF/*
-
-train-sample-mira:
-	@echo "####################"
-	@echo "# $@"
-	@echo "####################"
-	train_dir=./train/MIRA && \
-	kc_file=./train/sample.KC && \
-	./script/comainu.pl kc2longmodelMIRA "$${kc_file}" "$${train_dir}"
-
-clean-train-sample-mira:
-	rm -fr ./train/MIRA/*
 
 train-sample-svm:
 	@echo "####################"
@@ -322,7 +309,6 @@ distclean: clean
 	dist-model-win32 build-model-compil32 \
 	train-sample clean-train-sample \
 	train-crf clean-train-crf \
-	train-mira clean-train-mira \
 	train-svm clean-train-svm \
 
 

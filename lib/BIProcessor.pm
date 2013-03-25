@@ -9,7 +9,6 @@ use utf8;
 
 use constant MODEL_TYPE_SVM  => 0;
 use constant MODEL_TYPE_CRF  => 1;
-use constant MODEL_TYPE_MIRA => 2;
 
 my $DEFAULT_VALUES = {
     model_type => MODEL_TYPE_SVM,
@@ -257,13 +256,6 @@ sub extract_BI_data {
         $pos_feature =~ s/\n/\n\n/g;
         $cType_feature =~ s/\n/\n\n/g;
         $cForm_feature =~ s/\n/\n\n/g;
-    } elsif ( $self->{model_type} == MODEL_TYPE_MIRA ) {
-        $pos_feature =~ s/\n/\n\n/g;
-        $pos_feature =~ s/ /\t/g;
-        $cType_feature =~ s/\n/\n\n/g;
-        $cType_feature =~ s/ /\t/g;
-        $cForm_feature =~ s/\n/\n\n/g;
-        $cForm_feature =~ s/ /\t/g;
     }
     undef $comp;
 
@@ -339,10 +331,6 @@ sub exec_test {
     my $pos_model = $model_dir."/pos/".$TRAINNAME.".BI_pos.model";
     my $com1 = sprintf("%s -m \"%s\" < \"%s\" > \"%s\"",
                        $COM, $pos_model, $pos, $pos_out);
-    if ( $self->{model_type} == MODEL_TYPE_MIRA ) {
-        $com1 = sprintf("%s -m \"%s\" < \"%s\" > \"%s\"",
-                        $COM, $model_dir."/pos", $pos, $pos_out);
-    }
     print STDERR "# $com1\n";
     system($com1);
     unlink $pos if !$self->{debug} && -f $pos;
@@ -353,10 +341,6 @@ sub exec_test {
     $self->create_cType_dat($pos_out, $cType);
     my $com2 = sprintf("%s -m \"%s\" < \"%s\" > \"%s\"",
                        $COM, $cType_model, $cType, $cType_out);
-    if ( $self->{model_type} == MODEL_TYPE_MIRA ) {
-        $com2 = sprintf("%s -m \"%s\" < \"%s\" > \"%s\"",
-                        $COM, $model_dir."/cType", $cType, $cType_out);
-    }
     print STDERR "# $com2\n";
     system($com2);
     unlink $cType if !$self->{debug} && -f $cType;
@@ -367,10 +351,6 @@ sub exec_test {
     $self->create_cForm_dat($cType_out, $cForm);
     my $com3 = sprintf("%s -m \"%s\" < \"%s\" > \"%s\"",
                        $COM, $cForm_model, $cForm, $cForm_out);
-    if ( $self->{model_type} == MODEL_TYPE_MIRA ) {
-        $com3 = sprintf("%s -m \"%s\" < \"%s\" > \"%s\"",
-                        $COM, $model_dir."/cForm", $cForm, $cForm_out);
-    }
     print STDERR "# $com3\n";
     system($com3);
     unlink $cForm if !$self->{debug} && -f $cForm;
@@ -467,9 +447,6 @@ sub create_cType_dat {
 
     if ( $self->{model_type} == MODEL_TYPE_CRF ) {
         $buff =~ s/\n/\n\n/mg;
-    } elsif ( $self->{model_type} == MODEL_TYPE_MIRA ) {
-        $buff =~ s/\n/\n\n/mg;
-        $buff =~ s/ /\t/mg;
     }
     $buff .= "\n";
     $self->write_to_file($file, $buff);
@@ -501,9 +478,6 @@ sub create_cForm_dat {
     }
     if ( $self->{model_type} == MODEL_TYPE_CRF ) {
         $buff =~ s/\n/\n\n/mg;
-    } elsif ( $self->{model_type} == MODEL_TYPE_MIRA ) {
-        $buff =~ s/\n/\n\n/mg;
-        $buff =~ s/ /\t/mg;
     }
     $buff .= "\n";
     $self->write_to_file($file, $buff);
@@ -522,14 +496,9 @@ sub merge_data_and_out {
     my $data2 = Encode::decode("utf-8", <$fh2>);
     while ( $data1 && $data2 ) {
         $data1 =~ s/\r?\n//g;
-        $data1 =~ s/^EOS//g if($self->{model_type} == MODEL_TYPE_MIRA);
         $data2 =~ s/\r?\n//g;
         my @items = split(/\t/,$data1);
-        if ( $self->{model_type} == MODEL_TYPE_MIRA ) {
-            $data .= join("\t",@items)."\t".$data2."\n";
-        } else {
-            $data .= join(" ",@items)." ".$data2."\n";
-        }
+        $data .= join(" ",@items)." ".$data2."\n";
 
         $data1 = Encode::decode("utf-8", <$fh1>);
         $data2 = Encode::decode("utf-8", <$fh2>);

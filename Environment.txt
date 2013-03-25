@@ -51,10 +51,6 @@ ComainuÀsŠÂ‹«
   http://crfpp.sourceforge.net/
   CRF++-0.54
 
-EMIRA
-
-  MIRA-0.10
-
 EJava
 
   Java 1.6.0

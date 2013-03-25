@@ -195,18 +195,6 @@ sub get_crf_dir_auto {
     return $path;
 }
 
-sub get_mira_dir_auto {
-    my $self = shift;
-    my $path = "";
-    if($Config{"osname"} eq "MSWin32") {
-        $path = 'C:/Program Files/MIRA-0.10/bin';
-        if(!-d $path) {
-            $path = 'C:/MIRA-0.10/bin';
-        }
-    }
-    return $path;
-}
-
 sub get_java_auto {
     my $self = shift;
     my $path = "";

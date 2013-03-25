@@ -27,9 +27,8 @@ UNIX:
   Unidic2:
     unidic-2.1.0 以上
 
-  CRF++ または MIRA:
+  CRF++
     CRF++-0.54 以上
-    MIRA-0.10 以上
 
 中単位解析をする場合は以下も必要。
 

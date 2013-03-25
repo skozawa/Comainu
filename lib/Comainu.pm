@@ -34,7 +34,6 @@ my $DEFAULT_VALUES = {
     "unidic-db" => "/usr/local/unidic2/share/unidic.db",
     "svm-tool-dir" => "/usr/local/bin",
     "crf-dir" => "/usr/local/bin",
-    "mira-dir" => "/usr/local/bin",
     "mstparser-dir" => "mstparser",
     "boundary" => "none",
     "luwmrph" => "with",
@@ -136,8 +135,6 @@ sub USAGE_kc2longout {
     printf("    -> out/sample.lout\n");
     printf("  \$ perl ./script/comainu.pl kc2longout --luwmodel=SVM train.KC sample/sample.KC train/SVM/train.KC.model out\n");
     printf("    -> out/sample.KC.lout\n");
-    printf("  \$ perl ./script/comainu.pl kc2longout --luwmodel=MIRA train.KC sample/sample.KC train/MIRA out\n");
-    printf("    -> out/sample.lout\n");
     printf("\n");
 }
 
@@ -171,10 +168,7 @@ sub kc2longout_internal {
 
     $self->create_features($tmp_test_kc, $train_kc, $luwmodel);
 
-    $luwmodel =~ s/[\/\\]$// if $self->{luwmodel} eq "MIRA";
     $self->chunk_luw($tmp_test_kc, $luwmodel);
-    $luwmodel .= "/" . File::Basename::basename($train_kc)
-        if $self->{luwmodel} eq "MIRA";
     $self->merge_chunk_result($tmp_test_kc, $save_dir);
     $self->post_process($train_kc, $tmp_test_kc, $luwmodel, $save_dir);
 
@@ -205,13 +199,9 @@ sub create_features {
 
     # 素性の追加
     my $AF = new AddFeature();
-    my $basename = File::Basename::basename($train_kc);
-    if ( $self->{luwmodel} eq "SVM" || $self->{luwmodel} eq "CRF" ) {
-        my ($filename, $path) = File::Basename::fileparse($luwmodel);
-        $buff = $AF->add_feature($buff, $basename, $path);
-    } elsif ( $self->{luwmodel} eq "MIRA" ) {
-        $buff = $AF->add_feature($buff, $basename, $luwmodel);
-    }
+    my $basename = File::Basename::basename($luwmodel, ".model");
+    my ($filename, $path) = File::Basename::fileparse($luwmodel);
+    $buff = $AF->add_feature($buff, $basename, $path);
 
     $self->write_to_file($output_file, $buff);
     undef $buff;
@@ -222,7 +212,7 @@ sub create_features {
     return 0;
 }
 
-# 解析用KC２ファイルをチャンキングモデル(yamcha, crf++, mira)で解析
+# 解析用KC２ファイルをチャンキングモデル(yamcha, crf++)で解析
 sub chunk_luw {
     my ($self, $tmp_test_kc, $luwmodel) = @_;
     print STDERR "# CHUNK LUW\n";
@@ -236,8 +226,6 @@ sub chunk_luw {
         $tool_cmd = $self->{"yamcha-dir"} . "/yamcha";
     } elsif ( $self->{luwmodel} eq 'CRF' ) {
         $tool_cmd = $self->{"crf-dir"} . "/crf_test";
-    } elsif ( $self->{luwmodel} eq 'MIRA' ) {
-        $tool_cmd = $self->{"mira-dir"} . "/mira-predict";
     }
     $tool_cmd .= ".exe" if $Config{osname} eq "MSWin32";
 
@@ -255,8 +243,7 @@ sub chunk_luw {
     $self->check_file($input_file);
 
     my $buff = $self->read_from_file($input_file);
-    $buff =~ s/ /\t/mg if $self->{luwmodel} eq 'MIRA';
-    $buff =~ s/^EOS.*?//mg if $self->{luwmodel} ~~ ['CRF', 'MIRA'];
+    $buff =~ s/^EOS.*?//mg if $self->{luwmodel} eq'CRF';
     # yamchaやCRF++のために、明示的に最終行に改行を付与
     $buff .= "\n";
     $self->write_to_file($input_file, $buff);
@@ -264,20 +251,15 @@ sub chunk_luw {
     my $com = "";
     if ( $self->{luwmodel} eq "SVM" ) {
         $com = "\"" . $tool_cmd . "\" " . $opt . " -m \"" . $luwmodel . "\"";
-    } elsif ( $self->{luwmodel} eq "CRF" || $self->{luwmodel} eq "MIRA" ) {
+    } elsif ( $self->{luwmodel} eq "CRF" ) {
         $com = "\"$tool_cmd\" -m \"$luwmodel\"";
     }
     printf(STDERR "# COM: %s\n", $com) if $self->{debug};
 
     $buff = $self->proc_stdin2stdout($com, $buff);
     $buff =~ s/\x0d\x0a/\x0a/sg;
-    if ( $self->{luwmodel} eq "SVM" || $self->{luwmodel} eq "CRF" ) {
-        $buff =~ s/^\r?\n//mg;
-        $buff = $self->move_future_front($buff);
-    } elsif ( $self->{luwmodel} eq "MIRA" ) {
-        $buff = $self->move_future_front($buff);
-        $buff =~ s/^ EOS.*\r?\n//mg;
-    }
+    $buff =~ s/^\r?\n//mg;
+    $buff = $self->move_future_front($buff);
     $buff = $self->truncate_last_column($buff);
     $self->write_to_file($output_file, $buff);
     undef $buff;
@@ -322,9 +304,7 @@ sub post_process {
     $cmd .= ".exe" if $Config{osname} eq "MSWin32";
     $cmd = sprintf("\"%s\" -C", $cmd);
 
-    my $train_name = $self->{luwmodel} ne "MIRA" ?
-        File::Basename::basename($luwmodel, ".model") :
-        File::Basename::basename($train_kc, ".KC");
+    my $train_name = File::Basename::basename($luwmodel, ".model");
     my $test_name = File::Basename::basename($tmp_test_kc);
     my $lout_file = $save_dir . "/" . $test_name . ".lout";
     my $lout_data = $self->read_from_file($lout_file);
@@ -626,8 +606,6 @@ sub USAGE_bccwj2longout {
     printf("  \$ perl ./script/comainu.pl bccwj2longout train.KC sample/sample.bccwj.txt train/CRF/train.KC.model out\n");
     printf("    -> out/sample.bccwj.txt.lout\n");
     printf("  \$ perl ./script/comainu.pl bccwj2longout --luwmodel=SVM train.KC sample/sample.bccwj.txt train/SVM/train.KC.model out\n");
-    printf("    -> out/sample.bccwj.txt.lout\n");
-    printf("  \$ perl ./script/comainu.pl bccwj2longout --luwmodel=MIRA train.KC sample/sample.bccwj.txt train/MIRA out\n");
     printf("    -> out/sample.bccwj.txt.lout\n");
     printf("\n");
 }
@@ -1444,8 +1422,6 @@ sub METHOD_kc2longmodel {
         $self->train_luwmodel_svm($tmp_train_kc, $model_dir);
     } elsif ( $self->{"luwmodel"} eq "CRF" ) {
         $self->train_luwmodel_crf($tmp_train_kc, $model_dir);
-    } elsif ( $self->{"luwmodel"} eq "MIRA" ) {
-        $self->train_luwmodel_mira($tmp_train_kc, $model_dir);
     }
     if ( $self->{"luwmrph"} eq "with" ) {
         $self->train_bi_model($tmp_train_kc, $model_dir);
@@ -1560,37 +1536,6 @@ sub train_luwmodel_crf {
 
     my $crf_model = $model_dir . "/" . $basename .".model";
     my $com = "\"$crf_learn\" \"$crf_template\" \"$svmin\" \"$crf_model\"";
-    printf(STDERR "# COM: %s\n", $com);
-    system($com);
-
-    return 0;
-}
-
-sub train_luwmodel_mira {
-    my ($self, $train_kc, $model_dir) = @_;
-    print STDERR "# TRAIN LUWMODEL\n";
-
-    my $basename = File::Basename::basename($train_kc);
-
-    my $mira_learn = $self->{"mira-dir"} . "/mira-train";
-    my $mira_template = $model_dir . "/" . $basename . ".template";
-
-    ## SVMINの修正
-    my $svmin = $model_dir . "/" . $basename . ".svmin";
-    my $svmin_buff = $self->read_from_file($svmin);
-    my $svmin_buff2 = "";
-    foreach my $line ( split(/\r?\n/, $svmin_buff) ) {
-        my @items = split(/ /,$line);
-        $svmin_buff2 .= join("\t",@items)."\n";
-    }
-    my $line = (split(/\r?\n/,$svmin_buff))[0];
-    my $feature_num = scalar(split(/ /,$line))-2;
-    $self->write_to_file($svmin, $svmin_buff2);
-    $self->create_template($mira_template, $feature_num);
-    undef $svmin_buff;
-    undef $svmin_buff2;
-
-    my $com = "\"$mira_learn\" -t \"$mira_template\" -c \"$svmin\" -m \"$model_dir\"";
     printf(STDERR "# COM: %s\n", $com);
     system($com);
 
@@ -3536,12 +3481,6 @@ sub check_luwmodel {
    if ( $self->{luwmodel} eq "SVM" || $self->{luwmodel} eq "CRF" ) {
        unless ( -f $luwmodel ) {
            printf(STDERR "ERROR: '%s' not found or not a file.\n",
-                  $luwmodel);
-           die;
-       }
-   } elsif ( $self->{uwmodel} eq "MIRA" ) {
-       unless ( -d $luwmodel ) {
-           printf(STDERR "ERROR: '%s' not found or not a dir.\n",
                   $luwmodel);
            die;
        }

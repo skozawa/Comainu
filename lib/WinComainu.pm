@@ -91,8 +91,6 @@ my $CONFIGURATION_VIEW = [
             ["comainu-home", "dirname"],
             ["comainu-crf-train", "string", {"-list" => ["train.KC"]}],
             ["comainu-crf-model", "pathname"],
-            ["comainu-mira-train", "string", {"-list" => ["train.KC"]}],
-            ["comainu-mira-model", "dirname"],
             ["comainu-svm-train", "string", {"-list" => ["train.KC"]}],
             ["comainu-svm-model", "pathname"],
             ["comainu-svm-bnst-model", "pathname"],
@@ -112,7 +110,6 @@ my $CONFIGURATION_VIEW = [
             ["yamcha-dir", "dirname"],
             ["svm-tool-dir", "dirname"],
             ["crf-dir", "dirname"],
-            ["mira-dir", "dirname"],
             ["java", "pathname"],
             ["mstparser-dir", "dirname"],
         ],
@@ -785,7 +782,7 @@ sub get_comainu_type_list {
         return ["bnst", "long_only_boundary", "long", "longbnst", "mid", "midbnst"];
     }
     if ($type eq "model-type") {
-        return ["svm", "crf", "mira"];
+        return ["svm", "crf"];
     }
     if ($type eq "tagger-type") {
         return ["mecab", "chasen"];
@@ -1784,14 +1781,11 @@ sub execute_analysis_data {
     my $unidic_db = $app_conf->get("unidic-db");
     my $yamcha_dir = $app_conf->get("yamcha-dir");
     my $crf_dir = $app_conf->get("crf-dir");
-    my $mira_dir = $app_conf->get("mira-dir");
     my $java = $app_conf->get("java");
     my $mstparser_dir = $app_conf->get("mstparser-dir");
     my $comainu_home = $app_conf->get("comainu-home");
     my $comainu_crf_train = $app_conf->get("comainu-crf-train");
     my $comainu_crf_model = $app_conf->get("comainu-crf-model");
-    my $comainu_mira_train = $app_conf->get("comainu-mira-train");
-    my $comainu_mira_model = $app_conf->get("comainu-mira-model");
     my $comainu_svm_train = $app_conf->get("comainu-svm-train");
     my $comainu_svm_model = $app_conf->get("comainu-svm-model");
     my $comainu_svm_bnst_model = $app_conf->get("comainu-svm-bnst-model");
@@ -1836,9 +1830,6 @@ sub execute_analysis_data {
     if ($comainu_long_model_type =~ /svm/) {
         $comainu_long_model = $comainu_svm_model;
         $comainu_train_kc = $comainu_svm_train;
-    } elsif ($comainu_long_model_type =~ /mira/) {
-        $comainu_long_model = $comainu_mira_model;
-        $comainu_train_kc = $comainu_mira_train;
     }
     if ($comainu_train_kc eq "") {
         $comainu_train_kc = $comainu_long_model;
@@ -1886,7 +1877,6 @@ sub execute_analysis_data {
         "unidic-db" => $unidic_db,
         "yamcha-dir" => $yamcha_dir,
         "crf-dir" => $crf_dir,
-        "mira-dir" => $mira_dir,
         "java" => $java,
         "mstparser-dir" => $mstparser_dir,
         "comainu-output" => $tmp_dir,

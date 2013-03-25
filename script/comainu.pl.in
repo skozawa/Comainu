@@ -35,7 +35,6 @@ my $DEFAULT_VALUES = {
     "unidic-db"             => "@UNIDIC_DB@",
     "svm-tool-dir"          => "@SVM_TOOL_DIR@",
     "crf-dir"               => "@CRF_DIR@",
-    "mira-dir"              => "@MIRA_DIR@",
     "mstparser-dir"         => "@MSTPARSER_DIR@",
     "model-name"            => "@MODEL_NAME@",
     "comainu-svm-bip-model" => "train/BI_process_model",
@@ -62,7 +61,6 @@ my $OPT_NAME_LIST = [
     "unidic-db",
     "svm-tool-dir",
     "crf-dir",
-    "mira-dir",
     "mstparser-dir",
     "comainu-svm-bip-model",
     "comainu-output",
@@ -92,7 +90,7 @@ sub comainu_usage {
     printf("                                       SUWMODEL:=mecab|chasen\n");
     printf("                                       (curr: '%s')\n", $curr->{"suwmodel"});
     printf("    --luwmodel       LUWMODEL        specify the type of the model for boundary of long-unit-word\n");
-    printf("                                       LUWMODEL:=SVM|CRF|MIRA\n");
+    printf("                                       LUWMODEL:=SVM|CRF\n");
     printf("                                       (curr: '%s')\n", $curr->{"luwmodel"});
     # printf("    --luwmrphmodel   LUWMRPHMODEL    specify the type of the long-unit-word model\n");
     # printf("                                       LUWMRPHMODEL:=SVM\n");
@@ -157,7 +155,7 @@ sub comainu {
         "comainu-home=s", "perl=s", "java=s",
         "yamcha-dir=s", "chasen-dir=s", "mecab-dir=s",
         "unidic-dir=s", "unidic2-dir=s", "unidic-db=s",
-        "svm-tool-dir=s", "crf-dir=s", "mira-dir=s",
+        "svm-tool-dir=s", "crf-dir=s",
         "mstparser-dir=s",
         "comainu-svm-bip-model=s",
         "comainu-output=s", "comainu-temp=s",
@@ -290,8 +288,6 @@ sub check_sub_tool_path {
 
         if ( $opts->{luwmodel} eq 'CRF' ) {
             return 0 unless _check_tool_path($opts->{'crf-dir'}, 'crf_learn');
-        } elsif ( $opts->{luwmodel} eq 'MIRA' ) {
-            return 0 unless _check_tool_path($opts->{'mira-dir'}, 'mira-train');
         }
     }
 
@@ -309,8 +305,6 @@ sub check_sub_tool_path {
         return 0 unless _check_tool_path($opts->{"svm-tool-dir"}, 'svm_classify');
         if ( $opts->{luwmodel} eq 'CRF' ) {
             return 0 unless _check_tool_path($opts->{'crf-dir'}, 'crf_test');
-        } elsif ( $opts->{luwmodel} eq 'MIRA' ) {
-            return 0 unless _check_tool_path($opts->{'mira-dir'}, 'mira-predict');
         }
     }
 

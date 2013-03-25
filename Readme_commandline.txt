@@ -13,7 +13,6 @@
     MeCab:     0.98 or lator  (optional)
     TinySVM:   0.09 or lator  (optional: to make model)
     CRF++      0.54 or lator  (optional)
-    MIRA       0.10 or lator  (optional)
     MSTParser: 0.50 or lator  (bundled)
 
   UNIX/Linux:
@@ -41,7 +40,6 @@
                     --unidic2-dir "/usr/local/unidic2" \
                     --svm-tool-dir "/usr/local/bin" \
                     --crf-dir "/usr/local/bin" \
-                    --mira-dir "/usr/local/bin" \
                     --perl "/usr/bin/perl" \
                     --java "/usr/bin/java"
 
@@ -54,7 +52,6 @@
 		    --unidic-dir "c:/Program Files/unidic2" \
                     --svm-tool-dir "c:/TinySVM-0.09/bin" \
                     --crf-dir "c:/CRF++-0.54" \
-                    --mira-dir "c:/MIRA-0.10/bin" \
                     --perl "c:/Perl/bin/perl" \
                     --java "c:/usr/bin/java"
 
@@ -98,7 +95,7 @@ option:
                                           SUWMODEL:=mecab|chasen
                                           (curr: 'mecab')
     --luwmodel          LUWMODEL        specify the type of the model for boundary of long-unit-word
-                                          LUWMODEL:=SVM|CRF|MIRA
+                                          LUWMODEL:=SVM|CRF
                                           (curr: 'CRF')
     --perl                      PERL                    specify PERL
     --java                      JAVA                    specify JAVA
@@ -112,7 +109,6 @@ option:
     --unidic-db			UNIDIC_DB		specify UNIDIC_DB
     --svm-tool-dir              SVM_TOOL_DIR            specify SVM_TOOL_DIR
     --crf-dir                   CRF_DIR                 specify CRF_DIR
-    --mira-dir                  MIRA_DIR                specify MIRA_DIR
     --mstparser-dir             MSTPARSER_DIR           specify MSTPARSER_DIR
     --comainu-svm-bip-model     COMAINU_SVM_BIP_MODEL   specify COMAINU_SVM_BIP_MODEL
     --comainu-output            COMAINU_OUTPUT          specify COMAINU_OUTPUT
@@ -131,7 +127,6 @@ Preset Environments :
   UNIDIC_DB=/usr/local/unidic2/share/unidic.db
   SVM_TOOL_DIR=/usr/local/bin
   CRF_DIR=/usr/local/bin
-  MIRA_DIR=/usr/local/bin
   MSTPARSER_DIR=mstparser
   COMAINU_SVM_BIP_MODEL=train/BI_process_model
   COMAINU_OUTPUT=out
@@ -170,8 +165,6 @@ COMAINU-METHOD: bccwj2longout
   $ perl ./script/comainu.pl bccwj2longout train.KC sample/sample.bccwj.txt train/CRF/sample.KC.model out
     -> out/sample.bccwj.txt.lout
   $ perl ./script/comainu.pl bccwj2longout --luwmodel=SVM train.KC sample/sample.bccwj.txt train/SVM/sample.KC.model out
-    -> out/sample.bccwj.txt.lout
-  $ perl ./script/comainu.pl bccwj2longout --luwmodel=MIRA train.KC sample/sample.bccwj.txt train/MIRA out
     -> out/sample.bccwj.txt.lout
 
 COMAINU-METHOD: bccwj2midbnstout
@@ -254,8 +247,6 @@ COMAINU-METHOD: kc2longout
     -> out/sample.lout
   $ perl ./script/comainu.pl kc2longout --luwmodel=SVM sample/sample.KC sample/sample.KC sample/sample.KC.model out
     -> out/sample.KC.lout
-  $ perl ./script/comainu.pl kc2longout --luwmodel=MIRA sample/sample.KC sample train out
-    -> out/sample.lout
 
 COMAINU-METHOD: kclong2mideval
   Usage: ./script/comainu.pl kclong2mideval <ref-kc> <kc-mout> <out-dir>

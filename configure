@@ -51,7 +51,6 @@ UNIDIC2_DIR
 UNIDIC_DB
 SVM_TOOL_DIR
 CRF_DIR
-MIRA_DIR
 MSTPARSER_DIR
 MODEL_NAME
 "
@@ -78,7 +77,6 @@ UNIDIC2_DIR_DEFAULT="/usr/local/unidic2"
 UNIDIC_DB_DEFAULT="\${UNIDIC2_DIR}/share/unidic.db"
 SVM_TOOL_DIR_DEFAULT="/usr/local/bin"
 CRF_DIR_DEFAULT="/usr/local/bin"
-MIRA_DIR_DEFAULT="/usr/local/bin"
 MSTPARSER_DIR_DEFAULT="mstparser"
 # MODEL_NAME_DEFAULT="LUW090605b_all"
 # MODEL_NAME_DEFAULT="sample"
@@ -106,7 +104,6 @@ UNIDIC2_DIR_HELP="specify the UNIDIC2_DIR"
 UNIDIC_DB_HELP="specify the UNIDIC_DB"
 SVM_TOOL_DIR_HELP="specify the SVM_TOOL_DIR"
 CRF_DIR_HELP="specify the CRF_DIR"
-MIRA_DIR_HELP="specify the MIRA_DIR"
 MSTPARSER_DIR_HELP="specify the MSTPARSER_DIR"
 MODEL_NAME_HELP="specify the model name"
 

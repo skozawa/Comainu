@@ -28,7 +28,6 @@ my $DEFAULT_VALUES = {
     "yamcha-dir"          => "",
     "svm-tool-dir"        => "",
     "crf-dir"             => "",
-    "mira-dir"            => "",
     "model-name"          => "train",
     "java"                => "",
     "mstparser-dir"       => "",
@@ -86,7 +85,6 @@ sub main {
     $opts->{"yamcha-dir"} = $cgp->get_yamcha_dir_auto();
     $opts->{"svm-tool-dir"} = $cgp->get_svm_tool_dir_auto();
     $opts->{"crf-dir"} = $cgp->get_crf_dir_auto();
-    $opts->{"mira-dir"} = $cgp->get_mira_dir_auto();
     $opts->{"java"} = $cgp->get_java_auto();
     $opts->{"mstparser-dir"} = $cgp->get_mstparser_dir_auto();
 
