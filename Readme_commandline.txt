@@ -35,7 +35,6 @@
       $ ./configure --yamcha-dir "/usr/local/bin" \
                     --mecab-dir "/usr/local/bin" \
                     --unidic-dir "/usr/local/unidic" \
-                    --unidic2-dir "/usr/local/unidic2" \
                     --svm-tool-dir "/usr/local/bin" \
                     --crf-dir "/usr/local/bin" \
                     --perl "/usr/bin/perl" \
@@ -46,7 +45,6 @@
       $ ./configure --yamcha-dir "c:/yamcha-0.33/bin" \
                     --mecab-dir "c:/Program Files/MeCab/bin" \
                     --unidic-dir "c:/Program Files/unidic" \
-		    --unidic-dir "c:/Program Files/unidic2" \
                     --svm-tool-dir "c:/TinySVM-0.09/bin" \
                     --crf-dir "c:/CRF++-0.54" \
                     --perl "c:/Perl/bin/perl" \
@@ -98,8 +96,7 @@ option:
     --yamcha-dir                YAMCHA_DIR              specify YAMCHA_DIR
     --mecab-dir                 MECAB_DIR               specify MECAB_DIR
     --unidic-dir                UNIDIC_DIR              specify UNIDIC_DIR
-    --unidic2-dir		UNIDIC2_DIR		specify UNIDIC2_DIR
-    --unidic-db			UNIDIC_DB		specify UNIDIC_DB
+    --unidic-db                 UNIDIC_DB               specify UNIDIC_DB
     --svm-tool-dir              SVM_TOOL_DIR            specify SVM_TOOL_DIR
     --crf-dir                   CRF_DIR                 specify CRF_DIR
     --mstparser-dir             MSTPARSER_DIR           specify MSTPARSER_DIR
@@ -115,7 +112,6 @@ Preset Environments :
   YAMCHA_DIR=/usr/local/bin
   MECAB_DIR=/usr/local/bin
   UNIDIC_DIR=/usr/local/unidic
-  UNIDIC2_DIR=/usr/local/unidic2
   UNIDIC_DB=/usr/local/unidic2/share/unidic.db
   SVM_TOOL_DIR=/usr/local/bin
   CRF_DIR=/usr/local/bin

@@ -29,7 +29,6 @@ my $DEFAULT_VALUES = {
     "yamcha-dir" => "/usr/local/bin",
     "mecab-dir" => "/usr/local/bin",
     "unidic-dir" => "/usr/local/unidic",
-    "unidic2-dir" => "/usr/local/unidic2",
     "unidic-db" => "/usr/local/unidic2/share/unidic.db",
     "svm-tool-dir" => "/usr/local/bin",
     "crf-dir" => "/usr/local/bin",
@@ -1318,9 +1317,8 @@ sub mecab2kc_file {
     undef $def_buff;
 
     my $perl = $self->{perl};
-    my $com = sprintf("\"%s\" \"%s/bin/extcorpus.pl\" -C \"%s\"",
-		      $perl,
-		      $self->{"unidic2-dir"}, $ext_def_file);
+    my $com = sprintf("\"%s\" \"%s/script/extcorpus.pl\" -C \"%s\"",
+                      $perl, $self->{"comainu-home"}, $ext_def_file);
     $self->proc_file2file($com, $mecab_file, $mecab_ext_file);
 
     my $buff = $self->read_from_file($mecab_ext_file);

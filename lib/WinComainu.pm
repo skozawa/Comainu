@@ -102,7 +102,6 @@ my $CONFIGURATION_VIEW = [
         "options" => [
             ["mecab-dir", "dirname"],
             ["unidic-dir", "dirname"],
-            ["unidic2-dir", "dirname"],
             ["unidic-db", "pathname"],
             ["yamcha-dir", "dirname"],
             ["svm-tool-dir", "dirname"],
@@ -171,11 +170,6 @@ sub InitObject {
     if ($unidic_dir eq "") {
         $unidic_dir = $cgp->get_unidic_dir_auto();
         $app_conf->set("unidic-dir", $unidic_dir);
-    }
-    my $unidic2_dir = $app_conf->get("unidic2-dir");
-    if ($unidic2_dir eq "") {
-        $unidic2_dir = $cgp->get_unidic2_dir_auto();
-        $app_conf->set("unidic2-dir", $unidic2_dir);
     }
     my $unidic_db = $app_conf->get("unidic-db");
     if ($unidic_db eq "") {
@@ -1768,7 +1762,6 @@ sub execute_analysis_data {
     my $app_conf = $self->get_app_conf();
     my $mecab_dir = $app_conf->get("mecab-dir");
     my $unidic_dir = $app_conf->get("unidic-dir");
-    my $unidic2_dir = $app_conf->get("unidic2-dir");
     my $unidic_db = $app_conf->get("unidic-db");
     my $yamcha_dir = $app_conf->get("yamcha-dir");
     my $crf_dir = $app_conf->get("crf-dir");
@@ -1835,7 +1828,6 @@ sub execute_analysis_data {
     $yamcha_dir = File::Spec->rel2abs($yamcha_dir);
     $mecab_dir = File::Spec->rel2abs($mecab_dir);
     $unidic_dir = File::Spec->rel2abs($unidic_dir);
-    $unidic2_dir = File::Spec->rel2abs($unidic2_dir);
     $unidic_db = File::Spec->rel2abs($unidic_db);
     $comainu_home = File::Spec->rel2abs($comainu_home);
     $comainu_long_model = File::Spec->rel2abs($comainu_long_model);
@@ -1853,7 +1845,6 @@ sub execute_analysis_data {
         "comainu-home" => $comainu_home,
         "mecab-dir" => $mecab_dir,
         "unidic-dir" => $unidic_dir,
-        "unidic2-dir" => $unidic2_dir,
         "unidic-db" => $unidic_db,
         "yamcha-dir" => $yamcha_dir,
         "crf-dir" => $crf_dir,

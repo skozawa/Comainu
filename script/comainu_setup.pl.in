@@ -22,7 +22,6 @@ my $DEFAULT_VALUES = {
     "perl"                => "C:/Perl/bin/perl",
     "mecab-dir"           => "",
     "unidic-dir"          => "",
-    "unidic2-dir"         => "",
     "unidic-db"           => "",
     "yamcha-dir"          => "",
     "svm-tool-dir"        => "",
@@ -78,7 +77,6 @@ sub main {
     $opts->{"comainu-appdata-dir"} = $cgp->adjust_winpath($opts->{"comainu-appdata-dir"});
     $opts->{"mecab-dir"} = $cgp->get_mecab_dir_auto();
     $opts->{"unidic-dir"} = $cgp->get_unidic_dir_auto();
-    $opts->{"unidic2-dir"} = $cgp->get_unidic2_dir_auto();
     $opts->{"unidic-db"} = $cgp->get_unidic_db_auto();
     $opts->{"yamcha-dir"} = $cgp->get_yamcha_dir_auto();
     $opts->{"svm-tool-dir"} = $cgp->get_svm_tool_dir_auto();

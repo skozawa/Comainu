@@ -99,21 +99,6 @@ sub get_unidic_dir_auto {
     return $path;
 }
 
-sub get_unidic2_dir_auto {
-    my $self = shift;
-    my $path = "";
-    if ($Config{"osname"} eq "MSWin32") {
-        if (!-d $path) {
-            $path = "C:\\Program Files\\unidic2";
-        }
-        if (!-d $path) {
-            $path = "C:\\unidic2";
-        }
-        $path =~ s/\\/\//gs;
-    }
-    return $path;
-}
-
 sub get_unidic_db_auto {
     my $self = shift;
     my $path = "";
