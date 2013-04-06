@@ -23,11 +23,7 @@ Comainu実行環境
   http://www.tokuteicorpus.jp/dist/
   UniDic-2.1.0
 
-・ChaSenまたはMeCab
-
-  ChaSen -- 形態素解析器
-  http://chasen-legacy.sourceforge.jp/
-  ChaSen-2.4.2-1-ipadic-sjis-2.7.0
+・MeCab
 
   MeCab: Yet Another Part-of-Speech and Morphological Analyzer
   http://mecab.sourceforge.net/

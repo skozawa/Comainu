@@ -9,7 +9,6 @@
     YamCha:    0.33 or lator
     UniDic:    1.3.12 or lator (optional)
     UniDic2:   2.1.0 or later (optional)
-    ChaSen:    2.4.1 or lator (optional, 32bit version only)
     MeCab:     0.98 or lator  (optional)
     TinySVM:   0.09 or lator  (optional: to make model)
     CRF++      0.54 or lator  (optional)
@@ -34,7 +33,6 @@
     For UNIX/Linux:
       ex.)
       $ ./configure --yamcha-dir "/usr/local/bin" \
-                    --chasen-dir "/usr/local/bin" \
                     --mecab-dir "/usr/local/bin" \
                     --unidic-dir "/usr/local/unidic" \
                     --unidic2-dir "/usr/local/unidic2" \
@@ -46,7 +44,6 @@
     For MSYS/MinGW or Cygwin (MS-Windows):
       ex.)
       $ ./configure --yamcha-dir "c:/yamcha-0.33/bin" \
-                    --chasen-dir "c:/Program Files/ChaSen" \
                     --mecab-dir "c:/Program Files/MeCab/bin" \
                     --unidic-dir "c:/Program Files/unidic" \
 		    --unidic-dir "c:/Program Files/unidic2" \
@@ -56,7 +53,7 @@
                     --java "c:/usr/bin/java"
 
     * You have to specify the place of binaries for --yamcha-dir,
-      --chasen-dir, --mecab-dir and --svm-tool-dir.
+      --mecab-dir and --svm-tool-dir.
     * You have to specify the perl program for --perl.
 
 2. Usage
@@ -91,9 +88,6 @@ option:
     --luwmrph           LUWMRPH         whether to output morphology of long-unit-word
                                           LUWMRPH:=with|without
                                           (curr: 'with')
-    --suwmodel          SUWMODEL        specify the type of the short-unit-word model
-                                          SUWMODEL:=mecab|chasen
-                                          (curr: 'mecab')
     --luwmodel          LUWMODEL        specify the type of the model for boundary of long-unit-word
                                           LUWMODEL:=SVM|CRF
                                           (curr: 'CRF')
@@ -102,7 +96,6 @@ option:
     --comainu-home              COMAINU_HOME            specify COMAINU_HOME
     --ofilter                   OFILTER                 specify OFILTER
     --yamcha-dir                YAMCHA_DIR              specify YAMCHA_DIR
-    --chasen-dir                CHASEN_DIR              specify CHASEN_DIR
     --mecab-dir                 MECAB_DIR               specify MECAB_DIR
     --unidic-dir                UNIDIC_DIR              specify UNIDIC_DIR
     --unidic2-dir		UNIDIC2_DIR		specify UNIDIC2_DIR
@@ -120,7 +113,6 @@ Preset Environments :
   COMAINU_HOME=/usr/local/Comainu-0.52
   OFILTER=
   YAMCHA_DIR=/usr/local/bin
-  CHASEN_DIR=/usr/local/bin
   MECAB_DIR=/usr/local/bin
   UNIDIC_DIR=/usr/local/unidic
   UNIDIC2_DIR=/usr/local/unidic2
@@ -276,7 +268,7 @@ COMAINU-METHOD: kclong2midout
 
 COMAINU-METHOD: plain2bnstout
   Usage: ./script/comainu.pl plain2bnstout <test-text> <bnst-model-file> <out-dir>
-    This command analyzes <test-text> with MeCab or Chasen and <bnst-model-file>.
+    This command analyzes <test-text> with MeCab and <bnst-model-file>.
     The result is put into <out-dir>.
 
   ex.)
@@ -285,7 +277,7 @@ COMAINU-METHOD: plain2bnstout
 
 COMAINU-METHOD: plain2longbnstout
   Usage: ./script/comainu.pl plain2longbnstout <test-text> <long-model-file> <bnst-model-file> <out-dir>
-    This command analyzes <test-text> with Mecab or ChaSen and <long-model-file> and <bnst-model-file>.
+    This command analyzes <test-text> with Mecab and <long-model-file> and <bnst-model-file>.
     The result is put into <out-dir>.
 
   ex.)
@@ -294,18 +286,16 @@ COMAINU-METHOD: plain2longbnstout
 
 COMAINU-METHOD: plain2longout
   Usage: ./script/comainu.pl plain2longout <test-text> <long-model-file> <out-dir>
-    This command analyzes <test-text> with MeCab or Chasen and <long-model-file>.
+    This command analyzes <test-text> with MeCab and <long-model-file>.
     The result is put into <out-dir>.
 
   ex.)
   $ perl ./script/comainu.pl plain2longout sample/plain/sample.txt train/CRF/train.KC.model out
     -> out/sample.txt.lout
-  $ perl ./script/comainu.pl plain2longout --suwmodel=chasen sample/plain/sample.txt train/CRF/train.KC.model out
-    -> out/sample.txt.lout
 
 COMAINU-METHOD: plain2midbnstout
   Usage: ./script/comainu.pl plain2midbnstout <test-text> <long-model-file> <mid-model-file> <bnst-model-file> <out-dir>
-    This command analyzes <test-text> with Mecab or ChaSen and <long-model-file>, <mid-model-file> and <bnst-model-file>.
+    This command analyzes <test-text> with Mecab and <long-model-file>, <mid-model-file> and <bnst-model-file>.
     The result is put into <out-dir>.
 
   ex.)
@@ -314,7 +304,7 @@ COMAINU-METHOD: plain2midbnstout
 
 COMAINU-METHOD: plain2midout
   Usage: ./script/comainu.pl plain2midout <test-text> <long-model-file> <mid-model-file> <out-dir>
-    This command analyzes <test-text> with Mecab or ChaSen and <long-model-file> and <mid-model-file>.
+    This command analyzes <test-text> with Mecab and <long-model-file> and <mid-model-file>.
     The result is put into <out-dir>.
 
   ex.)

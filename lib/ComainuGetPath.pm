@@ -57,27 +57,6 @@ sub adjust_winpath {
     return $path;
 }
 
-sub get_chasen_dir_auto {
-    my $self = shift;
-    my $path = "";
-    if ($Config{"osname"} eq "MSWin32") {
-        eval "require Win32::OLE";
-        if (!$@) {
-            if (my $ws = Win32::OLE->CreateObject("WScript.Shell")) {
-                $path = $ws->RegRead("HKEY_LOCAL_MACHINE\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\chasen\\InstallLocation");
-                if ($path eq "") {
-                    $path = $ws->RegRead("HKEY_LOCAL_MACHINE\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\ChaSen_is1\\Inno Setup: App Path");
-                }
-            }
-        }
-        if (!-d $path) {
-            $path = "C:\\Program Files\\ChaSen";
-        }
-        $path =~ s/\\/\//gs;
-    }
-    return $path;
-}
-
 sub get_mecab_dir_auto {
     my $self = shift;
     my $path = "";

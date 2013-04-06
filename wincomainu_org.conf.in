@@ -23,7 +23,6 @@
     "comainu-model-type" => "svm",
     "comainu-tagger-type" => "mecab",
     "comainu-boundary-type" => "sentence",
-    "chasen-dir" => "@CHASEN_DIR@",
     "mecab-dir" => "@MECAB_DIR@",
     "unidic-dir" => "@UNIDIC_DIR@",
     "unidic2-dir" => "@UNIDIC2_DIR@",

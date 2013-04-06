@@ -27,7 +27,6 @@ my $DEFAULT_VALUES = {
     "perl" => "/usr/bin/perl",
     "java" => "/usr/bin/java",
     "yamcha-dir" => "/usr/local/bin",
-    "chasen-dir" => "/usr/local/bin",
     "mecab-dir" => "/usr/local/bin",
     "unidic-dir" => "/usr/local/unidic",
     "unidic2-dir" => "/usr/local/unidic2",
@@ -40,18 +39,6 @@ my $DEFAULT_VALUES = {
     "suwmodel" => "mecab",
     "luwmodel" => "CRF",
     "bnst_process" => "none",
-};
-
-my $MECAB_CHASEN_TABLE_FOR_UNIDIC = {
-    # MECAB => CHASEN
-    "0" => "orth",
-    "1" => "pron",
-    "2" => "lForm",
-    "3" => "lemma",
-    "4" => "pos",
-    "5" => "cType",
-    "6" => "cForm",
-    "7" => "goshu",
 };
 
 my $KC_MECAB_TABLE_FOR_UNIDIC = {
@@ -67,20 +54,6 @@ my $KC_MECAB_TABLE_FOR_UNIDIC = {
     "8" => "*",
     "9" => "*",
     "10" => "*",
-};
-
-my $MECAB_CHASEN_TABLE_FOR_CHAMAME = {
-    # MECAB => CHASEN
-    "0" => "",
-    "1" => "orth",
-    "2" => "pron",
-    "3" => "lForm",
-    "4" => "lemma",
-    "5" => "pos",
-    "6" => "cType",
-    "7" => "cForm",
-    #"8" => "form",
-    #"9" => "goshu",
 };
 
 my $KC_MECAB_TABLE_FOR_CHAMAME = {
@@ -106,7 +79,6 @@ my $KC_MECAB_TABLE_FOR_CHAMAME = {
 };
 
 my $UNIDIC_MECAB_TYPE = "chamame";
-my $MECAB_CHASEN_TABLE = $MECAB_CHASEN_TABLE_FOR_CHAMAME;
 my $KC_MECAB_TABLE = $KC_MECAB_TABLE_FOR_CHAMAME;
 
 sub new {
@@ -984,13 +956,11 @@ sub USAGE_plain2longout {
     my $self = shift;
     printf("COMAINU-METHOD: plain2longout\n");
     printf("  Usage: %s plain2longout <test-text> <long-model-file> <out-dir>\n", $0);
-    printf("    This command analyzes <test-text> with MeCab or Chasen and <long-model-file>.\n");
+    printf("    This command analyzes <test-text> with MeCab and <long-model-file>.\n");
     printf("    The result is put into <out-dir>.\n");
     printf("\n");
     printf("  ex.)\n");
     printf("  \$ perl ./script/comainu.pl plain2longout sample/plain/sample.txt train/CRF/train.KC.model out\n");
-    printf("    -> out/sample.txt.lout\n");
-    printf("  \$ perl ./script/comainu.pl plain2longout --suwmodel=chasen sample/plain/sample.txt train/CRF/train.KC.model out\n");
     printf("    -> out/sample.txt.lout\n");
     printf("\n");
 }
@@ -1022,19 +992,18 @@ sub plain2longout_internal {
 
     my $tmp_dir = $self->{"comainu-temp"};
     my $basename = File::Basename::basename($test_file);
-    my $chasen_file = $tmp_dir . "/" . $basename . ".chasen";
     my $mecab_file = $tmp_dir . "/" . $basename . ".mecab";
     my $kc_file = $tmp_dir . "/" . $basename . ".KC";
     my $kc_lout_file = $tmp_dir . "/" . $basename . ".KC.lout";
     my $mecab_lout_file = $save_dir . "/" . $basename . ".lout";
 
-    $self->plain2mecab_file($test_file, $chasen_file, $mecab_file);
+    $self->plain2mecab_file($test_file, $mecab_file);
     $self->mecab2kc_file($mecab_file, $kc_file);
     $self->METHOD_kc2longout($kc_file, $luwmodel, $tmp_dir);
     $self->merge_mecab_with_kc_lout_file($mecab_file, $kc_lout_file, $mecab_lout_file);
 
     unless ( $self->{debug} ) {
-        for ($chasen_file, $mecab_file, $kc_lout_file) {
+        for ($mecab_file, $kc_lout_file) {
             unlink $_ if -f $_;
         }
     }
@@ -1048,7 +1017,7 @@ sub USAGE_plain2bnstout {
     my $self = shift;
     printf("COMAINU-METHOD: plain2bnstout\n");
     printf("  Usage: %s plain2bnstout <test-text> <bnst-model-file> <out-dir>\n", $0);
-    printf("    This command analyzes <test-text> with MeCab or Chasen and <bnst-model-file>.\n");
+    printf("    This command analyzes <test-text> with MeCab and <bnst-model-file>.\n");
     printf("    The result is put into <out-dir>.\n");
     printf("\n");
     printf("  ex.)\n");
@@ -1084,19 +1053,18 @@ sub plain2bnstout_internal {
 
     my $tmp_dir = $self->{"comainu-temp"};
     my $basename = File::Basename::basename($test_file);
-    my $chasen_file  = $tmp_dir . "/" . $basename . ".chasen";
     my $mecab_file   = $tmp_dir . "/" . $basename . ".mecab";
     my $kc_file      = $tmp_dir . "/" . $basename . ".KC";
     my $kc_bout_file = $tmp_dir . "/" . $basename . ".KC.bout";
     my $bout_file    = $save_dir . "/" . $basename . ".bout";
 
-    $self->plain2mecab_file($test_file, $chasen_file, $mecab_file);
+    $self->plain2mecab_file($test_file, $mecab_file);
     $self->mecab2kc_file($mecab_file, $kc_file);
     $self->METHOD_kc2bnstout($kc_file, $bnstmodel, $tmp_dir);
     $self->merge_mecab_with_kc_bout_file($mecab_file, $kc_bout_file, $bout_file);
 
     unless ( $self->{debug} ) {
-        for ($chasen_file, $mecab_file, $kc_bout_file) {
+        for ($mecab_file, $kc_bout_file) {
             unlink $_ if -f $_;
         }
     }
@@ -1110,7 +1078,7 @@ sub USAGE_plain2longbnstout {
     my $self = shift;
     printf("COMAINU-METHOD: plain2longbnstout\n");
     printf("  Usage: %s plain2longbnstout <test-text> <long-model-file> <bnst-model-file> <out-dir>\n", $0);
-    printf("    This command analyzes <test-text> with Mecab or ChaSen and <long-model-file> and <bnst-model-file>.\n");
+    printf("    This command analyzes <test-text> with Mecab and <long-model-file> and <bnst-model-file>.\n");
     printf("    The result is put into <out-dir>.\n");
     printf("\n");
     printf("  ex.)\n");
@@ -1147,7 +1115,6 @@ sub plain2longbnstout_internal {
 
     my $tmp_dir = $self->{"comainu-temp"};
     my $basename = File::Basename::basename($test_file);
-    my $chasen_file  = $tmp_dir . "/" . $basename . ".chasen";
     my $mecab_file   = $tmp_dir . "/" . $basename . ".mecab";
     my $kc_file      = $tmp_dir . "/" . $basename . ".KC";
     my $kc_lout_file = $tmp_dir . "/" . $basename . ".KC.lout";
@@ -1156,7 +1123,7 @@ sub plain2longbnstout_internal {
 
     $self->{"bnst_process"} = "with_luw";
 
-    $self->plain2mecab_file($test_file, $chasen_file, $mecab_file);
+    $self->plain2mecab_file($test_file, $mecab_file);
     $self->mecab2kc_file($mecab_file, $kc_file);
     $self->METHOD_kc2longout($kc_file, $luwmodel, $tmp_dir);
     $self->METHOD_kc2bnstout($kc_file, $bnstmodel, $tmp_dir);
@@ -1164,7 +1131,7 @@ sub plain2longbnstout_internal {
     $self->merge_mecab_with_kc_bout_file($lbout_file, $kc_bout_file, $lbout_file);
 
     unless ( $self->{debug} ) {
-        for ($chasen_file, $mecab_file, $kc_lout_file, $kc_bout_file) {
+        for ($mecab_file, $kc_lout_file, $kc_bout_file) {
             unlink $_ if -f $_;
         }
     }
@@ -1178,7 +1145,7 @@ sub USAGE_plain2midout {
     my $self = shift;
     printf("COMAINU-METHOD: plain2midout\n");
     printf("  Usage: %s plain2midout <test-text> <long-model-file> <mid-model-file> <out-dir>\n", $0);
-    printf("    This command analyzes <test-text> with Mecab or ChaSen and <long-model-file> and <mid-model-file>.\n");
+    printf("    This command analyzes <test-text> with Mecab and <long-model-file> and <mid-model-file>.\n");
     printf("    The result is put into <out-dir>.\n");
     printf("\n");
     printf("  ex.)\n");
@@ -1215,14 +1182,13 @@ sub plain2midout_internal {
 
     my $tmp_dir = $self->{"comainu-temp"};
     my $basename = File::Basename::basename($test_file);
-    my $chasen_file  = $tmp_dir . "/" . $basename . ".chasen";
     my $mecab_file   = $tmp_dir . "/" . $basename . ".mecab";
     my $kc_file      = $tmp_dir . "/" . $basename . ".KC";
     my $kc_lout_file = $tmp_dir . "/" . $basename . ".KC.lout";
     my $kc_mout_file = $tmp_dir . "/" . $basename . ".KC.mout";
     my $mout_file   = $save_dir . "/" . $basename . ".mout";
 
-    $self->plain2mecab_file($test_file, $chasen_file, $mecab_file);
+    $self->plain2mecab_file($test_file, $mecab_file);
     $self->mecab2kc_file($mecab_file, $kc_file);
     $self->METHOD_kc2longout($kc_file, $luwmodel, $tmp_dir);
     $self->lout2kc4mid_file($kc_lout_file, $kc_file);
@@ -1230,7 +1196,7 @@ sub plain2midout_internal {
     $self->merge_mecab_with_kc_mout_file($mecab_file, $kc_mout_file, $mout_file);
 
     unless ( $self->{debug} ) {
-        for ($chasen_file, $mecab_file, $kc_lout_file, $kc_mout_file) {
+        for ($mecab_file, $kc_lout_file, $kc_mout_file) {
             unlink $_ if -f $_;
         }
     }
@@ -1244,7 +1210,7 @@ sub USAGE_plain2midbnstout {
     my $self = shift;
     printf("COMAINU-METHOD: plain2midbnstout\n");
     printf("  Usage: %s plain2midbnstout <test-text> <long-model-file> <mid-model-file> <bnst-model-file> <out-dir>\n", $0);
-    printf("    This command analyzes <test-text> with Mecab or ChaSen and <long-model-file>, <mid-model-file> and <bnst-model-file>.\n");
+    printf("    This command analyzes <test-text> with Mecab and <long-model-file>, <mid-model-file> and <bnst-model-file>.\n");
     printf("    The result is put into <out-dir>.\n");
     printf("\n");
     printf("  ex.)\n");
@@ -1282,7 +1248,6 @@ sub plain2midbnstout_internal {
 
     my $tmp_dir = $self->{"comainu-temp"};
     my $basename = File::Basename::basename($test_file);
-    my $chasen_file  = $tmp_dir . "/" . $basename . ".chasen";
     my $mecab_file   = $tmp_dir . "/" . $basename . ".mecab";
     my $kc_file      = $tmp_dir . "/" . $basename . ".KC";
     my $kc_lout_file = $tmp_dir . "/" . $basename . ".KC.lout";
@@ -1292,7 +1257,7 @@ sub plain2midbnstout_internal {
 
     $self->{"bnst_process"} = "with_luw";
 
-    $self->plain2mecab_file($test_file, $chasen_file, $mecab_file);
+    $self->plain2mecab_file($test_file, $mecab_file);
     $self->mecab2kc_file($mecab_file, $kc_file);
     $self->METHOD_kc2longout($kc_file, $luwmodel, $tmp_dir);
     $self->METHOD_kc2bnstout($kc_file, $bnstmodel, $tmp_dir);
@@ -1302,7 +1267,7 @@ sub plain2midbnstout_internal {
     $self->merge_mecab_with_kc_bout_file($mbout_file, $kc_bout_file, $mbout_file);
 
     unless ( $self->{debug} ) {
-        for ($chasen_file, $mecab_file, $kc_lout_file, $kc_mout_file, $kc_bout_file) {
+        for ($mecab_file, $kc_lout_file, $kc_mout_file, $kc_bout_file) {
             unlink $_ if -f $_;
         }
     }
@@ -1315,21 +1280,13 @@ sub plain2midbnstout_internal {
 # 形態素解析
 ############################################################
 sub plain2mecab_file {
-    my ($self, $test_file, $chasen_file, $mecab_file) = @_;
+    my ($self, $test_file, $mecab_file) = @_;
 
     my $unidic_dir = $self->{"unidic-dir"};
-    my $com = "";
-    if ( $self->{suwmodel} eq "chasen" ) {
-        my $chasen_dir = $self->{"chasen-dir"};
-        my $chasenrc = $unidic_dir."/dic/unidic-chasen/chasenrc";
-        $com = sprintf("\"%s/chasen\" -r \"%s\" -i w",
-                       $chasen_dir, $chasenrc);
-    } elsif ( $self->{suwmodel} eq "mecab" ) {
-        my $mecab_dir = $self->{"mecab-dir"};
-        my $mecabdic = $unidic_dir."/dic/unidic-mecab";
-        $com = sprintf("\"%s/mecab\" -O%s -d\"%s\" -r\"%s\"",
+    my $mecab_dir = $self->{"mecab-dir"};
+    my $mecabdic = $unidic_dir."/dic/unidic-mecab";
+    my $com = sprintf("\"%s/mecab\" -O%s -d\"%s\" -r\"%s\"",
                        $mecab_dir, $UNIDIC_MECAB_TYPE, $mecabdic, $self->{mecab_rcfile});
-    }
     $com =~ s/\//\\/g if $Config{osname} eq "MSWin32";
 
     print STDERR "# COM: ".$com."\n";
@@ -1347,19 +1304,14 @@ sub plain2mecab_file {
     undef $out_buffs;
     undef $in_buff;
 
-    if ( $self->{suwmodel} eq "chasen" ) {
-        $self->write_to_file($chasen_file, $out_buff);
-        $self->chasen2mecab_file($chasen_file, $mecab_file);
-    } elsif ( $self->{suwmodel} eq "mecab" ) {
-        $self->write_to_file($mecab_file, $out_buff);
-    }
+    $self->write_to_file($mecab_file, $out_buff);
     undef $out_buff;
 }
 
 # extcorput.plを利用して付加情報を付与
 sub mecab2kc_file {
-    my ($self, $chasen_file, $kc_file) = @_;
-    my $chasen_ext_file = $chasen_file."_ext";
+    my ($self, $mecab_file, $kc_file) = @_;
+    my $mecab_ext_file = $mecab_file."_ext";
     my $ext_def_file = $self->{"comainu-temp"}."/mecab_ext.def";
 
     my $def_buff = "";
@@ -1375,13 +1327,13 @@ sub mecab2kc_file {
     my $com = sprintf("\"%s\" \"%s/bin/extcorpus.pl\" -C \"%s\"",
 		      $perl,
 		      $self->{"unidic2-dir"}, $ext_def_file);
-    $self->proc_file2file($com, $chasen_file, $chasen_ext_file);
+    $self->proc_file2file($com, $mecab_file, $mecab_ext_file);
 
-    my $buff = $self->read_from_file($chasen_ext_file);
+    my $buff = $self->read_from_file($mecab_ext_file);
     $buff = $self->mecab2kc($buff);
     $self->write_to_file($kc_file, $buff);
 
-    unlink $chasen_ext_file if !$self->{debug} && -f $chasen_ext_file;
+    unlink $mecab_ext_file if !$self->{debug} && -f $mecab_ext_file;
 
     undef $buff;
 }
@@ -2820,57 +2772,6 @@ sub lout2kc4mid_file {
 
     undef $kc_lout_data;
     undef $kc_buff;
-}
-
-# convert chasen(unidic) to mecab(unidic)
-sub chasen2mecab_file {
-    my ($self, $chasen_file, $kc_file) = @_;
-    my $buff = $self->read_from_file($chasen_file);
-    $buff = $self->chasen2mecab($buff);
-    $self->write_to_file($kc_file, $buff);
-    undef $buff;
-}
-
-# convert chasen(unidic) to mecab(unidic)
-sub chasen2mecab {
-    my ($self, $buff) = @_;
-
-    my $table = $MECAB_CHASEN_TABLE;
-    my $res_str = "";
-    my $item_name_list = [map {$table->{$_};} keys %$table];
-    $buff =~ s/\r?\n$//;
-
-    foreach my $line ( split(/\r?\n/, $buff) ) {
-        if ( $line =~ /^EOS/ ) {
-            $res_str .= $line."\n";
-            next;
-        }
-        next if $line !~ /<cha:W1.*?<\/cha:W1>/;
-
-        my $item_map = {};
-        foreach my $item_name (@$item_name_list) {
-            my ($item_value) = ($line =~ / $item_name=\"(.*?)\"/);
-            if(($item_name eq "cType" || $item_name eq "cForm") && !defined($item_value)) {
-                $item_value = "";
-            }
-            $item_value =~ s/\&lt;/\</gs;
-            $item_value =~ s/\&gt;/\>/gs;
-            $item_value =~ s/\&quot;/\'/gs;
-            $item_value =~ s/\&apos;/\"/gs;
-            $item_value =~ s/\&amp;/\&/gs;
-            $item_map->{$item_name} = $item_value;
-        }
-        my $value_list = [ map {
-            $item_map->{$table->{$_}};
-        } sort {$a <=> $b} keys %$table ];
-        $res_str .= sprintf("%s\n", join("\t", @$value_list));
-    }
-    $res_str .= "EOS\n" if $res_str !~ /EOS\s*$/;
-
-    undef $buff;
-    undef $item_name_list;
-
-    return $res_str;
 }
 
 sub mecab2kc {

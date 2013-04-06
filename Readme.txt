@@ -17,8 +17,7 @@ UNIX:
 
 形態素解析を利用する場合は以下も必要。
 
-  ChaSen または MeCab:
-    chasen-2.4.1 以上
+  MeCab:
     mecab-0.98 以上
 
   UniDic:

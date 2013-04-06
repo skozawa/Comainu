@@ -28,7 +28,6 @@ my $DEFAULT_VALUES = {
     "java"                  => "@JAVA@",
     "comainu-home"          => "@COMAINU_HOME@",
     "yamcha-dir"            => "@YAMCHA_DIR@",
-    "chasen-dir"            => "@CHASEN_DIR@",
     "mecab-dir"             => "@MECAB_DIR@",
     "unidic-dir"            => "@UNIDIC_DIR@",
     "unidic2-dir"           => "@UNIDIC2_DIR@",
@@ -54,7 +53,6 @@ my $OPT_NAME_LIST = [
     "java",
     "comainu-home",
     "yamcha-dir",
-    "chasen-dir",
     "mecab-dir",
     "unidic-dir",
     "unidic2-dir",
@@ -86,9 +84,9 @@ sub comainu_usage {
     printf("    --luwmrph        LUWMRPH         whether to output morphology of long-unit-word\n");
     printf("                                       LUWMRPH:=with|without\n");
     printf("                                       (curr: '%s')\n", $curr->{"luwmrph"});
-    printf("    --suwmodel       SUWMODEL        specify the type of the short-unit-word model\n");
-    printf("                                       SUWMODEL:=mecab|chasen\n");
-    printf("                                       (curr: '%s')\n", $curr->{"suwmodel"});
+    # printf("    --suwmodel       SUWMODEL        specify the type of the short-unit-word model\n");
+    # printf("                                       SUWMODEL:=mecab\n");
+    # printf("                                       (curr: '%s')\n", $curr->{"suwmodel"});
     printf("    --luwmodel       LUWMODEL        specify the type of the model for boundary of long-unit-word\n");
     printf("                                       LUWMODEL:=SVM|CRF\n");
     printf("                                       (curr: '%s')\n", $curr->{"luwmodel"});
@@ -153,14 +151,14 @@ sub comainu {
         $opts, "help", "debug=i", "version",
         "help-method", "list-method", "force",
         "comainu-home=s", "perl=s", "java=s",
-        "yamcha-dir=s", "chasen-dir=s", "mecab-dir=s",
+        "yamcha-dir=s", "mecab-dir=s",
         "unidic-dir=s", "unidic2-dir=s", "unidic-db=s",
         "svm-tool-dir=s", "crf-dir=s",
         "mstparser-dir=s",
         "comainu-svm-bip-model=s",
         "comainu-output=s", "comainu-temp=s",
         "boundary=s",
-        "luwmrph=s", "suwmodel=s", "luwmodel=s",
+        "luwmrph=s", "luwmodel=s",
     );
 
     if ( $Config{"osname"} =~ /MSWin32|cygwin|msys/i ) {
@@ -309,11 +307,7 @@ sub check_sub_tool_path {
     }
 
     if ( $method =~ /plain2/ ) {
-        if ( $opts->{suwmodel} eq 'chasen' ) {
-            return 0 unless _check_tool_path($opts->{'chasen-dir'}, 'chasen');
-        } elsif ( $opts->{suwmodel} eq 'mecab' ) {
-            return 0 unless _check_tool_path($opts->{'mecab-dir'}, 'mecab');
-        }
+        return 0 unless _check_tool_path($opts->{'mecab-dir'}, 'mecab');
         return 0 unless _check_tool_dir($opts->{'unidic-dir'}, 'Unidic');
         return 0 unless _check_tool_dir($opts->{'unidic2-dir'}, 'Unidic2');
         unless ( -f $opts->{'unidic-db'} ) {

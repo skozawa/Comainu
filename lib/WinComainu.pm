@@ -100,7 +100,6 @@ my $CONFIGURATION_VIEW = [
     {
         "name" => "STR_TOOLS",
         "options" => [
-            ["chasen-dir", "dirname"],
             ["mecab-dir", "dirname"],
             ["unidic-dir", "dirname"],
             ["unidic2-dir", "dirname"],
@@ -162,11 +161,6 @@ sub InitObject {
     if ($yamcha_dir eq "") {
         $yamcha_dir = $cgp->get_yamcha_dir_auto();
         $app_conf->set("yamcha-dir", $yamcha_dir);
-    }
-    my $chasen_dir = $app_conf->get("chasen-dir");
-    if ($chasen_dir eq "") {
-        $chasen_dir = $cgp->get_chasen_dir_auto();
-        $app_conf->set("chasen-dir", $chasen_dir);
     }
     my $mecab_dir = $app_conf->get("mecab-dir");
     if ($mecab_dir eq "") {
@@ -783,7 +777,7 @@ sub get_comainu_type_list {
         return ["svm", "crf"];
     }
     if ($type eq "tagger-type") {
-        return ["mecab", "chasen"];
+        return ["mecab"];
     }
     if ($type eq "boundary-type") {
         return ["sentence", "word"];
@@ -1772,7 +1766,6 @@ sub execute_analysis_data {
     my $self = shift;
     my ($in_data, $progress_func) = @_;
     my $app_conf = $self->get_app_conf();
-    my $chasen_dir = $app_conf->get("chasen-dir");
     my $mecab_dir = $app_conf->get("mecab-dir");
     my $unidic_dir = $app_conf->get("unidic-dir");
     my $unidic2_dir = $app_conf->get("unidic2-dir");
@@ -1840,7 +1833,6 @@ sub execute_analysis_data {
     };
 
     $yamcha_dir = File::Spec->rel2abs($yamcha_dir);
-    $chasen_dir = File::Spec->rel2abs($chasen_dir);
     $mecab_dir = File::Spec->rel2abs($mecab_dir);
     $unidic_dir = File::Spec->rel2abs($unidic_dir);
     $unidic2_dir = File::Spec->rel2abs($unidic2_dir);
@@ -1859,7 +1851,6 @@ sub execute_analysis_data {
     my $comainu_opts = {
         "debug" => $self->{"debug"},
         "comainu-home" => $comainu_home,
-        "chasen-dir" => $chasen_dir,
         "mecab-dir" => $mecab_dir,
         "unidic-dir" => $unidic_dir,
         "unidic2-dir" => $unidic2_dir,
