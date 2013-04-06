@@ -29,7 +29,7 @@ my $DEFAULT_VALUES = {
     "comainu-home"          => "@COMAINU_HOME@",
     "yamcha-dir"            => "@YAMCHA_DIR@",
     "mecab-dir"             => "@MECAB_DIR@",
-    "unidic-dir"            => "@UNIDIC_DIR@",
+    "mecab-dic-dir"         => "@MECAB_DIC_DIR@",
     "unidic-db"             => "@UNIDIC_DB@",
     "svm-tool-dir"          => "@SVM_TOOL_DIR@",
     "crf-dir"               => "@CRF_DIR@",
@@ -53,7 +53,7 @@ my $OPT_NAME_LIST = [
     "comainu-home",
     "yamcha-dir",
     "mecab-dir",
-    "unidic-dir",
+    "mecab-dic-dir",
     "unidic-db",
     "svm-tool-dir",
     "crf-dir",
@@ -150,7 +150,7 @@ sub comainu {
         "help-method", "list-method", "force",
         "comainu-home=s", "perl=s", "java=s",
         "yamcha-dir=s", "mecab-dir=s",
-        "unidic-dir=s", "unidic-db=s",
+        "mecab-dic-dir=s", "unidic-db=s",
         "svm-tool-dir=s", "crf-dir=s",
         "mstparser-dir=s",
         "comainu-svm-bip-model=s",
@@ -306,7 +306,7 @@ sub check_sub_tool_path {
 
     if ( $method =~ /plain2/ ) {
         return 0 unless _check_tool_path($opts->{'mecab-dir'}, 'mecab');
-        return 0 unless _check_tool_dir($opts->{'unidic-dir'}, 'Unidic');
+        return 0 unless _check_tool_dir($opts->{'mecab-dic-dir'}, 'mecab-dic');
         unless ( -f $opts->{'unidic-db'} ) {
             printf(STDERR "# Error: Not found Unidic database: '%s'\n",
                    $opts->{"unidic-db"});

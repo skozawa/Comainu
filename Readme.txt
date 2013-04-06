@@ -20,8 +20,8 @@ UNIX:
   MeCab:
     mecab-0.98 以上
 
-  UniDic:
-    unidic-1.3.12 以上
+  UniDic-MeCab:
+    unidic-mecab-2.1.1 以上
 
   Unidic2:
     unidic-2.1.0 以上

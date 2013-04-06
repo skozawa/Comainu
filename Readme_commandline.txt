@@ -3,16 +3,16 @@
 
 0. Requirements
   Common:
-    GCC:       3.4.4 or later (optional: to built, Cygwin/MinGW on MS-Windows)
-    Perl:      5.8.8 or later (recomended Active Perl on MS-Windows)
-    Java:      1.6.0 or later (optional: for mid analysis)
-    YamCha:    0.33 or lator
-    UniDic:    1.3.12 or lator (optional)
-    UniDic2:   2.1.0 or later (optional)
-    MeCab:     0.98 or lator  (optional)
-    TinySVM:   0.09 or lator  (optional: to make model)
-    CRF++      0.54 or lator  (optional)
-    MSTParser: 0.50 or lator  (bundled)
+    GCC:          3.4.4 or later (optional: to built, Cygwin/MinGW on MS-Windows)
+    Perl:         5.8.8 or later (recomended Active Perl on MS-Windows)
+    Java:         1.6.0 or later (optional: for mid analysis)
+    YamCha:       0.33 or lator
+    UniDic2:      2.1.0 or later (optional)
+    MeCab:        0.98 or lator  (optional)
+    UniDic-MeCab: 2.1.1 or lator (optional)
+    TinySVM:      0.09 or lator  (optional: to make model)
+    CRF++         0.54 or lator  (optional)
+    MSTParser:    0.50 or lator  (bundled)
 
   UNIX/Linux:
     UNIX utility: sed, make, gzip, diff, uniq, sort, basename, dirname
@@ -34,7 +34,8 @@
       ex.)
       $ ./configure --yamcha-dir "/usr/local/bin" \
                     --mecab-dir "/usr/local/bin" \
-                    --unidic-dir "/usr/local/unidic" \
+                    --mecab-dic-dir "/usr/local/lib/mecab/dic" \
+                    --unidic-db "/usr/local/unidic2/share/unidic.db" \
                     --svm-tool-dir "/usr/local/bin" \
                     --crf-dir "/usr/local/bin" \
                     --perl "/usr/bin/perl" \
@@ -44,7 +45,8 @@
       ex.)
       $ ./configure --yamcha-dir "c:/yamcha-0.33/bin" \
                     --mecab-dir "c:/Program Files/MeCab/bin" \
-                    --unidic-dir "c:/Program Files/unidic" \
+                    --mecab-dic-dir 'c:/Program Files/MeCab/dic" \
+                    --unidic-db "c:/Program Files/unidic2/share/unidic.db" \
                     --svm-tool-dir "c:/TinySVM-0.09/bin" \
                     --crf-dir "c:/CRF++-0.54" \
                     --perl "c:/Perl/bin/perl" \
@@ -95,7 +97,7 @@ option:
     --ofilter                   OFILTER                 specify OFILTER
     --yamcha-dir                YAMCHA_DIR              specify YAMCHA_DIR
     --mecab-dir                 MECAB_DIR               specify MECAB_DIR
-    --unidic-dir                UNIDIC_DIR              specify UNIDIC_DIR
+    --mecab-dic-dir             MECAB_DIC_DIR           specify MECAB_DIC_DIR
     --unidic-db                 UNIDIC_DB               specify UNIDIC_DB
     --svm-tool-dir              SVM_TOOL_DIR            specify SVM_TOOL_DIR
     --crf-dir                   CRF_DIR                 specify CRF_DIR
@@ -111,7 +113,7 @@ Preset Environments :
   OFILTER=
   YAMCHA_DIR=/usr/local/bin
   MECAB_DIR=/usr/local/bin
-  UNIDIC_DIR=/usr/local/unidic
+  MECAB_DIC_DIR=/usr/local/lib/mecab/dic
   UNIDIC_DB=/usr/local/unidic2/share/unidic.db
   SVM_TOOL_DIR=/usr/local/bin
   CRF_DIR=/usr/local/bin

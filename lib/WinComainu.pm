@@ -101,7 +101,7 @@ my $CONFIGURATION_VIEW = [
         "name" => "STR_TOOLS",
         "options" => [
             ["mecab-dir", "dirname"],
-            ["unidic-dir", "dirname"],
+            ["mecab-dic-dir", "dirname"],
             ["unidic-db", "pathname"],
             ["yamcha-dir", "dirname"],
             ["svm-tool-dir", "dirname"],
@@ -166,10 +166,10 @@ sub InitObject {
         $mecab_dir = $cgp->get_mecab_dir_auto();
         $app_conf->set("mecab-dir", $mecab_dir);
     }
-    my $unidic_dir = $app_conf->get("unidic-dir");
-    if ($unidic_dir eq "") {
-        $unidic_dir = $cgp->get_unidic_dir_auto();
-        $app_conf->set("unidic-dir", $unidic_dir);
+    my $mecab_dic_dir = $app_conf->get("mecab-dic-dir");
+    if ($mecab_dic_dir eq "") {
+        $mecab_dic_dir = $cgp->get_mecab_dic_dir_auto();
+        $app_conf->set("mecab-dic-dir", $mecab_dic_dir);
     }
     my $unidic_db = $app_conf->get("unidic-db");
     if ($unidic_db eq "") {
@@ -1761,7 +1761,7 @@ sub execute_analysis_data {
     my ($in_data, $progress_func) = @_;
     my $app_conf = $self->get_app_conf();
     my $mecab_dir = $app_conf->get("mecab-dir");
-    my $unidic_dir = $app_conf->get("unidic-dir");
+    my $mecab_dic_dir = $app_conf->get("mecab-dic-dir");
     my $unidic_db = $app_conf->get("unidic-db");
     my $yamcha_dir = $app_conf->get("yamcha-dir");
     my $crf_dir = $app_conf->get("crf-dir");
@@ -1827,7 +1827,7 @@ sub execute_analysis_data {
 
     $yamcha_dir = File::Spec->rel2abs($yamcha_dir);
     $mecab_dir = File::Spec->rel2abs($mecab_dir);
-    $unidic_dir = File::Spec->rel2abs($unidic_dir);
+    $mecab_dic_dir = File::Spec->rel2abs($mecab_dic_dir);
     $unidic_db = File::Spec->rel2abs($unidic_db);
     $comainu_home = File::Spec->rel2abs($comainu_home);
     $comainu_long_model = File::Spec->rel2abs($comainu_long_model);
@@ -1844,7 +1844,7 @@ sub execute_analysis_data {
         "debug" => $self->{"debug"},
         "comainu-home" => $comainu_home,
         "mecab-dir" => $mecab_dir,
-        "unidic-dir" => $unidic_dir,
+        "mecab-dic-dir" => $mecab_dic_dir,
         "unidic-db" => $unidic_db,
         "yamcha-dir" => $yamcha_dir,
         "crf-dir" => $crf_dir,

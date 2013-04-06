@@ -24,7 +24,7 @@
     "comainu-tagger-type" => "mecab",
     "comainu-boundary-type" => "sentence",
     "mecab-dir" => "@MECAB_DIR@",
-    "unidic-dir" => "@UNIDIC_DIR@",
+    "mecab-dic-dir" => "@MECAB_DIC_DIR@",
     "unidic-db" => "@UNIDIC_DB@",
     "yamcha-dir" => "@YAMCHA_DIR@",
     "svm-tool-dir" => "@SVM_TOOL_DIR@",

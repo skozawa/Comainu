@@ -81,18 +81,33 @@ sub get_mecab_dir_auto {
     return $path;
 }
 
-sub get_unidic_dir_auto {
+sub get_mecab_dic_dir_auto {
     my $self = shift;
     my $path = "";
     if ($Config{"osname"} eq "MSWin32") {
         eval "require Win32::OLE";
         if (!$@) {
             if (my $ws = Win32::OLE->CreateObject("WScript.Shell")) {
-                $path = $ws->RegRead("HKEY_LOCAL_MACHINE\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\unidic_win\\InstallLocation");
+                $path = $ws->RegRead("HKEY_LOCAL_MACHINE\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\MeCab_is1\\InstallLocation");
+                if ($path ne "") {
+                    $path .= "\\" if $path !~ /\\$/;
+                    $path .= "dic";
+                }
+
+                if (!-d $path) {
+                    $path = $ws->RegRead("HKEY_LOCAL_MACHINE\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\unidic_win\\InstallLocation");
+                    if ($path ne "") {
+                        $path .= "\\" if $path !~ /\\$/;
+                        $path .= "dic";
+                    }
+                }
             }
         }
         if (!-d $path) {
-            $path = "C:\\Program Files\\unidic";
+            $path = "C:\\Program Files\\unidic\\dic";
+        }
+        if (!-d $path) {
+            $path = "C:\\Program Files\\MeCab\\dic";
         }
         $path =~ s/\\/\//gs;
     }

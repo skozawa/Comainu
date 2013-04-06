@@ -28,7 +28,7 @@ my $DEFAULT_VALUES = {
     "java" => "/usr/bin/java",
     "yamcha-dir" => "/usr/local/bin",
     "mecab-dir" => "/usr/local/bin",
-    "unidic-dir" => "/usr/local/unidic",
+    "mecab-dic-dir" => "/usr/local/lib/mecab/dic",
     "unidic-db" => "/usr/local/unidic2/share/unidic.db",
     "svm-tool-dir" => "/usr/local/bin",
     "crf-dir" => "/usr/local/bin",
@@ -1275,11 +1275,12 @@ sub plain2midbnstout_internal {
 sub plain2mecab_file {
     my ($self, $test_file, $mecab_file) = @_;
 
-    my $unidic_dir = $self->{"unidic-dir"};
+    my $mecab_dic_dir = $self->{"mecab-dic-dir"};
     my $mecab_dir = $self->{"mecab-dir"};
-    my $mecabdic = $unidic_dir."/dic/unidic-mecab";
+    my $mecabdic = $mecab_dic_dir . '/unidic';
+    $mecabdic = $mecab_dic_dir."/unidic-mecab" unless -d $mecabdic;
     my $com = sprintf("\"%s/mecab\" -O%s -d\"%s\" -r\"%s\"",
-                       $mecab_dir, $UNIDIC_MECAB_TYPE, $mecabdic, $self->{mecab_rcfile});
+                      $mecab_dir, $UNIDIC_MECAB_TYPE, $mecabdic, $self->{mecab_rcfile});
     $com =~ s/\//\\/g if $Config{osname} eq "MSWin32";
 
     print STDERR "# COM: ".$com."\n";
