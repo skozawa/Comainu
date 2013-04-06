@@ -620,8 +620,9 @@ sub bccwj2longout_internal {
     $self->METHOD_kc2longout($kc_file, $luwmodel, $tmp_dir);
     $self->merge_bccwj_with_kc_lout_file($tmp_test_bccwj, $kc_lout_file, $bccwj_lout_file);
 
-    unlink $kc_lout_file   if !$self->{debug} && -f $kc_lout_file;
-    unlink $tmp_test_bccwj if !$self->{debug} && -f $tmp_test_bccwj;
+    unless ( $self->{debug} ) {
+        do { unlink $_ if -f $_; } for ($kc_lout_file, $tmp_test_bccwj);
+    }
 
     return 0;
 }
@@ -679,8 +680,9 @@ sub bccwj2bnstout_internal {
     $self->METHOD_kc2bnstout($kc_file, $bnstmodel, $tmp_dir);
     $self->merge_bccwj_with_kc_bout_file($tmp_test_bccwj, $kc_bout_file, $bccwj_bout_file);
 
-    unlink $kc_bout_file   if !$self->{debug} && -f $kc_bout_file;
-    unlink $tmp_test_bccwj if !$self->{debug} && -f $tmp_test_bccwj;
+    unless ( $self->{debug} ) {
+        do { unlink $_ if -f $_; } for ($kc_bout_file, $tmp_test_bccwj);
+    }
 
     return 0;
 }
@@ -744,9 +746,9 @@ sub bccwj2longbnstout_internal {
     $self->merge_bccwj_with_kc_lout_file($tmp_test_bccwj, $kc_lout_file, $bccwj_lbout_file);
     $self->merge_bccwj_with_kc_bout_file($bccwj_lbout_file, $kc_bout_file, $bccwj_lbout_file);
 
-    unlink $kc_lout_file   if !$self->{debug} && -f $kc_lout_file;
-    unlink $kc_bout_file   if !$self->{debug} && -f $kc_bout_file;
-    unlink $tmp_test_bccwj if !$self->{debug} && -f $tmp_test_bccwj;
+    unless ( $self->{debug} ) {
+        do { unlink $_ if -f $_; } for ($kc_lout_file, $kc_bout_file, $tmp_test_bccwj);
+    }
 
     return 0;
 }
@@ -809,9 +811,9 @@ sub bccwj2midout_internal {
     $self->merge_bccwj_with_kc_lout_file($tmp_test_bccwj, $kc_lout_file, $bccwj_mout_file);
     $self->merge_bccwj_with_kc_mout_file($bccwj_mout_file, $kc_mout_file, $bccwj_mout_file);
 
-    unlink $kc_lout_file   if !$self->{debug} && -f $kc_lout_file;
-    unlink $kc_mout_file   if !$self->{debug} && -f $kc_mout_file;
-    unlink $tmp_test_bccwj if !$self->{debug} && -f $tmp_test_bccwj;
+    unless ( $self->{debug} ) {
+        do { unlink $_ if -f $_; } for ($kc_lout_file, $kc_mout_file, $tmp_test_bccwj);
+    }
 
     return 0;
 }
@@ -880,10 +882,10 @@ sub bccwj2midbnstout_internal {
     $self->merge_bccwj_with_kc_bout_file($bccwj_mbout_file, $kc_bout_file, $bccwj_mbout_file);
     $self->merge_bccwj_with_kc_mout_file($bccwj_mbout_file, $kc_mout_file, $bccwj_mbout_file);
 
-    unlink $kc_lout_file   if !$self->{debug} && -f $kc_lout_file;
-    unlink $kc_mout_file   if !$self->{debug} && -f $kc_mout_file;
-    unlink $kc_bout_file   if !$self->{debug} && -f $kc_bout_file;
-    unlink $tmp_test_bccwj if !$self->{debug} && -f $tmp_test_bccwj;
+    unless ( $self->{debug} ) {
+        do { unlink $_ if -f $_; }
+            for ($kc_lout_file, $kc_mout_file, $kc_bout_file, $tmp_test_bccwj);
+    }
 
     return 0;
 }
@@ -941,8 +943,9 @@ sub bccwjlong2midout_internal {
     $self->METHOD_kclong2midout($kc_file, $muwmodel, $tmp_dir);
     $self->merge_bccwj_with_kc_mout_file($tmp_test_bccwj, $kc_mout_file, $bccwj_mout_file);
 
-    unlink $kc_mout_file   if !$self->{debug} && -f $kc_mout_file;
-    unlink $tmp_test_bccwj if !$self->{debug} && -f $tmp_test_bccwj;
+    unless ( $self->{debug} ) {
+        do { unlink $_ if -f $_; } for ($kc_mout_file, $tmp_test_bccwj);
+    }
 
     return 0;
 }
@@ -1003,9 +1006,7 @@ sub plain2longout_internal {
     $self->merge_mecab_with_kc_lout_file($mecab_file, $kc_lout_file, $mecab_lout_file);
 
     unless ( $self->{debug} ) {
-        for ($mecab_file, $kc_lout_file) {
-            unlink $_ if -f $_;
-        }
+        do { unlink $_ if -f $_; } for ($mecab_file, $kc_lout_file);
     }
 
     return;
@@ -1064,9 +1065,7 @@ sub plain2bnstout_internal {
     $self->merge_mecab_with_kc_bout_file($mecab_file, $kc_bout_file, $bout_file);
 
     unless ( $self->{debug} ) {
-        for ($mecab_file, $kc_bout_file) {
-            unlink $_ if -f $_;
-        }
+        do { unlink $_ if -f $_; } for ($mecab_file, $kc_bout_file);
     }
 
     return 0;
@@ -1131,9 +1130,7 @@ sub plain2longbnstout_internal {
     $self->merge_mecab_with_kc_bout_file($lbout_file, $kc_bout_file, $lbout_file);
 
     unless ( $self->{debug} ) {
-        for ($mecab_file, $kc_lout_file, $kc_bout_file) {
-            unlink $_ if -f $_;
-        }
+        do { unlink $_ if -f $_; } for ($mecab_file, $kc_lout_file, $kc_bout_file);
     }
 
     return 0;
@@ -1196,9 +1193,7 @@ sub plain2midout_internal {
     $self->merge_mecab_with_kc_mout_file($mecab_file, $kc_mout_file, $mout_file);
 
     unless ( $self->{debug} ) {
-        for ($mecab_file, $kc_lout_file, $kc_mout_file) {
-            unlink $_ if -f $_;
-        }
+        do { unlink $_ if -f $_; } for ($mecab_file, $kc_lout_file, $kc_mout_file);
     }
 
     return 0;
@@ -1267,9 +1262,8 @@ sub plain2midbnstout_internal {
     $self->merge_mecab_with_kc_bout_file($mbout_file, $kc_bout_file, $mbout_file);
 
     unless ( $self->{debug} ) {
-        for ($mecab_file, $kc_lout_file, $kc_mout_file, $kc_bout_file) {
-            unlink $_ if -f $_;
-        }
+        do { unlink $_ if -f $_; }
+            for ($mecab_file, $kc_lout_file, $kc_mout_file, $kc_bout_file);
     }
 
     return 0;
