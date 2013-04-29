@@ -1,15 +1,12 @@
 # -*- mode: perl; coding: utf-8 -*-
-
-use strict;
-
 package AppConf;
-
+use strict;
+use warnings;
 use utf8;
+
 use Encode;
 use FindBin qw($Bin);
 use Config;
-
-use AppConf;
 
 my $DEFAULT_VALUES =
 {
@@ -23,15 +20,13 @@ my $DEFAULT_VALUES =
 
 sub new {
     my $proto = shift;
-    my $class = ref($proto) || $proto;
+    my $class = ref $proto || $proto;
     my $self = {%$DEFAULT_VALUES, @_};
     bless $self, $class;
-    if (-f $self->{"conf-org-file"}) {
-        $self->load($self->{"conf-org-file"});
-    }
-    if (-f $self->{"conf-file"}) {
-        $self->load($self->{"conf-file"});
-    }
+
+    $self->load($self->{"conf-org-file"}) if -f $self->{"conf-org-file"};
+    $self->load($self->{"conf-file"}) if -f $self->{"conf-file"};
+
     return $self;
 }
 
@@ -40,57 +35,50 @@ sub get_filename {
 }
 
 sub load {
-    my $self = shift;
-    my ($conf_file) = @_;
-    unless($conf_file) {
-        $conf_file = $self->{"conf-file"};
-    }
-    unless ($self->{"conf-map"}) {
-        $self->{"conf-map"} = {};
-    }
+    my ($self, $conf_file) = @_;
+    $conf_file //= $self->{"conf-file"};
+
+    $self->{"conf-map"} ||= {};
     my $conf_map = $self->{"conf-map"};
+
     open(my $fh, $conf_file) or die "Cannot open conf '$conf_file'";
     my $buff = join("", (<$fh>));
     close($fh);
-    $buff = Encode::decode($self->{"encoding"}, $buff);
+    $buff = Encode::decode($self->{encoding}, $buff);
     my $added_map = eval "$buff";
-    if (!ref($added_map)) {
-        $added_map = {};
-    }
+    $added_map = {} unless ref $added_map;
     $conf_map = {%$conf_map, %$added_map};
-    if ($self->{"adjust-winpath"} > 0) {
-        $self->adjust_winpath_map($conf_map);
-    }
+    $self->adjust_winpath_map($conf_map) if $self->{"adjust-winpath"};
     $self->{"conf-map"} = $conf_map;
+
     return $conf_map;
 }
 
 sub save {
-    my $self = shift;
-    my ($conf_file) = @_;
-    unless($conf_file) {
-        $conf_file = $self->{"conf-file"};
-    }
+    my ($self, $conf_file) = @_;
+    $conf_file //= $self->{"conf-file"};
+
     open(my $fh, ">", $conf_file) or die "Cannot open conf '$conf_file'";
     $self->show($fh);
     close($fh);
+
     if ($self->{"debug"} > 0) {
         printf(STDERR "# Saved conf: %s\n", $conf_file);
     }
 }
 
 sub show {
-    my $self = shift;
-    my ($fh, $encoding) = @_;
-    $fh = \*STDOUT unless $fh;
-    $encoding = $self->{"encoding"} unless $encoding;
+    my ($self, $fh, $encoding) = @_;
+    $fh //= \*STDOUT;
+    $encoding ||= $self->{encoding};
+
     my $conf_map = $self->{"conf-map"};
     printf($fh "# -*- mode: perl; coding: %s; -*-\n", $encoding);
     printf($fh "\{\n");
     foreach my $key (sort {$a cmp $b} keys %$conf_map) {
         my $value = $conf_map->{$key};
         $key = Encode::encode($encoding, $key);
-        $value = Encode::encode($self->{"encoding"}, $value);
+        $value = Encode::encode($self->{encoding}, $value);
         printf($fh "    \"%s\" => \"%s\",\n", $key, $value);
     }
     printf($fh "\};\n");
@@ -122,8 +110,7 @@ sub clone {
 }
 
 sub equal {
-    my $self = shift;
-    my ($that) = @_;
+    my ($self, $that) = @_;
     my $self_map = $self->{"conf-map"};
     my $that_map = $that->{"conf-map"};
     my $flag = 1;
@@ -138,8 +125,8 @@ sub equal {
 }
 
 sub adjust_winpath_map {
-    my $self = shift;
-    my ($conf_map) = @_;
+    my ($self, $conf_map) = @_;
+
     if ($Config{"osname"} =~ /MSWin32|cygwin|msys/i) {
         while (my ($key, $value) = each %$conf_map) {
             $value = $self->adjust_winpath($value);
@@ -150,13 +137,11 @@ sub adjust_winpath_map {
 
 # adjust MS-Windows path
 sub adjust_winpath {
-    my $self = shift;
-    my ($path) = @_;
-    if ($path !~ /^\//) {
-        return $path;
-    }
+    my ($self, $path) = @_;
+    return $path if $path !~ /^\//;
+
     my $path_tmp = $path;
-    open(STDERR2, ">&STDERR");
+    open(STDERR, ">&STDERR");
     close(STDERR);
     eval {
         if ($path_tmp =~ /^\/([a-zA-Z])\//) {

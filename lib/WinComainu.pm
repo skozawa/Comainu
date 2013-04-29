@@ -1,47 +1,32 @@
 # -*- mode: perl; coding: utf-8 -*-
+package WinComainu;
 
 use strict;
-
-package WinComainu;
-use vars qw($VERSION $DoDebug);
-$VERSION = '0.53';
-$DoDebug = 0;
-
-use Tk qw (Ev);
-# use AutoLoader;
-
-use AppBase;
-use base qw(AppBase);
-
-Construct Tk::Widget 'WinComainu';
-
+use warnings;
 use utf8;
-use FindBin qw($Bin);
-use Config;
-use Encode;
-use Encode::JP; # to avoid segmentation fault on Linux
-use FileHandle;
-STDERR->autoflush(1);
-use File::Spec;
-use File::Basename;
-use Time::HiRes;
-use Tk;
-use Tk::Panedwindow;
-use Tk::ProgressBar;
-use Tk::BrowseEntry;
-use Tk::DropSite;
-use Tk::Table;
 
-use TextUndo_patch;
+use parent qw(AppBase);
+
+use Config;
+use Tkx;
+use Tkx::Scrolled;
+Tkx::package_require("Tktable");
+use FindBin qw($Bin);
+use File::Basename;
+use File::Spec;
+use Time::HiRes;
+use Encode;
+
 use CommandWorker;
 use ComainuGetPath;
 use RunCom;
+
 
 my $DEFAULT_VALUES = {
     "debug"            => 0,
     "perl"             => "perl",
     "app-name"         => "WinComainu",
-    "app-version"      => $VERSION,
+    "app-version"      => '0.70',
     "title"            => "",
     "copyright"        => "",
     "icon-file"        => "$Bin/../img/wincomainu.ico",
@@ -94,7 +79,6 @@ my $CONFIGURATION_VIEW = [
             ["comainu-svm-bnst-model", "pathname"],
             ["comainu-svm-bip-model", "dirname"],
             ["comainu-mst-model", "pathname"],
-            # ["comainu-boundary", "string"],
         ],
     },
     {
@@ -118,44 +102,53 @@ my $CONFIGURATION_VIEW = [
             ["font-family", "string", {"-list" => $FONT_FAMILY_LIST}],
             ["font-size", "string", {"-list" => ["6", "9", "10", "12", "14", "18"]}],
             ["font-style", "string", {"-list" => ["normal", "bold", "roman", "italic"]}],
-            # ["in-wrap", "string"],
-            # ["in-readonly", "string"],
-            # ["in-table-disp", "string"],
-            # ["out-wrap", "string"],
-            # ["out-readonly", "string"],
-            # ["out-table-disp", "string"],
         ],
     },
 ];
 
-sub ClassInit {
-    my ($class,$mw) = @_;
 
-    return $class->SUPER::ClassInit($mw);
-}
-
-sub InitObject {
+sub initialize {
     my ($self, $args) = @_;
     my $opts = {
         %$DEFAULT_VALUES,
-        "configuration-view"=>$CONFIGURATION_VIEW
+        %$args,
+        "configuration-view" => $CONFIGURATION_VIEW,
     };
-    # $self->{"opts"} = $opts;
-    %$self = (%$opts, %$self);
-    my $parent = $self->parent();
-    my $toplevel = $self->toplevel();
-    if ($parent == $toplevel) {
-        $toplevel->withdraw();
-        $toplevel->geometry("800x600");
+    unless ( $self->_parent ) {
+        $self->g_wm_withdraw;
+        $self->g_wm_geometry("800x600");
     }
-    $self->SUPER::InitObject($args);
+    $self->SUPER::initialize($opts);
 
     # CommandWorker should be set up at first.
     my $com_worker = CommandWorker->new();
-    $self->{"_com_worker"} = $com_worker;
+    $self->_data->{_com_worker} = $com_worker;
+
+    $self->_set_app_path;
+
+    # my $dummy_text_undo = $self->TextUndo_patch(); # for rebinding
+    # # skip key binding on TextUndo_patch
+    # $self->g_bind("TextUndo_patch", "<Control-Key-o>", sub { return; });
+    # $self->g_bind("TextUndo_patch", "<Control-Key-s>", sub { return; });
+    # $self->g_bind("TextUndo_patch", "<Control-Key-q>", sub { return; });
+    # # rebind selectAll
+    # $self->g_bind("TextUndo_patch", "<Control-Key-a>", $self->bind("TextUndo_patch", "<Control-Key-slash>"));
+    # # rebind <<Undo>> and <<Redo>>
+    # $self->g_bind("TextUndo_patch", "<Control-Key-slash>", $self->bind("TextUndo_patch", "<<Undo>>"));
+    # $self->g_bind("TextUndo_patch", "<Control-Key-y>", $self->bind("TextUndo_patch", "<<Redo>>"));
+
+    unless ( $self->_parent ) {
+        $self->g_wm_deiconify;
+    }
+
+    $self->init;
+}
+
+sub _set_app_path {
+    my ($self) = @_;
 
     my $cgp = ComainuGetPath->new();
-    my $app_conf = $self->get_app_conf();
+    my $app_conf = $self->_data->{"app-conf"};
     my $yamcha_dir = $app_conf->get("yamcha-dir");
     if ($yamcha_dir eq "") {
         $yamcha_dir = $cgp->get_yamcha_dir_auto();
@@ -176,70 +169,36 @@ sub InitObject {
         $unidic_db = $cgp->get_unidic_db_auto();
         $app_conf->set("unidic-db", $unidic_db);
     }
-
-    my $dummy_text_undo = $self->TextUndo_patch(); # for rebinding
-    # skip key binding on TextUndo_patch
-    $self->bind("TextUndo_patch", "<Control-Key-o>", sub { return; });
-    $self->bind("TextUndo_patch", "<Control-Key-s>", sub { return; });
-    $self->bind("TextUndo_patch", "<Control-Key-q>", sub { return; });
-    # rebind selectAll
-    $self->bind("TextUndo_patch", "<Control-Key-a>", $self->bind("TextUndo_patch", "<Control-Key-slash>"));
-    # rebind <<Undo>> and <<Redo>>
-    $self->bind("TextUndo_patch", "<Control-Key-slash>", $self->bind("TextUndo_patch", "<<Undo>>"));
-    $self->bind("TextUndo_patch", "<Control-Key-y>", $self->bind("TextUndo_patch", "<<Redo>>"));
-
-    if ($parent == $toplevel) {
-        $toplevel->update();
-        $toplevel->deiconify();
-    }
-    return $self;
-}
-
-sub cmd_exit {
-    my $self = shift;
-    my $cancel = $self->SUPER::cmd_exit();
-    if ($cancel == 0) {
-        eval {
-            if ($self->{"_com_worker"}) {
-                $self->{"_com_worker"}->DESTROY();
-                $self->{"_com_worker"} = undef;
-            }
-        };
-        if ($@) {
-            warn $@;
-        }
-    }
 }
 
 sub init {
     my $self = shift;
-    $self->make_menubar();
-    $self->make_toolbar();
-    $self->make_mainframe();
+    $self->make_menubar;
+    $self->make_toolbar;
+    $self->make_mainframe;
 }
 
 sub make_menubar {
     my $self = shift;
-    my $top = $self->toplevel();
-    my $mb_fr = $self->{"menubar"};
-    my $mb_bts = $mb_fr->{"bts"};
-    my $mc;
-    my $lbl_str = "";
-    my $app_conf = $self->get_app_conf();
+
+    my $top = $self->_parent || $self;
+    my $menubar_frame = $self->_data->{menubar};
+    my $menubar_buttons = $menubar_frame->_data->{bts};
+
+    my $app_conf = $self->_data->{"app-conf"};
     my $curr_font_family = $app_conf->get("font-family");
-    my $curr_font_size = $app_conf->get("font-size");
-    my $curr_font_style = $app_conf->get("font-style");
-    my $cand_families = [];
-    if ($self->windowingsystem() eq "win32") {
-        $cand_families = [$curr_font_family, "Meiryo UI", "MS UI Gothic"];
-    } else {
-        $cand_families = [$curr_font_family, "gothic", "fixed"];
-    }
-    my $def_families = [$self->fontFamilies];
+    my $curr_font_size   = $app_conf->get("font-size");
+    my $curr_font_style  = $app_conf->get("font-style");
+    my $cand_families = Tkx::tk_windowingsystem() eq "win32" ?
+        [$curr_font_family, "Meiryo UI", "MS UI Gothic"] :
+        [$curr_font_family, "gothic", "fixed"];
+    my $def_families = [Tkx::font_families()];
     @$FONT_FAMILY_LIST = @$def_families;
-    if ($self->{"debug"} > 0) {
+    if ($self->_data->{debug}) {
         printf(STDERR "# FONT_FAMILIES=%s\n", Encode::encode("utf-8", join(", ", @$def_families)));
     }
+
+    # Font etc.
     my $font_family = undef;
     foreach my $cand_font_family (@$cand_families) {
         foreach my $def_font_family (@$def_families) {
@@ -250,491 +209,544 @@ sub make_menubar {
         }
         last if $font_family;
     }
-    if (defined($font_family)) {
-        if ($self->{"debug"} > 0) {
+    if ( defined $font_family ) {
+        if ($self->_data->{debug}) {
             printf(STDERR "USE_FONT_FAMILY=%s\n", Encode::encode("utf-8", $font_family));
         }
         $app_conf->set("font-family", $font_family);
         $curr_font_family = $font_family;
     }
-    $self->optionAdd('*font' => [$curr_font_family, $curr_font_size, $curr_font_style]);
+    Tkx::option_add('*font' => [$curr_font_family, $curr_font_size, $curr_font_style]);
 
-    # File
-    $lbl_str = $self->{"msg"}{"MENU_STR_FILE"};
-    my $mb = $mb_bts->Menubutton(-text=>$lbl_str, -underline=>1)->pack(-side=>"left");
-    my $mc = $mb->Menu(-tearoff=>0);
-    $mb->configure(-menu=>$mc);
-    $lbl_str = $self->{"msg"}{"MENU_STR_NEW"};
-    $mc->command(
-        -label=>$lbl_str,
-        -underline=>1,
-        -accelerator=>"Ctrl+N",
-        -command=>sub { $self->cmd_new(); }
-    );
-    $top->bind("<Control-Key-n>", sub { $self->cmd_new(); });
-    $lbl_str = $self->{"msg"}{"MENU_STR_OPEN"};
-    $mc->command(
-        -label=>$lbl_str,
-        -underline=>1,
-        -accelerator=>"Ctrl+O",
-        -command=>sub { $self->cmd_open(); }
-    );
-    $top->bind("<Control-Key-o>", sub { $self->cmd_open(); });
-    $lbl_str = $self->{"msg"}{"MENU_STR_SAVE_AS"};
-    $mc->command(
-        -label=>$lbl_str,
-        -underline=>1,
-        -accelerator=>"Ctrl+S",
-        -command=>sub { $self->cmd_save_as(); }
-    );
-    $top->bind("<Control-Key-s>", sub { $self->cmd_save_as(); });
-    $lbl_str = $self->{"msg"}{"MENU_STR_CLOSE"};
-    $mc->command(
-        -label=>$lbl_str,
-        -underline=>1,
-        -accelerator=>"Ctrl+W",
-        -command=>sub { $self->cmd_close(); }
-    );
-    $top->bind("<Control-Key-w>", sub { $self->cmd_close(); });
-    $mc->separator();
-    $lbl_str = $self->{"msg"}{"MENU_STR_EXIT"};
-    $mc->command(
-        -label=>$lbl_str,
-        -underline=>1,
-        -accelerator=>"Ctrl+Q",
-        -command=>sub { $self->cmd_exit(); }
-    );
-    $top->bind("<Control-Key-q>", sub { $self->cmd_exit(); });
+    # File Menu
+    {
+        my $menubutton = $menubar_buttons->new_menubutton(
+            -text => $self->_data->{msg}{MENU_STR_FILE}, -underline => 1
+        );
+        $menubutton->g_pack(-side => "left");
+        my $menu = $menubutton->new_menu(-tearoff => 0);
+        $menubutton->configure(-menu => $menu);
 
-    # Edit
-    $lbl_str = $self->{"msg"}{"MENU_STR_EDIT"};
-    my $mb = $mb_bts->Menubutton(-text=>$lbl_str, -underline=>1)->pack(-side=>"left");
-    my $mc = $mb->Menu(-tearoff=>0);
-    $mb->configure(-menu=>$mc);
-    $lbl_str = $self->{"msg"}{"MENU_STR_UNDO"};
-    $mc->command(
-        -label=>$lbl_str,
-        -underline=>1,
-        -accelerator=>"Ctrl+Z",
-        -command=>sub { $self->eventGenerate("<Control-Key-z>"); }
-    );
-    $lbl_str = $self->{"msg"}{"MENU_STR_REDO"};
-    $mc->command(
-        -label=>$lbl_str,
-        -underline=>1,
-        -accelerator=>"Ctrl+Y",
-        -command=>sub { $self->eventGenerate("<Control-Key-y>"); }
-    );
-    $mc->separator();
-    $lbl_str = $self->{"msg"}{"MENU_STR_CUT"};
-    $mc->command(
-        -label=>$lbl_str,
-        -underline=>1,
-        -accelerator=>"Ctrl+X",
-        -command=>sub { $self->eventGenerate("<Control-Key-x>"); }
-    );
-    $lbl_str = $self->{"msg"}{"MENU_STR_COPY"};
-    $mc->command(
-        -label=>$lbl_str,
-        -underline=>1,
-        -accelerator=>"Ctrl+C",
-        -command=>sub { $self->eventGenerate("<Control-Key-c>"); }
-    );
-    $lbl_str = $self->{"msg"}{"MENU_STR_PASTE"};
-    $mc->command(
-        -label=>$lbl_str,
-        -underline=>1,
-        -accelerator=>"Ctrl+V",
-        -command=>sub { $self->eventGenerate("<Control-Key-v>"); }
-    );
-    $mc->separator();
-    $lbl_str = $self->{"msg"}{"MENU_STR_SELECT_ALL"};
-    $mc->command(
-        -label=>$lbl_str,
-        -underline=>1,
-        -accelerator=>"Ctrl+A",
-        -command=>sub { $self->eventGenerate("<Control-Key-a>"); }
-    );
+        # XXX new
+        $menu->add_command(
+            -label       => $self->_data->{msg}{MENU_STR_NEW},
+            -underline   => 1,
+            -accelerator => "Ctrl+N",
+            -command     => sub { $self->cmd_new; }
+        );
+        $top->g_bind("<Control-Key-n>", sub { $self->cmd_new; });
+
+        # open
+        $menu->add_command(
+            -label       => $self->_data->{msg}{MENU_STR_OPEN},
+            -underline   => 1,
+            -accelerator => "Ctrl+O",
+            -command     => sub { $self->cmd_open; }
+        );
+        $top->g_bind("<Control-Key-o>", sub { $self->cmd_open; });
+
+        # save
+        $menu->add_command(
+            -label       => $self->_data->{msg}{MENU_STR_SAVE_AS},
+            -underline   => 1,
+            -accelerator => "Ctrl+S",
+            -command     => sub { $self->cmd_save_as; }
+        );
+        $top->g_bind("<Control-Key-s>", sub { $self->cmd_save_as; });
+
+        # close
+        $menu->add_command(
+            -label       => $self->_data->{msg}{MENU_STR_CLOSE},
+            -underline   => 1,
+            -accelerator => "Ctrl+W",
+            -command     => sub { $self->cmd_close; }
+        );
+        $top->g_bind("<Control-Key-w>", sub { $self->cmd_close; });
+        $menu->add_separator;
+
+        # exit
+        $menu->add_command(
+            -label       => $self->_data->{msg}{MENU_STR_EXIT},
+            -underline   => 1,
+            -accelerator => "Ctrl+Q",
+            -command     => sub { $self->cmd_exit; }
+        );
+        $top->g_bind("<Control-Key-q>", sub { $self->cmd_exit; });
+    }
+
+    # XXX Edit Menu
+    # {
+    #     my $mb = $menubar_buttons->new_menubutton(
+    #         -text => $self->_data->{msg}{MENU_STR_EDIT}, -underline => 1
+    #     );
+    #     $mb->g_pack(-side => "left");
+
+    #     my $mc = $mb->new_menu(-tearoff => 0);
+    #     $mb->configure(-menu => $mc);
+
+    #     # undo
+    #     $mc->add_command(
+    #         -label       => $self->_data->{msg}{MENU_STR_UNDO},
+    #         -underline   => 1,
+    #         -accelerator => "Ctrl+Z",
+    #         -command     => sub { $self->eventGenerate("<Control-Key-z>"); }
+    #     );
+
+    #     # redo
+    #     $mc->add_command(
+    #         -label       => $self->_data->{msg}{MENU_STR_REDO},
+    #         -underline   => 1,
+    #         -accelerator => "Ctrl+Y",
+    #         -command     => sub { $self->eventGenerate("<Control-Key-y>"); }
+    #     );
+    #     $mc->add_separator;
+
+    #     # cut
+    #     $mc->add_command(
+    #         -label       => $self->_data->{msg}{MENU_STR_CUT},
+    #         -underline   => 1,
+    #         -accelerator => "Ctrl+X",
+    #         -command     => sub { $self->eventGenerate("<Control-Key-x>"); }
+    #     );
+
+    #     # copy
+    #     $mc->add_command(
+    #         -label       => $self->_data->{msg}{MENU_STR_COPY},
+    #         -underline   => 1,
+    #         -accelerator => "Ctrl+C",
+    #         -command     => sub { $self->eventGenerate("<Control-Key-c>"); }
+    #     );
+
+    #     # paste
+    #     $mc->add_command(
+    #         -label       => $self->_data->{msg}{MENU_STR_PASTE},
+    #         -underline   => 1,
+    #         -accelerator => "Ctrl+V",
+    #         -command     => sub { $self->eventGenerate("<Control-Key-v>"); }
+    #     );
+    #     $mc->add_separator;
+
+    #     # select_all
+    #     $mc->add_command(
+    #         -label       => $self->_data->{msg}{MENU_STR_SELECT_ALL},
+    #         -underline   => 1,
+    #         -accelerator => "Ctrl+A",
+    #         -command     => sub { $self->eventGenerate("<Control-Key-a>"); }
+    #     );
+    # }
 
     # Tool
-    $lbl_str = $self->{"msg"}{"MENU_STR_TOOL"};
-    my $mb = $mb_bts->Menubutton(-text=>$lbl_str, -underline=>1)->pack(-side=>"left");
-    my $mc = $mb->Menu(-tearoff=>0);
-    $mb->configure(-menu=>$mc);
-    $lbl_str = $self->{"msg"}{"MENU_STR_COMAINU_INPUT"};
-    $self->init_comainu_type("input-type");
-    $self->make_comainu_type_cascade("input-type", $mc, -label=>$lbl_str);
-    $lbl_str = $self->{"msg"}{"MENU_STR_COMAINU_OUTPUT"};
-    $self->init_comainu_type("output-type");
-    $self->make_comainu_type_cascade("output-type", $mc, -label=>$lbl_str);
-    $lbl_str = $self->{"msg"}{"MENU_STR_COMAINU_MODEL"};
-    $self->init_comainu_type("model-type");
-    $self->make_comainu_type_cascade("model-type", $mc, -label=>$lbl_str);
-    $lbl_str = $self->{"msg"}{"MENU_STR_COMAINU_TAGGER"};
-    $self->init_comainu_type("tagger-type");
-    $self->make_comainu_type_cascade("tagger-type", $mc, -label=>$lbl_str);
-    $lbl_str = $self->{"msg"}{"MENU_STR_COMAINU_BOUNDARY"};
-    $self->init_comainu_type("boundary-type");
-    $self->make_comainu_type_cascade("boundary-type", $mc, -label=>$lbl_str);
-    $lbl_str = $self->{"msg"}{"MENU_STR_ANALYSIS"};
-    $mc->command(
-        -label=>$lbl_str,
-        -underline=>1,
-        -accelerator=>"Alt+A",
-        -command=>sub { $self->cmd_analysis(); }
-    );
-    $top->bind("<Alt-Key-a>", sub { $self->cmd_analysis(); });
-    $lbl_str = $self->{"msg"}{"MENU_STR_BATCH_ANALYSIS"};
-    $mc->command(
-        -label=>$lbl_str,
-        -underline=>1,
-        -accelerator=>"Alt+B",
-        -command=>sub { $self->cmd_batch_analysis(); }
-    );
-    $top->bind("<Alt-Key-b>", sub { $self->cmd_batch_analysis(); });
-    $lbl_str = $self->{"msg"}{"MENU_STR_CLEAR_INPUT"};
-    $mc->command(
-        -label=>$lbl_str,
-        -underline=>1,
-        -accelerator=>"Alt+C",
-        -command=>sub { $self->cmd_clear_input(); }
-    );
-    $top->bind("<Alt-Key-c>", sub { $self->cmd_clear_input(); });
-    $lbl_str = $self->{"msg"}{"MENU_STR_CLEAR_CACHE"};
-    $mc->command(
-        -label=>$lbl_str,
-        -underline=>1,
-        -accelerator=>"Alt+D",
-        -command=>sub { $self->cmd_clear_cache(); }
-    );
-    $top->bind("<Alt-Key-d>", sub { $self->cmd_clear_cache(); });
-    $mc->separator();
-    $lbl_str = $self->{"msg"}{"MENU_STR_CONFIGURATION"};
-    $mc->command(
-        -label=>$lbl_str,
-        -underline=>1,
-        -accelerator=>"Alt+O",
-        -command=>sub { $self->cmd_configuration(); }
-    );
-    $top->bind("<Alt-Key-o>", sub { $self->cmd_configuration(); });
+    {
+        my $menubutton = $menubar_buttons->new_menubutton(
+            -text => $self->_data->{msg}{MENU_STR_TOOL}, -underline => 1
+        );
+        $menubutton->g_pack(-side => "left");
+        my $menu = $menubutton->new_menu(-tearoff => 0);
+        $menubutton->configure(-menu => $menu);
+
+        $self->init_comainu_type("input-type");
+        $self->make_comainu_type_cascade(
+            "input-type", $menu, -label => $self->_data->{msg}{MENU_STR_COMAINU_INPUT},
+        );
+
+        $self->init_comainu_type("output-type");
+        $self->make_comainu_type_cascade(
+            "output-type", $menu, -label => $self->_data->{msg}{MENU_STR_COMAINU_OUTPUT},
+        );
+
+        $self->init_comainu_type("model-type");
+        $self->make_comainu_type_cascade(
+            "model-type", $menu, -label => $self->_data->{msg}{MENU_STR_COMAINU_MODEL},
+        );
+
+        $self->init_comainu_type("tagger-type");
+        $self->make_comainu_type_cascade(
+            "tagger-type", $menu, -label => $self->_data->{msg}{MENU_STR_COMAINU_TAGGER},
+        );
+
+        $self->init_comainu_type("boundary-type");
+        $self->make_comainu_type_cascade(
+            "boundary-type", $menu, -label => $self->_data->{msg}{MENU_STR_COMAINU_BOUNDARY},
+        );
+
+        # analysis
+        $menu->add_command(
+            -label       => $self->_data->{msg}{MENU_STR_ANALYSIS},
+            -underline   => 1,
+            -accelerator => "Alt+A",
+            -command     => sub { $self->cmd_analysis; }
+        );
+        $top->g_bind("<Alt-Key-a>", sub { $self->cmd_analysis; });
+
+        # batch analysis
+        $menu->add_command(
+            -label       => $self->_data->{msg}{MENU_STR_BATCH_ANALYSIS},
+            -underline   => 1,
+            -accelerator => "Alt+B",
+            -command     => sub { $self->cmd_batch_analysis; }
+        );
+        $top->g_bind("<Alt-Key-b>", sub { $self->cmd_batch_analysis; });
+
+        # clear input
+        $menu->add_command(
+            -label       => $self->_data->{msg}{MENU_STR_CLEAR_INPUT},
+            -underline   => 1,
+            -accelerator => "Alt+C",
+            -command     => sub { $self->cmd_clear_input; }
+        );
+        $top->g_bind("<Alt-Key-c>", sub { $self->cmd_clear_input; });
+
+        # clear cache
+        $menu->add_command(
+            -label       => $self->_data->{msg}{MENU_STR_CLEAR_CACHE},
+            -underline   => 1,
+            -accelerator => "Alt+D",
+            -command     => sub { $self->cmd_clear_cache; }
+        );
+        $top->g_bind("<Alt-Key-d>", sub { $self->cmd_clear_cache; });
+        $menu->add_separator;
+
+        # configuration
+        $menu->add_command(
+            -label       => $self->_data->{msg}{MENU_STR_CONFIGURATION},
+            -underline   => 1,
+            -accelerator => "Alt+O",
+            -command     => sub { $self->cmd_configuration; }
+        );
+        $top->g_bind("<Alt-Key-o>", sub { $self->cmd_configuration; });
+    }
 
     # Help
-    $lbl_str = $self->{"msg"}{"MENU_STR_HELP"};
-    my $mb = $mb_bts->Menubutton(-text=>$lbl_str, -underline=>1)->pack(-side=>"left");
-    my $mc = $mb->Menu(-tearoff=>0);
-    $mb->configure(-menu=>$mc);
-    $lbl_str = $self->{"msg"}{"MENU_STR_HELP"};
-    $mc->command(
-        -label=>$lbl_str,
-        -underline=>1,
-        -accelerator=>"F1",
-        -command=>sub { $self->cmd_show_help(); }
-    );
-    $top->bind("<F1>", sub { $self->cmd_show_help(); });
-    $mc->separator();
-    $lbl_str = $self->{"msg"}{"MENU_STR_ABOUT"};
-    $mc->command(
-        -label=>$lbl_str,
-        -underline=>1,
-        -command=>sub { $self->cmd_show_about(); }
-    );
+    {
+        my $menubutton = $menubar_buttons->new_menubutton(
+            -text => $self->_data->{msg}{MENU_STR_HELP}, -underline => 1
+        );
+        $menubutton->g_pack(-side => "left");
+        my $menu = $menubutton->new_menu(-tearoff => 0);
+        $menubutton->configure(-menu => $menu);
+        $menu->add_command(
+            -label       => $self->_data->{msg}{MENU_STR_HELP},
+            -underline   => 1,
+            -accelerator => "F1",
+            -command     => sub { $self->cmd_show_help; }
+        );
+        $top->g_bind("<F1>", sub { $self->cmd_show_help; });
+        $menu->add_separator;
+        $menu->add_command(
+            -label     => $self->_data->{msg}{MENU_STR_ABOUT},
+            -underline => 1,
+            -command   => sub { $self->cmd_show_about; }
+        );
+    }
 
     return;
 }
 
 sub make_toolbar {
     my $self = shift;
-    my $top = $self->toplevel();
-    my $app_conf = $self->get_app_conf();
-    my $tb_fr = $self->{"toolbar"};
-    my $tb_bts = $tb_fr->{"bts"};
-    my $f = $tb_bts->Frame();
-    $f->pack(-side=>"top", -anchor=>"nw");
-    my $lbl_str = $self->{"msg"}{"STR_COMAINU_INPUT"};
-    my $be = $self->make_comainu_type_selector(
-        "input-type",
-        $f,
-        -label=>$lbl_str,
-        -width=>16
-    );
-    $be->pack(-side=>"left");
-    my $lbl_str = $self->{"msg"}{"STR_COMAINU_OUTPUT"};
-    my $be = $self->make_comainu_type_selector(
-        "output-type",
-        $f,
-        -label=>$lbl_str,
-        -width=>16
-    );
-    $be->pack(-side=>"left");
-    my $lbl_str = $self->{"msg"}{"STR_COMAINU_MODEL"};
-    my $be = $self->make_comainu_type_selector(
-        "model-type",
-        $f,
-        -label=>$lbl_str,
-        -width=>4
-    );
-    $be->pack(-side=>"left");
-    my $lbl_str = $self->{"msg"}{"STR_COMAINU_TAGGER"};
-    my $be = $self->make_comainu_type_selector(
-        "tagger-type",
-        $f,
-        -label=>$lbl_str,
-        -width=>8
-    );
-    $be->pack(-side=>"left");
-    my $lbl_str = $self->{"msg"}{"STR_COMAINU_BOUNDARY"};
-    my $be = $self->make_comainu_type_selector(
-        "boundary-type",
-        $f,
-        -label=>$lbl_str,
-        -width=>4
-    );
-    $be->pack(-side=>"left");
 
-    my $f = $tb_bts->Frame();
-    $f->pack(-side=>"top", -anchor=>"nw");
-    my $lbl_str = $self->{"msg"}{"BT_STR_ANALYSIS"};
-    my $b = $f->Button(
-        -text=>$lbl_str,
-        -command=>sub { $self->cmd_analysis(); }
-    );
-    $b->pack(-side=>"left", -anchor=>"w");
-    $self->{"_analysis_button"} = $b;
-    my $lbl_str = $self->{"msg"}{"BT_STR_BATCH_ANALYSIS"};
-    my $b = $f->Button(
-        -text=>$lbl_str,
-        -command=>sub { $self->cmd_batch_analysis(); }
-    );
-    $b->pack(-side=>"left", -anchor=>"w");
-    $self->{"_batch_analysis_button"} = $b;
-    $lbl_str = $self->{"msg"}{"BT_STR_CLEAR_INPUT"};
-    $b = $f->Button(
-        -text=>$lbl_str,
-        -command=>sub { $self->cmd_clear_input(); }
-    );
-    $b->pack(-side=>"left");
-    $self->{"_clear_input_button"} = $b;
-    $lbl_str = $self->{"msg"}{"BT_STR_CLEAR_CACHE"};
-    $b = $f->Button(
-        -text=>$lbl_str,
-        -command=>sub { $self->cmd_clear_cache(); }
-    );
-    $b->pack(-side=>"left");
-    $self->{"_clear_cache_button"} = $b;
+    my $top = $self->_parent || $self;
+    my $app_conf = $self->_data->{"app-conf"};
+    my $toolbar_frame = $self->_data->{toolbar};
+    my $toolbar_buttons = $toolbar_frame->_data->{bts};
+
+    my $combo_frame = $toolbar_buttons->new_frame;
+    $combo_frame->g_pack(-side => "top", -anchor => "nw");
+    # input
+    {
+        my $label = $combo_frame->new_label(-text => $self->_data->{msg}{STR_COMAINU_INPUT});
+        $label->g_pack(-side => "left");
+        my $combobox = $self->make_comainu_type_selector(
+            "input-type", $combo_frame, -width => 16,
+        );
+        $combobox->g_pack(-side=>"left");
+    }
+    # output
+    {
+        my $label = $combo_frame->new_label(-text => $self->_data->{msg}{STR_COMAINU_OUTPUT});
+        $label->g_pack(-side => "left");
+        my $combobox = $self->make_comainu_type_selector(
+            "output-type", $combo_frame, -width => 16,
+        );
+        $combobox->g_pack(-side => "left");
+    }
+    # model
+    {
+        my $label = $combo_frame->new_label(-text => $self->_data->{msg}{STR_COMAINU_MODEL});
+        $label->g_pack(-side => "left");
+        my $combobox = $self->make_comainu_type_selector(
+            "model-type", $combo_frame, -width => 6,
+        );
+        $combobox->g_pack(-side => "left");
+    }
+    # tagger
+    {
+        my $label = $combo_frame->new_label(-text => $self->_data->{msg}{STR_COMAINU_TAGGER});
+        $label->g_pack(-side => "left");
+        my $combobox = $self->make_comainu_type_selector(
+            "tagger-type", $combo_frame, -width => 8,
+        );
+        $combobox->g_pack(-side => "left");
+    }
+    # boundary
+    {
+        my $label = $combo_frame->new_label(-text => $self->_data->{msg}{STR_COMAINU_BOUNDARY});
+        $label->g_pack(-side => "left");
+        my $combobox = $self->make_comainu_type_selector(
+            "boundary-type", $combo_frame, -width => 6,
+        );
+        $combobox->g_pack(-side => "left");
+    }
+
+    my $button_frame = $toolbar_buttons->new_frame;
+    $button_frame->g_pack(-side => "top", -anchor => "nw");
+    # analysis
+    {
+        my $button = $button_frame->new_button(
+            -text    => $self->_data->{msg}{BT_STR_ANALYSIS},
+            -command => sub { $self->cmd_analysis; }
+        );
+        $button->g_pack(-side => "left", -anchor => "w");
+        $self->_data->{_analysis_button} = $button;
+    }
+    # batch analysis
+    {
+        my $button = $button_frame->new_button(
+            -text    => $self->_data->{msg}{BT_STR_BATCH_ANALYSIS},
+            -command => sub { $self->cmd_batch_analysis; }
+        );
+        $button->g_pack(-side => "left", -anchor => "w");
+        $self->_data->{_batch_analysis_button} = $button;
+    }
+    # clear input
+    {
+        my $button = $button_frame->new_button(
+            -text    => $self->_data->{msg}{BT_STR_CLEAR_INPUT},
+            -command => sub { $self->cmd_clear_input; }
+        );
+        $button->g_pack(-side => "left");
+        $self->_data->{_clear_input_button} = $button;
+    }
+    # clear cache
+    {
+        my $button = $button_frame->new_button(
+            -text    => $self->_data->{msg}{BT_STR_CLEAR_CACHE},
+            -command => sub { $self->cmd_clear_cache; }
+        );
+        $button->g_pack(-side => "left");
+        $self->_data->{_clear_cache_button} = $button;
+    }
 }
 
 sub make_mainframe {
     my $self = shift;
-    my $top = $self->toplevel();
-    my $app_conf = $self->get_app_conf();
-    my $mf = $self->{"mainframe"};
-    my ($f, $b, $e, $c);
+    my $top = $self->_parent || $self;
+    my $app_conf = $self->_data->{"app-conf"};
+    my $mf = $self->_data->{mainframe};
 
     # Paned frame
-    my $pw = $mf->Panedwindow(-orient=>"vertical");
-    $pw->pack(-side=>"top", -fill=>"both", -expand=>"yes");
+    my $paned_window = $mf->new_ttk__panedwindow(-orient => "vertical");
+    $paned_window->g_pack(-side => "top", -fill => "both", -expand => "yes");
 
     # Input pane
-    # my $f_in = $mf->Frame(-bg=>"#ffffff");
-    # $f_in->pack(-side=>"top", -fill=>"both", -expand=>"yes");
-    my $f_in = $pw->Frame(-bg=>"#ffffff");
-    $pw->add($f_in, -minsize => 100, -height => 200);
-    $f = $f_in->Frame();
-    $f->pack(-side=>"top", -fill=>"x");
-    my $lbl_str;
-    $lbl_str = $self->{"msg"}{"STR_INPUT"};
-    $f->Label(-text=>$lbl_str)->pack(-side=>"left", -fill=>"x", -anchor=>"w");
-    $lbl_str = $self->{"msg"}{"BT_STR_OPEN"};
-    $b = $f->Button(
-        -text=>$lbl_str,
-        -command=>sub { $self->cmd_open(); }
-    );
-    $b->pack(-side=>"left");
-    $e = $f->Entry(
-        -textvariable=>\$self->{"in-pathname"},
-        -state=>"readonly"
-    );
-    $e->pack(-side=>"left", -fill=>"x", -expand=>"yes", -anchor=>"w");
-    $c = $f->Checkbutton(
-        -text=>$self->{"msg"}{"BT_STR_WRAP"},
-        -onvalue=>"word",
-        -offvalue=>"none",
-        -variable=>$app_conf->get_ref("in-wrap"),
-        -command=>sub {
-            $self->{"in_text"}->configure(-wrap=>$app_conf->get("in-wrap"));
-        }
-    );
-    $c->pack(-side=>"left");
-    $c = $f->Checkbutton(
-        -text=>$self->{"msg"}{"BT_STR_READONLY"},
-        -onvalue=>"1",
-        -offvalue=>"0",
-        -variable=>$app_conf->get_ref("in-readonly"),
-        -command=>sub {
-            my $state = $app_conf->get("in-readonly") ? "disabled" : "normal";
-            $self->{"in_text"}->configure(-state=>$state);
-            $self->change_state_table($self->{"in_table"}, $state);
-        }
-    );
-    $c->pack(-side=>"left");
-    $c = $f->Checkbutton(
-        -text=>$self->{"msg"}{"BT_STR_TABLE_DISP"},
-        -onvalue=>"1",
-        -offvalue=>"0",
-        -variable=>$app_conf->get_ref("in-table-disp"),
-        -command=>sub {
-            my $in_text = $self->{"in_text"};
-            my $in_table = $self->{"in_table"};
-            my $table_disp = $app_conf->get("in-table-disp");
-            my $readonly = $app_conf->get("in-readonly");
-            $self->change_table_disp($in_text, $in_table,
-                                     $table_disp, $readonly);
-        }
-    );
-    $c->pack(-side=>"left");
-    my $in_text = $f_in->Scrolled(
-        "TextUndo_patch",
-        -scrollbars=>"se",
-        -height=>10,
-        -bg=>"#ffffff",
-        -wrap=>$app_conf->get("in-wrap")
-    );
-    my $in_table = $f_in->Table(
-        -scrollbars=>"se",
-        -rows => 1,
-        -columns => 1,
-        -fixedrows => 0,
-        -fixedcolumns => 0,
-        -height => 200,
-        -takefocus => "yes",
-        -bg => "#ffffff",
-    );
-    $f_in->DropSite(
-        -droptypes=>$self->get_droptypes(),
-        -dropcommand=>sub {
-            my ($selection) = @_;
-            my $w = $f_in;
-            my $pathname = $self->get_selection($w, $selection);
-            if ($pathname) {
-                $pathname =~ s/\\/\//g;
-                $pathname = $self->decode_pathname($pathname);
-                $self->cmd_open($pathname);
+    {
+        my $input_frame = $paned_window->new_frame(-bg => "#ffffff");
+        $paned_window->add($input_frame);
+        my $frame = $input_frame->new_frame;
+        $frame->g_pack(-side => "top", -fill => "x");
+
+        my $label = $frame->new_label(-text => $self->_data->{msg}{STR_INPUT});
+        $label->g_pack(-side => "left", -fill => "x", -anchor => "w");
+
+        my $open_button = $frame->new_button(
+            -text    => $self->_data->{msg}{BT_STR_OPEN},
+            -command => sub { $self->cmd_open; }
+        );
+        $open_button->g_pack(-side => "left");
+
+        my $entry = $frame->new_entry(
+            -textvariable => \$self->_data->{"in-pathname"},
+            -state        => "readonly"
+        );
+        $entry->g_pack(-side => "left", -fill => "x", -expand => "yes", -anchor => "w");
+
+        my $wrap_button = $frame->new_checkbutton(
+            -text     => $self->_data->{msg}{BT_STR_WRAP},
+            -onvalue  => "word",
+            -offvalue => "none",
+            -variable => $app_conf->get_ref("in-wrap"),
+            -command  => sub {
+                $self->_data->{in_text}->configure(-wrap => $app_conf->get("in-wrap"));
             }
+        );
+        $wrap_button->g_pack(-side => "left");
+
+        my $readonly_button = $frame->new_checkbutton(
+            -text     => $self->_data->{msg}{BT_STR_READONLY},
+            -onvalue  => "1",
+            -offvalue => "0",
+            -variable => $app_conf->get_ref("in-readonly"),
+            -command  => sub {
+                my $state = $app_conf->get("in-readonly") ? "disabled" : "normal";
+                $self->_data->{in_text}->configure(-state => $state);
+                $self->change_state_table($self->_data->{in_table}, $state);
+            }
+        );
+        $readonly_button->g_pack(-side => "left");
+
+        my $table_button = $frame->new_checkbutton(
+            -text     => $self->_data->{msg}{BT_STR_TABLE_DISP},
+            -onvalue  => "1",
+            -offvalue => "0",
+            -variable => $app_conf->get_ref("in-table-disp"),
+            -command  => sub {
+                my $in_text  = $self->_data->{in_text};
+                my $in_table = $self->_data->{in_table};
+                my $table_disp = $app_conf->get("in-table-disp");
+                my $readonly = $app_conf->get("in-readonly");
+                $self->change_table_disp(
+                    $in_text, $in_table, $table_disp, $readonly
+                );
+            }
+        );
+        $table_button->g_pack(-side => "left");
+
+        my $in_text = $input_frame->new_tkx_Scrolled(
+            "text",
+            -scrollbars => "se",
+            -height     => 10,
+            -bg         => "#ffffff",
+            -wrap       => $app_conf->get("in-wrap"),
+        );
+        my $in_table = $input_frame->new_table(
+            -rows      => 1,
+            -cols      => 1,
+            -height    => 200,
+            -takefocus => "yes",
+            -bg        => "#ffffff",
+            -multiline => 0,
+        );
+
+        my $state = $app_conf->get("in-readonly") ? "disabled" : "normal";
+        $in_text->configure(-state=>$state);
+        $in_text->g_bind("<Button>", sub { $in_text->g_focus; });
+        $in_text->g_bind("<Control-Key-f>", sub { $in_text->FindPopUp; });
+        $in_text->g_bind("<Control-Key-h>", sub { $in_text->FindAndReplacePopUp; });
+        $self->_data->{in_text} = $in_text;
+        $self->_data->{in_table} = $in_table;
+
+        $self->bind_wheel($in_table, $in_table);
+
+        if($app_conf->get("in-table-disp")) {
+            $in_table->g_pack(-side => "top", -fill => "both", -expand => "yes");
+        } else {
+            $in_text->g_pack(-side => "top", -fill => "both", -expand => "yes");
         }
-    );
-    my $state = $app_conf->get("in-readonly") ? "disabled" : "normal";
-    $in_text->configure(-state=>$state);
-    $in_text->bind("<Button>", sub { $in_text->focus(); });
-    $in_text->bind("<Control-Key-f>", sub { $in_text->FindPopUp(); });
-    $in_text->bind("<Control-Key-h>", sub { $in_text->FindAndReplacePopUp(); });
-    $self->{"in_text"} = $in_text;
-    $self->{"in_table"} = $in_table;
-
-    $self->bind_wheel($in_table, $in_table);
-
-    if($app_conf->get("in-table-disp")) {
-        $in_table->pack(-side=>"top", -fill=>"both", -expand=>"yes");
-    } else {
-        $in_text->pack(-side=>"top", -fill=>"both", -expand=>"yes");
     }
 
     # Output pane
-    # my $f_out = $mf->Frame();
-    # $f_out->pack(-side=>"top", -fill=>"both", -expand=>"yes");
-    my $f_out = $pw->Frame();
-    $pw->add($f_out, -minsize => 100);
-    $f = $f_out->Frame();
-    $f->pack(-side=>"top", -fill=>"x");
-    $lbl_str = $self->{"msg"}{"STR_OUTPUT"};
-    $f->Label(-text=>$lbl_str)->pack(-side=>"left", -anchor=>"w");
-    $lbl_str = $self->{"msg"}{"BT_STR_SAVE"};
-    $b = $f->Button(
-        -text=>$lbl_str,
-        -command=>sub { $self->cmd_save_as(); }
-    );
-    $b->pack(-side=>"left");
-    $e = $f->Entry(
-        -textvariable=>\$self->{"out-pathname"},
-        -state=>"readonly"
-    );
-    $e->pack(-side=>"left", -fill=>"x", -expand=>"yes", -anchor=>"w");
-    $c = $f->Checkbutton(
-        -text=>$self->{"msg"}{"BT_STR_WRAP"},
-        -onvalue=>"word",
-        -offvalue=>"none",
-        -variable=>$app_conf->get_ref("out-wrap"),
-        -command=>sub {
-            $self->{"out_text"}->configure(-wrap=>$app_conf->get("out-wrap"));
-        }
-    );
-    $c->pack(-side=>"left");
-    $c = $f->Checkbutton(
-        -text=>$self->{"msg"}{"BT_STR_READONLY"},
-        -onvalue=>"1",
-        -offvalue=>"0",
-        -variable=>$app_conf->get_ref("out-readonly"),
-        -command=>sub {
-            my $state = $app_conf->get("out-readonly") ? "disabled" : "normal";
-            $self->{"out_text"}->configure(-state=>$state);
-            $self->change_state_table($self->{"out_table"}, $state);
-        }
-    );
-    $c->pack(-side=>"left");
-    $c = $f->Checkbutton(
-        -text=>$self->{"msg"}{"BT_STR_TABLE_DISP"},
-        -onvalue=>"1",
-        -offvalue=>"0",
-        -variable=>$app_conf->get_ref("out-table-disp"),
-        -command=>sub {
-            my $out_text = $self->{"out_text"};
-            my $out_table = $self->{"out_table"};
-            my $table_disp = $app_conf->get("out-table-disp");
-            my $readonly = $app_conf->get("out-readonly");
-            $self->change_table_disp($out_text, $out_table,
-                                     $table_disp, $readonly);
-        }
-    );
-    $c->pack(-side=>"left");
-    my $out_text = $f_out->Scrolled(
-        "TextUndo_patch",
-        -scrollbars=>"se",
-        -height=>10,
-        -bg=>"#ffffff",
-        -wrap=>$app_conf->get("out-wrap")
-    );
-    my $out_table = $f_out->Table(
-        -scrollbars=>"se",
-        -rows => 1,
-        -columns => 1,
-        -fixedrows => 0,
-        -fixedcolumns => 0,
-        -height => 200,
-        -takefocus => "yes",
-        -bg => "#ffffff",
-    );
-    my $state = $app_conf->get("out-readonly") ? "disabled" : "normal";
-    $out_text->configure(-state=>$state);
-    $out_text->bind("<Button>", sub { $out_text->focus(); });
-    $out_text->bind("<Control-Key-f>", sub { $out_text->FindPopUp(); });
-    $out_text->bind("<Control-Key-h>", sub { $out_text->FindAndReplacePopUp(); });
-    $self->{"out_text"} = $out_text;
-    $self->{"out_table"} = $out_table;
+    {
+        my $output_frame = $paned_window->new_frame;
+        $paned_window->add($output_frame);
+        my $frame = $output_frame->new_frame;
+        $frame->g_pack(-side => "top", -fill => "x");
 
-    $self->bind_wheel($out_table, $out_table);
+        my $label = $frame->new_label(-text => $self->_data->{msg}{STR_OUTPUT});
+        $label->g_pack(-side => "left", -anchor => "w");
 
-    if ($app_conf->get("out-table-disp")) {
-        $out_table->pack(-side=>"top", -fill=>"both", -expand=>"yes");
-    } else {
-        $out_text->pack(-side=>"top", -fill=>"both", -expand=>"yes");
+        my $save_button = $frame->new_button(
+            -text    => $self->_data->{msg}{BT_STR_SAVE},
+            -command => sub { $self->cmd_save_as; }
+        );
+        $save_button->g_pack(-side => "left");
+
+        my $entry = $frame->new_entry(
+            -textvariable => \$self->_data->{"out-pathname"},
+            -state        => "readonly"
+        );
+        $entry->g_pack(-side => "left", -fill => "x", -expand => "yes", -anchor => "w");
+
+        my $wrap_button = $frame->new_checkbutton(
+            -text     => $self->_data->{msg}{BT_STR_WRAP},
+            -onvalue  => "word",
+            -offvalue => "none",
+            -variable => $app_conf->get_ref("out-wrap"),
+            -command  =>sub {
+                $self->_data->{out_text}->configure(-wrap => $app_conf->get("out-wrap"));
+            }
+        );
+        $wrap_button->g_pack(-side => "left");
+
+        my $readonly_button = $frame->new_checkbutton(
+            -text     => $self->_data->{msg}{BT_STR_READONLY},
+            -onvalue  => "1",
+            -offvalue => "0",
+            -variable => $app_conf->get_ref("out-readonly"),
+            -command  => sub {
+                my $state = $app_conf->get("out-readonly") ? "disabled" : "normal";
+                $self->_data->{out_text}->configure(-state => $state);
+                $self->change_state_table($self->_data->{out_table}, $state);
+            }
+        );
+        $readonly_button->g_pack(-side => "left");
+
+        my $table_button = $frame->new_checkbutton(
+            -text     => $self->_data->{msg}{BT_STR_TABLE_DISP},
+            -onvalue  => "1",
+            -offvalue => "0",
+            -variable => $app_conf->get_ref("out-table-disp"),
+            -command  => sub {
+                my $out_text  = $self->_data->{out_text};
+                my $out_table = $self->_data->{out_table};
+                my $table_disp = $app_conf->get("out-table-disp");
+                my $readonly = $app_conf->get("out-readonly");
+                $self->change_table_disp(
+                    $out_text, $out_table, $table_disp, $readonly
+                );
+            }
+        );
+        $table_button->g_pack(-side => "left");
+
+        my $out_text = $output_frame->new_tkx_Scrolled(
+            "text",
+            -scrollbars => "se",
+            -height     => 10,
+            -bg         => "#ffffff",
+            -wrap       => $app_conf->get("out-wrap")
+        );
+        my $out_table = $output_frame->new_table(
+            -rows      => 1,
+            -cols      => 1,
+            -height    => 200,
+            -takefocus => "yes",
+            -bg        => "#ffffff",
+            -multiline => 0,
+        );
+
+        my $state = $app_conf->get("out-readonly") ? "disabled" : "normal";
+        $out_text->configure(-state=>$state);
+        $out_text->g_bind("<Button>", sub { $out_text->g_focus; });
+        $out_text->g_bind("<Control-Key-f>", sub { $out_text->FindPopUp; });
+        $out_text->g_bind("<Control-Key-h>", sub { $out_text->FindAndReplacePopUp; });
+        $self->_data->{out_text} = $out_text;
+        $self->_data->{out_table} = $out_table;
+
+        $self->bind_wheel($out_table, $out_table);
+
+        if ($app_conf->get("out-table-disp")) {
+            $out_table->g_pack(-side => "top", -fill => "both", -expand => "yes");
+        } else {
+            $out_text->g_pack(-side => "top", -fill => "both", -expand => "yes");
+        }
     }
 }
 
+
 sub bind_wheel {
-    my $self = shift;
-    my ($w, $table) = @_;
-    $w->bind("<Button>", sub { $w->focus(); });
+    my ($self, $w, $table) = @_;
+
     if($Config{"osname"} eq "MSWin32") {
-        $w->bind(
+        $w->g_bind(
             "<MouseWheel>",
             sub {
                 my $delta = $Tk::event->D();
@@ -743,108 +755,103 @@ sub bind_wheel {
             }
         );
     } else {
-        $w->bind(
+        $w->g_bind(
             "<Button-4>",
             sub { $table->yview("scroll", -1, "units"); }
         );
-        $w->bind(
+        $w->g_bind(
             "<Button-5>",
             sub { $table->yview("scroll", +1, "units"); }
         );
     }
 }
 
+
 sub get_comainu_type_list {
-    my $self = shift;
-    my ($type) = @_;
-    if ($type eq "input-type") {
-        return ["plain", "bccwj", "bccwjlong", "kc", "kclong"];
-    }
+    my ($self, $type) = @_;
+
+    return ["plain", "bccwj", "bccwjlong", "kc", "kclong"] if $type eq "input-type";
+
     if ($type eq "output-type") {
-        my $input_type = $self->get_comainu_type_by_name("input-type", $self->{"_comainu_input_name"});
-        if ($input_type =~ /^bccwjlong|kclong$/) {
-            return ["mid"];
-        }
+        my $input_type = $self->get_comainu_type_by_name("input-type", $self->_data->{_comainu_input_name});
+        return ["mid"] if $input_type =~ /^bccwjlong|kclong$/;
         return ["bnst", "long_only_boundary", "long", "longbnst", "mid", "midbnst"];
     }
-    if ($type eq "model-type") {
-        return ["svm", "crf"];
-    }
-    if ($type eq "tagger-type") {
-        return ["mecab"];
-    }
-    if ($type eq "boundary-type") {
-        return ["sentence", "word"];
-    }
+
+    return ["svm", "crf"]       if $type eq "model-type";
+    return ["mecab"]            if $type eq "tagger-type";
+    return ["sentence", "word"] if $type eq "boundary-type";
 }
 
 sub get_comainu_type_name_list {
-    my $self = shift;
-    my ($type) = @_;
+    my ($self, $type) = @_;
+
     my $type_list = $self->get_comainu_type_list($type);
     my $type_name_list = [];
     foreach my $type (@$type_list) {
-        my $type_name = $self->{"msg"}{"STR_".uc($type)};
-        push(@$type_name_list, $type_name);
+        my $type_name = $self->_data->{msg}{"STR_".uc($type)};
+        push @$type_name_list, $type_name;
     }
     return $type_name_list;
 }
 
 sub get_comainu_type_by_name {
-    my $self = shift;
-    my ($type, $type_name) = @_;
-    my $res_type;
+    my ($self, $type, $type_name) = @_;
+
     my $type_list = $self->get_comainu_type_list($type);
     my $type_name_list = $self->get_comainu_type_name_list($type);
-    for (my $i = 0; $i < scalar(@$type_list); ++$i) {
+    my $res_type;
+    for (my $i = 0; $i < scalar @$type_list; ++$i) {
         my $tmp_type = $type_list->[$i];
         my $tmp_type_name = $type_name_list->[$i];
-        if ($tmp_type_name eq $type_name) {
+        if ($tmp_type_name eq ($type_name // "")) {
             $res_type = $tmp_type;
             last;
         }
     }
-    return $res_type;
+    return $res_type // "";
 }
 
+
 sub init_comainu_type {
-    my $self = shift;
-    my ($type) = @_;
-    if (!exists($self->{"_comainu_".$type."_name"}) or
-            !exists($self->{"_comainu_".$type})) {
-        my $app_conf = $self->get_app_conf();
+    my ($self, $type) = @_;
+
+    if (!exists $self->_data->{"_comainu_".$type."_name"} ||
+            !exists $self->_data->{"_comainu_".$type}) {
+        my $app_conf = $self->_data->{"app-conf"};
         my $type_list = $self->get_comainu_type_list($type);
         my $type_name_list = $self->get_comainu_type_name_list($type);
-        for (my $i = 0; $i < scalar(@$type_list); ++$i) {
+        for (my $i = 0; $i < scalar @$type_list; ++$i) {
             my $type_tmp = $type_list->[$i];
             my $type_name = $type_name_list->[$i];
             if ($app_conf->get("comainu-".$type) eq $type_tmp) {
-                $self->{"_comainu_".$type."_name"} = $type_name;
+                $self->_data->{"_comainu_".$type."_name"} = $type_name;
             }
         }
-        $self->{"_comainu_".$type."_name_list"} = $type_name_list;
+        $self->_data->{"_comainu_".$type."_name_list"} = $type_name_list;
     }
 }
 
 sub make_comainu_type_cascade {
-    my $self = shift;
-    my ($type, $mc, %opts) = @_;
+    my ($self, $type, $mc, %opts) = @_;
+
     my $label = $opts{"-label"};
-    my $m;                              # for closure of postcommand
-    $m = $mc->Menu(
-        -tearoff=>0,
-        -postcommand=>sub {
-            $m->delete(0, "end");
+    my $menu; # for closure of postcommand
+
+    $menu = $mc->new_menu(
+        -tearoff     => 0,
+        -postcommand => sub {
+            $menu->delete(0, "end");
             foreach my $type_name (@{$self->get_comainu_type_name_list($type)}) {
-                $m->radiobutton(
-                    -label=>$type_name,
-                    -variable=>\$self->{"_comainu_".$type."_name"},
-                    -command=>sub {
+                $menu->add_radiobutton(
+                    -label    => $type_name,
+                    -variable => \$self->_data->{"_comainu_".$type."_name"},
+                    -command  => sub {
                         my $type_tmp = $self->get_comainu_type_by_name(
                             $type,
-                            $self->{"_comainu_type_name"}
+                            $self->_data->{"_comainu_type_name"}
                         );
-                        my $app_conf = $self->get_app_conf();
+                        my $app_conf = $self->_data->{"app-conf"};
                         $app_conf->set("comainu-".$type, $type_tmp);
                         $self->check_comainu_limitation($type);
                     }
@@ -852,74 +859,36 @@ sub make_comainu_type_cascade {
             }
         }
     );
-    $mc->cascade(-underline=>1, -menu=>$m, %opts);
+    $mc->add_cascade(-underline => 1, -menu => $menu, %opts);
 }
 
 sub make_comainu_type_selector {
-    my $self = shift;
-    my ($type, $f, %opts) = @_;
-    my $app_conf = $self->get_app_conf();
+    my ($self, $type, $frame, %opts) = @_;
+    my $app_conf = $self->_data->{"app-conf"};
     my $type_list = $self->get_comainu_type_list($type);
     my $type_name_list = $self->get_comainu_type_name_list($type);
+
     $self->init_comainu_type($type);
-    my $be = $f->BrowseEntry(
-        -width=>"-1",
-        -autolimitheight=>"yes",
-        -autolistwidth=>"yes",
-        -state=>"readonly",
-        -variable=>\$self->{"_comainu_".$type."_name"},
-        -listcmd=>sub {
-            my ($be) = @_;
-            my $curr_type_name_list = $self->get_comainu_type_name_list($type);
-				 $be->delete(0, "end");
-            map {$be->insert("end", $_);} @$curr_type_name_list;
-        },
-        -browse2cmd=>sub {
-            my ($be, $index) = @_;
-            $app_conf->set("comainu-".$type, $type_list->[$index]);
-            # print $app_conf->get("comainu-".$type)."\n";
-            $self->check_comainu_limitation($type);
-        },
-        %opts
+    my $combobox = $frame->new_ttk__combobox(
+        -textvariable => \$self->_data->{"_comainu_".$type."_name"},
+        -values       => $type_name_list,
+        %opts,
     );
-    $be->Subwidget("entry")->configure(
-        -state=>"readonly",
-        -readonlybackground=>"#ffffff",
-    );
-    my $select_type_by_key = sub {
-        my ($d) = @_;
-        my $e = $be->Subwidget("entry");
-        for (my $i = 0; $i < scalar(@$type_name_list); ++$i) {
-            my $type_name = $type_name_list->[$i];
-            if ($type_name eq $e->get()) {
-                my $index = $i + $d;
-                if ($index < 0) {
-                    $index += scalar(@$type_name_list);
-                }
-                if ($index >= scalar(@$type_name_list)) {
-                    $index -= scalar(@$type_name_list);
-                }
-                my $next_type_name = $type_name_list->[$index];
-                $self->{"_comainu_".$type."_name"} = $type_name_list->[$index];
-                $e->selectionRange(0, "end");
-                $app_conf->set("comainu-".$type, $type_list->[$index]);
-                # print $app_conf->get("comainu-".$type)."\n";
-                last;
-            }
-        }
-    };
-    $be->bind("<Key-Up>",   sub { $select_type_by_key->(-1); });
-    $be->bind("<Key-Down>", sub { $select_type_by_key->(+1); });
-    return $be;
+    $combobox->g_bind("<<ComboboxSelected>>",   sub {
+        $app_conf->set("comainu-".$type, $type_list->[$combobox->current]);
+        $self->check_comainu_limitation($type);
+    });
+
+    return $combobox;
 }
 
 sub check_comainu_limitation {
-    my $self = shift;
-    my ($type) = @_;
+    my ($self, $type) = @_;
+
     if ($type eq "input-type") {
-        my $input_type = $self->get_comainu_type_by_name("input-type", $self->{"_comainu_input_name"});
+        my $input_type = $self->get_comainu_type_by_name("input-type", $self->_data->{_comainu_input_name});
         if ($input_type =~ /^bccwjlong|kclong$/) {
-            my $output_type_name = $self->{"_comainu_output_name"};
+            my $output_type_name = $self->_data->{_comainu_output_name};
             my $output_type = $self->get_comainu_type_by_name("output-type", $output_type_name);
             my $output_type_name_list = $self->get_comainu_type_name_list("output-type");
             my $found = 0;
@@ -931,25 +900,27 @@ sub check_comainu_limitation {
             }
             if ($found == 0) {
                 $output_type_name = $output_type_name_list->[0];
-                $self->{"_comainu_output_name"} = $output_type_name;
-                my $app_conf = $self->get_app_conf();
+                $self->_data->{_comainu_output_name} = $output_type_name;
+                my $app_conf = $self->_data->{"app-conf"};
                 $output_type = $self->get_comainu_type_by_name("output-type", $output_type_name);
                 $app_conf->set("comainu-output", $output_type);
-                # print $app_conf->get("comainu-output")."\n";
             }
         }
     }
 }
 
+
+
 sub cmd_open {
-    my $self = shift;
-    my ($in_file) = @_;
-    my $app_conf = $self->get_app_conf();
+    my ($self, $in_file) = @_;
+
+    my $app_conf = $self->_data->{"app-conf"};
     my $comainu_input_type = $app_conf->get("comainu-input-type");
     my $dirname = $app_conf->get("in-dirname");
     my $filename = $app_conf->get("in-filename");
+
     my $pathname;
-    if (defined($in_file) and $in_file ne "") {
+    if (defined $in_file && $in_file ne "") {
         if (-f $self->encode_pathname($in_file)) {
             $pathname = $in_file;
         } else {
@@ -957,111 +928,118 @@ sub cmd_open {
             $filename = "";
         }
     }
-    if (!defined($pathname)) {
+    unless (defined $pathname) {
         my $filetypes = [];
         if ($comainu_input_type =~ /kc/) {
             $filetypes = [['KC', ['*.KC']], ['Text', ['*.txt']]];
         } else {
             $filetypes = [['Text', ['*.txt']], ['KC', ['*.KC']]];
         }
-        push(@$filetypes, ['All Files', ['*.*']]);
-        $pathname = $self->getOpenFile(
-            -filetypes=>$filetypes,
-            -initialdir=>$dirname,
-            -initialfile=>$filename,
-            -parent=>$self->toplevel(),
+        push @$filetypes, ['All Files', ['*.*']];
+        $pathname = Tkx::tk___getOpenFile(
+            -filetypes   => $filetypes,
+            -initialdir  => $dirname,
+            -initialfile => $filename,
+            -parent      => $self,
         );
     }
-    if($pathname) {
-        $dirname = File::Basename::dirname($pathname);
+    if ( $pathname ) {
+        $dirname  = File::Basename::dirname($pathname);
         $filename = File::Basename::basename($pathname);
-        $pathname = $dirname."/".$filename;
-        $self->{"in-pathname"} = $pathname;
+        $pathname = $dirname . "/" . $filename;
+        $self->_data->{"in-pathname"} = $pathname;
         $app_conf->set("in-dirname", $dirname);
         $app_conf->set("in-filename", $filename);
+
         my $pathname_enc = $self->encode_pathname($pathname);
         if (open(my $fh, $pathname_enc)) {
             my $data = join("", (<$fh>));
             close($fh);
             $data =~ s/\r\n/\n/sg;
             $data = Encode::decode("utf-8", $data);
-            $self->cmd_clear_input();
-            my $in_table_disp = $app_conf->get("in-table-disp");
-            if ($in_table_disp) {
-                $self->put_table($self->{"in_table"}, $data,
-                                 $app_conf->get("in-readonly"));
+            $self->cmd_clear_input;
+            if ( $app_conf->get("in-table-disp") ) {
+                $self->put_table(
+                    $self->_data->{"in_table"}, $data,
+                    $app_conf->get("in-readonly")
+                );
             } else {
-                $self->put_text($self->{"in_text"}, $data);
+                $self->put_text($self->_data->{"in_text"}, $data);
             }
-            $self->{"in-pathname"} = $pathname;
+            $self->_data->{"in-pathname"} = $pathname;
         }
     }
-    if (defined($in_file) and $in_file ne "") {
-        return;
-    }
-    my $top = $self->toplevel();
-    $top->raise();
-    return Tk::break();
+
+    return if defined $in_file && $in_file ne "";
+
+    # my $top = $self->toplevel();
+    # $top->raise();
+    # return Tk::break();
 }
 
 sub cmd_save_as {
-    my $self = shift;
-    my ($out_file) = @_;
-    my $app_conf = $self->get_app_conf();
+    my ($self, $out_file) = @_;
+
+    my $app_conf = $self->_data->{"app-conf"};
     my $comainu_output_type = $app_conf->get("comainu-output-type");
-    my $dirname = $app_conf->get("out-dirname");
-    my $filename = $app_conf->get("out-filename");
+    my $dirname     = $app_conf->get("out-dirname");
+    my $filename    = $app_conf->get("out-filename");
     my $in_filename = $app_conf->get("in-filename");
+
     my $pathname;
-    my $out_data = $self->get_text($self->{"out_text"});
-    if ($app_conf->get("out-table-disp")) {
-        $out_data = $self->get_table($self->{"out_table"});
-    }
-    if (defined($out_file) and $out_file ne "") {
+    my $out_data = $app_conf->get("out-table-disp") ?
+        $self->get_table($self->_data->{out_table}) :
+        $self->get_text($self->_data->{out_text});
+
+    if (defined $out_file && $out_file ne "") {
         $pathname = $out_file;
     } else {
-        if ($out_data !~ /^\s*$/s or
-                $self->messageBox(
-                    -message=>$self->{"msg"}{"MSG_STR_NULL_OUTPUT"},
-                    -icon=>"warning",
-                    -type=>"yesno", -default=>"no"
+        if ($out_data !~ /^\s*$/s ||
+                Tkx::tk___messageBox(
+                    -message => $self->_data->{msg}{MSG_STR_NULL_OUTPUT},
+                    -icon    => "warning",
+                    -type    => "yesno",
+                    -default => "no"
                 ) =~ /yes/i) {
-            my $filetypes = [];
-            if ($comainu_output_type eq "long") {
-                $filename = $in_filename . ".lout";
-                $filetypes = [['Long', ['*.lout']], ['Text', ['*.txt']]];
-            } elsif ($comainu_output_type eq "bnst") {
-                $filename = $in_filename . ".bout";
-                $filetypes = [['BNST', ['*.bout']], ['Text', ['*.txt']]];
-            } elsif ($comainu_output_type eq "longbnst") {
-                $filename = $in_filename . ".lbout";
-                $filetypes = [['LongBNST', ['*.lbout']], ['Text', ['*.txt']]];
-            } elsif ($comainu_output_type eq "mid") {
-                $filename = $in_filename . ".mout";
-                $filetypes = [['Mid', ['*.mout']], ['Text', ['*.txt']]];
-            } elsif ($comainu_output_type eq "midbnst") {
-                $filename = $in_filename . ".mbout";
-                $filetypes = [['MidBNST', ['*.mbout']], ['Text', ['*.txt']]];
-            } else {
-                $filename = $in_filename . ".lout";
-                $filetypes = [['Long', ['*.lout']], ['Text', ['*.txt']]];
-            }
-            push(@$filetypes, ['All Files', ['*.*']]);
-            $pathname = $self->getSaveFile(
-                -filetypes=>$filetypes,
-                -initialdir=>$dirname,
-                -initialfile=>$filename,
-                -parent=>$self->toplevel(),
+
+            my $filetypes = do {
+                if ($comainu_output_type eq "long") {
+                    $filename = $in_filename . ".lout";
+                    [['Long', ['*.lout']], ['Text', ['*.txt']]];
+                } elsif ($comainu_output_type eq "bnst") {
+                    $filename = $in_filename . ".bout";
+                    [['BNST', ['*.bout']], ['Text', ['*.txt']]];
+                } elsif ($comainu_output_type eq "longbnst") {
+                    $filename = $in_filename . ".lbout";
+                    [['LongBNST', ['*.lbout']], ['Text', ['*.txt']]];
+                } elsif ($comainu_output_type eq "mid") {
+                    $filename = $in_filename . ".mout";
+                    [['Mid', ['*.mout']], ['Text', ['*.txt']]];
+                } elsif ($comainu_output_type eq "midbnst") {
+                    $filename = $in_filename . ".mbout";
+                    [['MidBNST', ['*.mbout']], ['Text', ['*.txt']]];
+                } else {
+                    $filename = $in_filename . ".lout";
+                    [['Long', ['*.lout']], ['Text', ['*.txt']]];
+                }
+            };
+            push @$filetypes, ['All Files', ['*.*']];
+            $pathname = Tkx::tk___getSaveFile(
+                -filetypes   =>$filetypes,
+                -initialdir  =>$dirname,
+                -initialfile =>$filename,
+                -parent      => $self->_parent || $self,
             );
         }
     }
     if ($pathname) {
-        $dirname = File::Basename::dirname($pathname);
+        $dirname  = File::Basename::dirname($pathname);
         $filename = File::Basename::basename($pathname);
-        $pathname = $dirname."/".$filename;
-        $self->{"out-pathname"} = $pathname;
+        $pathname = $dirname . "/" . $filename;
+        $self->_data->{"out-pathname"} = $pathname;
         $app_conf->set("out-dirname", $dirname);
         $app_conf->set("out-filename", $filename);
+
         my $pathname_enc = $self->encode_pathname($pathname);
         if (open(my $fh, ">", $pathname_enc)) {
             $out_data = Encode::encode("utf-8", $out_data);
@@ -1069,80 +1047,86 @@ sub cmd_save_as {
             close($fh);
         }
     }
-    if (defined($out_file) and $out_file ne "") {
-        return;
-    }
-    my $top = $self->toplevel();
-    $top->raise();
-    return Tk::break();
+
+    return if ($out_file // "") ne "";
+
+    # my $top = $self->toplevel();
+    # $top->raise();
+    # return Tk::break();
 }
 
 sub cmd_analysis {
-    my $self = shift;
-    my ($cont_flag, $progress_func) = @_;
-    my $app_conf = $self->get_app_conf();
-    my $in_data = "";
+    my ($self, $cont_flag, $progress_func) = @_;
+    my $app_conf = $self->_data->{"app-conf"};
+
     my $in_table_disp = $app_conf->get("in-table-disp");
-    if ($in_table_disp) {
-        $in_data = $self->get_table($self->{"in_table"});
-    } else {
-        $in_data = $self->get_text($self->{"in_text"});
-    }
+    my $in_data = $in_table_disp ?
+        $self->get_table($self->_data->{in_table}) :
+        $self->get_text($self->_data->{in_text});
+
     if ($in_data !~ /^\s*$/s) {
         if ($in_table_disp) {
-            $self->put_table($self->{"out_table"}, "",
-                             $app_conf->get("out-readonly"));
+            $self->put_table(
+                $self->_data->{out_table}, "", $app_conf->get("out-readonly")
+            );
         } else {
-            $self->put_text($self->{"out_text"}, "");
+            $self->put_text($self->_data->{out_text}, "");
         }
         $self->enable_analysis_buttons(0);
+
         my $res_data = $self->execute_analysis_data($in_data, $progress_func);
+
         my $out_table_disp = $app_conf->get("out-table-disp");
         if ($out_table_disp) {
-            $self->put_table($self->{"out_table"}, $res_data,
-                             $app_conf->get("out-readonly"));
+            $self->put_table(
+                $self->_data->{out_table}, $res_data, $app_conf->get("out-readonly")
+            );
         } else {
-            $self->put_text($self->{"out_text"}, $res_data);
+            $self->put_text($self->_data->{out_text}, $res_data);
         }
         $self->enable_analysis_buttons(1);
     } elsif (!$cont_flag) {
-        $self->messageBox(-message=>$self->{"msg"}{"MSG_STR_NULL_INPUT"},
-                          -icon=>"warning", -type=>"ok");
+        Tkx::tk___messageBox(
+            -message => $self->_data->{msg}{MSG_STR_NULL_INPUT},
+            -icon    => "warning",
+            -type    => "ok"
+        );
     }
-    if ($cont_flag) {
-        return;
-    }
-    my $top = $self->toplevel();
-    $top->raise();
-    return Tk::break();
+    return if $cont_flag;
+
+    # my $top = $self->toplevel();
+    # $top->raise();
+    # return Tk::break();
 }
 
 sub cmd_batch_analysis {
     my $self = shift;
-    my $app_conf = $self->get_app_conf();
-    my $in_dirname = $app_conf->get("in-dirname");
+    my $app_conf = $self->_data->{"app-conf"};
+
+    my $in_dirname  = $app_conf->get("in-dirname");
     my $out_dirname = $app_conf->get("out-dirname");
     my $progress = 0;
-    my $total = 0;
-    my $count = 0;
+    my $total    = 0;
+    my $count    = 0;
     my $run_flag = 0;
 
     my $title = "Batch analysis";
-    my $top = $self->Toplevel(-title=>$title);
-    $top->withdraw();
-    $top->update();
-    if (exists($self->{"img"})) {
-        $top->iconimage($self->{"img"});
-    }
-    $top->grab();
+    my $top = $self->new_toplevel;
+    $top->g_wm_title($title);
+    $top->g_wm_withdraw;
+    # $top->update;
+    $top->g_wm_iconphoto($self->_data->{img}) if exists $self->_data->{img};
+    $top->g_grab;
 
     my $func_execute_batch_analysis = sub {
         my ($self, $in_dirname, $out_dirname, $run_flag_ref, $total_ref, $count_ref, $progress_ref) = @_;
-        my $app_conf = $self->get_app_conf();
-        my $comainu_input_type = $app_conf->get("comainu-input-type");
+
+        my $app_conf = $self->_data->{"app-conf"};
+        my $comainu_input_type  = $app_conf->get("comainu-input-type");
         my $comainu_output_type = $app_conf->get("comainu-output-type");
         $comainu_output_type =~ s/_only_boundary//;
-        my $in_file_list = [];
+
+        my $in_file_list  = [];
         my $out_file_list = [];
         eval {
             my $in_dirname_enc = $self->encode_pathname($in_dirname);
@@ -1150,22 +1134,21 @@ sub cmd_batch_analysis {
             foreach my $filename (readdir($dh)) {
                 my $in_pathname = undef;
                 $filename = $self->decode_pathname($filename);
-                if ($filename =~ /^\./) {
-                    next;
-                }
+                next if $filename =~ /^\./;
+
                 if ($comainu_input_type eq "kc") {
                     if ($filename =~ /\.KC$/) {
                         $in_pathname = $in_dirname."/".$filename;
-                        push(@$in_file_list, $in_pathname);
+                        push @$in_file_list, $in_pathname;
                         $filename =~ s/\.KC$//;
                     }
                 } else {
                     if ($filename =~ /\.txt$/) {
                         $in_pathname = $in_dirname."/".$filename;
-                        push(@$in_file_list, $in_pathname);
+                        push @$in_file_list, $in_pathname;
                     }
                 }
-                if (defined($in_pathname)) {
+                if (defined $in_pathname) {
                     if ($comainu_output_type eq "bnst") {
                         $filename .= ".bout";
                     } elsif ($comainu_output_type eq "long") {
@@ -1178,20 +1161,23 @@ sub cmd_batch_analysis {
                         $filename .= ".mbout";
                     }
                     my $out_pathname = $out_dirname."/".$filename;
-                    push(@$out_file_list, $out_pathname);
+                    push @$out_file_list, $out_pathname;
                 }
             }
             closedir($dh);
         };
-        my $total = scalar(@$in_file_list);
+
+        my $total = scalar @$in_file_list;
         $$total_ref = $total;
         if ($$run_flag_ref == 0) {
             $$run_flag_ref = 1;
             if ($$count_ref == $$total_ref) {
-                my $message = $self->{"msg"}{"MSG_FINISHED_BATCH"};
-                my $res = $top->messageBox(-message=>$message,
-                                           -icon=>"warning",
-                                           -type=>"yesno", -default=>"no");
+                my $res = Tkx::tk___messageBox(
+                    -message => $self->_data->{msg}{MSG_FINISHED_BATCH},
+                    -icon    => "warning",
+                    -type    => "yesno",
+                    -default => "no"
+                );
                 if ($res =~ /yes/i) {
                     $$count_ref = 0;
                 } else {
@@ -1203,29 +1189,24 @@ sub cmd_batch_analysis {
             $$run_flag_ref = 0;
             return;
         }
-        if (!-d $out_dirname) {
-            mkdir($out_dirname);
-        }
-        while ($$run_flag_ref == 1 and $$count_ref < $total) {
-            my $in_file = $in_file_list->[$$count_ref];
+        mkdir $out_dirname unless -d $out_dirname;
+
+        while ($$run_flag_ref == 1 && $$count_ref < $total) {
+            my $in_file  = $in_file_list->[$$count_ref];
             my $out_file = $out_file_list->[$$count_ref];
             ++$$count_ref;
             $$progress_ref = 100 * ($$count_ref - 1 + 0.01) / $total;
             my $next_progress = 100 * $$count_ref / $total;
-            $self->update();
+            # $self->update();
             my $progress_func = sub {
                 my $delta = ($next_progress - $$progress_ref) / 2.0;
-                if ($delta > 1) {
-                    $delta = 1;
-                }
+                $delta = 1 if $delta > 1;
                 $$progress_ref += $delta;
-                $self->update();
+                # $self->update();
             };
-            # $self->execute_analysis_file($in_file, $out_file);
-            $self->execute_analysis_file_on_gui($in_file, $out_file, $top,
-                                                $progress_func);
+            $self->execute_analysis_file_on_gui($in_file, $out_file, $top, $progress_func);
             $$progress_ref = 100 * $$count_ref / $total;
-            $self->update();
+            # $self->update();
         }
         $$run_flag_ref = 0;
     };
@@ -1233,278 +1214,284 @@ sub cmd_batch_analysis {
         $count = 0;
         $progress = 0;
         $run_flag = 1;
-        $func_execute_batch_analysis->($self, $in_dirname, $out_dirname, \$run_flag, \$total, \$count, \$progress);
+        $func_execute_batch_analysis->(
+            $self, $in_dirname, $out_dirname,
+            \$run_flag, \$total, \$count, \$progress
+        );
     };
     my $func_close = sub {
         my ($self, $in_dirname, $out_dirname, $top, $run_flag_ref) = @_;
         $$run_flag_ref = 0;
         $app_conf->set("in-dirname", $in_dirname);
         $app_conf->set("out-dirname", $out_dirname);
-        $top->parent()->focus();
-        $top->destroy();
+        $top->_parent->g_focus if $top->_parent;
+        $top->g_destroy;
     };
 
-    my ($f, $l, $ei, $eo, $p, $e, $b);
-
     # for frame
-    my $mf = $top->Frame();
-    $mf->pack(-side=>"top", -fill=>"x", -expand=>"yes");
-    $mf->gridColumnconfigure(0, -weight=>0);
-    $mf->gridColumnconfigure(1, -weight=>1);
+    my $main_frame = $top->new_frame;
+    $main_frame->g_pack(-side => "top", -fill => "x", -expand => "yes");
     my $row = 0;
 
-    # for selector
-    $f = $mf->Frame();
-    $f->grid(-row=>$row, -column=>0, -columnspan=>2, -sticky=>"w");
     {
+        # for selector
+        my $frame = $main_frame->new_frame;
+        $frame->g_grid(-row => $row, -column => 0, -columnspan => 2, -sticky => "w");
+
         my $col = 0;
-        my $lbl_str = 0;
-        my $be;
-        $lbl_str = $self->{"msg"}{"STR_COMAINU_INPUT"};
-        $be = $self->make_comainu_type_selector(
-            "input-type",
-            $f,
-            -label=>$lbl_str,
-            -width=>16
-        );
-        $be->grid(-row=>$row, -column=>$col++, -sticky=>"w");
-        $lbl_str = $self->{"msg"}{"STR_COMAINU_OUTPUT"};
-        $be = $self->make_comainu_type_selector(
-            "output-type",
-            $f,
-            -label=>$lbl_str,
-            -width=>16
-        );
-        $be->grid(-row=>$row, -column=>$col++, -sticky=>"w");
-        $lbl_str = $self->{"msg"}{"STR_COMAINU_MODEL"};
-        $be = $self->make_comainu_type_selector(
-            "model-type",
-            $f,
-            -label=>$lbl_str,
-            -width=>4
-        );
-        $be->grid(-row=>$row, -column=>$col++, -sticky=>"w");
-        $lbl_str = $self->{"msg"}{"STR_COMAINU_TAGGER"};
-        $be = $self->make_comainu_type_selector(
-            "tagger-type",
-            $f,
-            -label=>$lbl_str,
-            -width=>8
-        );
-        $be->grid(-row=>$row, -column=>$col++, -sticky=>"w");
-        $lbl_str = $self->{"msg"}{"STR_COMAINU_BOUNDARY"};
-        $be = $self->make_comainu_type_selector(
-            "boundary-type",
-            $f,
-            -label=>$lbl_str,
-            -width=>4
-        );
-        $be->grid(-row=>$row, -column=>$col++, -sticky=>"w");
+        # input
+        {
+            my $label = $frame->new_label(-text => $self->_data->{msg}{STR_COMAINU_INPUT});
+            $label->g_grid(-row => $row, -column => $col++, -sticky => "w");
+            my $combobox = $self->make_comainu_type_selector(
+                "input-type", $frame, -width => 16
+            );
+            $combobox->g_grid(-row => $row, -column => $col++, -sticky => "w");
+        }
+        # output
+        {
+            my $label = $frame->new_label(-text => $self->_data->{msg}{STR_COMAINU_OUTPUT});
+            $label->g_grid(-row => $row, -column => $col++, -sticky => "w");
+            my $combobox = $self->make_comainu_type_selector(
+                "output-type", $frame, -width => 16
+            );
+            $combobox->g_grid(-row => $row, -column => $col++, -sticky => "w");
+        }
+        # model
+        {
+            my $label = $frame->new_label(-text => $self->_data->{msg}{STR_COMAINU_MODEL});
+            $label->g_grid(-row => $row, -column => $col++, -sticky => "w");
+            my $combobox = $self->make_comainu_type_selector(
+                "model-type", $frame, -width => 6,
+            );
+            $combobox->g_grid(-row => $row, -column => $col++, -sticky => "w");
+        }
+        # tagger
+        {
+            my $label = $frame->new_label(-text => $self->_data->{msg}{STR_COMAINU_TAGGER});
+            $label->g_grid(-row => $row, -column => $col++, -sticky => "w");
+            my $combobox = $self->make_comainu_type_selector(
+                "tagger-type", $frame, -width => 8,
+            );
+            $combobox->g_grid(-row => $row, -column => $col++, -sticky => "w");
+        }
+        # boundary
+        {
+            my $label = $frame->new_label(-text => $self->_data->{msg}{STR_COMAINU_BOUNDARY});
+            $label->g_grid(-row => $row, -column => $col++, -sticky => "w");
+            my $combobox = $self->make_comainu_type_selector(
+                "boundary-type", $frame, -width => 6,
+            );
+            $combobox->g_grid(-row => $row, -column => $col++, -sticky => "w");
+        }
     }
     ++$row;
 
     # for input
-    $l = $mf->Label(-text=>$self->{"msg"}{"STR_INPUT_DIR"});
-    $l->grid(-row=>$row, -column=>0, -sticky=>"e");
-    $f = $mf->Frame();
-    $f->grid(-row=>$row, -column=>1, -sticky=>"ew");
-    $ei = $self->make_pathname_entry(
-        $f,
-        -textvariable=>\$in_dirname,
-        -pathnametype=>"dirname"
-    );
+    {
+        my $label = $main_frame->new_label(-text => $self->_data->{msg}{STR_INPUT_DIR});
+        $label->g_grid(-row => $row, -column => 0, -sticky => "e");
+        my $frame = $main_frame->new_frame;
+        $frame->g_grid(-row => $row, -column => 1, -sticky => "ew");
+        my $entry = $self->make_pathname_entry(
+            $frame,
+            -textvariable => \$in_dirname,
+            -pathnametype => "dirname"
+        );
+    }
     ++$row;
 
     # for output
-    $l = $mf->Label(-text=>$self->{"msg"}{"STR_OUTPUT_DIR"});
-    $l->grid(-row=>$row, -column=>0, -sticky=>"e");
-    $f = $mf->Frame();
-    $f->grid(-row=>$row, -column=>1, -sticky=>"ew");
-    $eo = $self->make_pathname_entry(
-        $f,
-        -textvariable=>\$out_dirname,
-        -pathnametype=>"dirname"
-    );
+    {
+        my $label = $main_frame->new_label(-text => $self->_data->{msg}{STR_OUTPUT_DIR});
+        $label->g_grid(-row => $row, -column => 0, -sticky => "e");
+        my $frame = $main_frame->new_frame;
+        $frame->g_grid(-row => $row, -column => 1, -sticky => "ew");
+        my $entry = $self->make_pathname_entry(
+            $frame,
+            -textvariable => \$out_dirname,
+            -pathnametype => "dirname"
+        );
+    }
     ++$row;
 
     # for progress bar
-    $f = $top->Frame();
-    $f->pack(-side=>"top", -fill=>"x");
-    $l = $f->Label(-text=>$self->{"msg"}{"STR_PROGRESS"});
-    $l->pack(-side=>"left");
-    $l = $f->Label(-textvariable=>\$count, -width=>5);
-    $l->pack(-side=>"left");
-    $l = $f->Label(-text=>"/");
-    $l->pack(-side=>"left");
-    $l = $f->Label(-textvariable=>\$total, -width=>5);
-    $l->pack(-side=>"left");
-    my $colors = [];
-    my $color_list = [
-        '#ff7f7f', '#ffff7f', '#7fff7f',
-        '#7fffff', '#7f7fff', '#ff7fff'
-    ];
-    my $color_list_len = scalar(@$color_list);
-    for(my $i = 0; $i < $color_list_len - 1; ++$i) {
-        for (my $j = 0; $j < 100 / ($color_list_len - 1); ++$j) {
-            my $start_color = $color_list->[$i];
-            my $end_color = $color_list->[$i + 1];
-            my $c = $self->calc_color($start_color, $end_color,
-                                      $j, 100 / ($color_list_len - 1));
-            my $k = $j + $i * 100 / $color_list_len;
-            push(@$colors, $k, $c);
+    {
+        my $frame = $top->new_frame;
+        $frame->g_pack(-side => "top", -fill => "x");
+        my $progress_label = $frame->new_label(-text => $self->_data->{msg}{STR_PROGRESS});
+        $progress_label->g_pack(-side => "left");
+        my $count_label = $frame->new_label(-textvariable => \$count, -width => 5);
+        $count_label->g_pack(-side => "left");
+        my $slash_label = $frame->new_label(-text => "/");
+        $slash_label->g_pack(-side => "left");
+        my $total_label = $frame->new_label(-textvariable => \$total, -width => 5);
+        $total_label->g_pack(-side => "left");
+
+        my $colors = [];
+        my $color_list = [
+            '#ff7f7f', '#ffff7f', '#7fff7f',
+            '#7fffff', '#7f7fff', '#ff7fff',
+        ];
+        my $color_list_len = scalar(@$color_list);
+        for(my $i = 0; $i < $color_list_len - 1; ++$i) {
+            for (my $j = 0; $j < 100 / ($color_list_len - 1); ++$j) {
+                my $start_color = $color_list->[$i];
+                my $end_color   = $color_list->[$i + 1];
+                my $c = $self->calc_color(
+                    $start_color, $end_color, $j, 100 / ($color_list_len - 1)
+                );
+                my $k = $j + $i * 100 / $color_list_len;
+                push @$colors, $k, $c;
+            }
         }
+        $colors = [0 => '#00ff00'];
+
+        $progress = 0.0;
+        my $progress_bar = $frame->new_ttk__progressbar(
+            -length => 500,
+            -variable => \$progress,
+        );
+        $progress_bar->g_pack(
+            -side => "left", -padx => 5, -pady => 5,
+            -fill => "x", -expand => "yes",
+        );
     }
-    $colors = [0=>'#00ff00'];
-    $p = $f->ProgressBar(
-        -troughcolor=>"#ffffff",
-        -colors=>$colors,
-        -padx=>2, -pady=>2,
-        -gap=>1,
-        -border=>2,
-        -width=>15, -length=>500,
-        -from=>0, -to=>100,
-        -blocks=>100,
-        -variable=>\$progress,
-    );
-    $p->pack(
-        -side=>"left", -padx=>5, -pady=>5,
-        -fill=>"x", -expand=>"yes"
-    );
 
     # for buttons
-    $f = $top->Frame();
-    $f->pack(-side=>"top");
-    $b = $f->Button(
-        -text=>$self->{"msg"}{"BT_STR_RESET"},
-        -command=>sub { $func_reset->(); }
-    );
-    $b->pack(-side=>"left");
-    $b = $f->Button(
-        -text=>$self->{"msg"}{"BT_STR_EXECUTE_STOP"},
-        -command=>sub {
-			$func_execute_batch_analysis->($self, $in_dirname, $out_dirname, \$run_flag, \$total, \$count, \$progress);
-        }
-    );
-    $b->pack(-side=>"left");
-    $b->focus();
-    $b = $f->Button(
-        -text=>$self->{"msg"}{"BT_STR_CLOSE"},
-        -command=>sub {
-			$func_close->($self, $in_dirname, $out_dirname, $top, \$run_flag);
-        }
-    );
-    $b->pack(-side=>"left");
+    {
+        my $frame = $top->new_frame;
+        $frame->g_pack(-side => "top");
+        my $reset_button = $frame->new_button(
+            -text    => $self->_data->{msg}{BT_STR_RESET},
+            -command => sub { $func_reset->(); }
+        );
+        $reset_button->g_pack(-side => "left");
+        my $execute_button = $frame->new_button(
+            -text    => $self->_data->{msg}{BT_STR_EXECUTE_STOP},
+            -command => sub {
+                $func_execute_batch_analysis->(
+                    $self, $in_dirname, $out_dirname,
+                    \$run_flag, \$total, \$count, \$progress
+                );
+            }
+        );
+        $execute_button->g_pack(-side => "left");
+        $execute_button->g_focus;
+        my $close_button = $frame->new_button(
+            -text    => $self->_data->{msg}{BT_STR_CLOSE},
+            -command => sub {
+                $func_close->($self, $in_dirname, $out_dirname, $top, \$run_flag);
+            }
+        );
+        $close_button->g_pack(-side => "left");
 
-    $top->bind(
-        "<Control-Key-r>",
-        sub { $func_reset->(); }
-    );
-    $top->bind(
-        "<Control-Key-e>",
-        sub {
-            $func_execute_batch_analysis->($self, $in_dirname, $out_dirname, \$run_flag, \$total, \$count, \$progress);
-        }
-    );
-    $top->bind(
-        "<Control-Key-w>",
-        sub {
+        $top->g_bind("<Control-Key-r>", sub { $func_reset->(); });
+        $top->g_bind("<Control-Key-e>", sub {
+            $func_execute_batch_analysis->(
+                $self, $in_dirname, $out_dirname,
+                \$run_flag, \$total, \$count, \$progress
+            );
+        });
+        $top->g_bind("<Control-Key-w>", sub {
             $func_close->($self, $in_dirname, $out_dirname, $top, \$run_flag);
-        }
-    );
-    $top->bind(
-        "<Key-Escape>",
-        sub {
+        });
+        $top->g_bind("<Key-Escape>", sub {
             $func_close->($self, $in_dirname, $out_dirname, $top, \$run_flag);
-        }
-    );
-    $top->protocol(
-        "WM_DELETE_WINDOW",
-        sub {
+        });
+        $top->g_wm_protocol("WM_DELETE_WINDOW", sub {
             $func_close->($self, $in_dirname, $out_dirname, $top, \$run_flag);
-        }
-    );
+        });
+    }
 
     $run_flag = 1;
-    $func_execute_batch_analysis->($self, $in_dirname, $out_dirname, \$run_flag, \$total, \$count, \$progress);
-    $top->resizable(1, 0);
-    $top->update();
-    $top->deiconify();
+    $func_execute_batch_analysis->(
+        $self, $in_dirname, $out_dirname,
+        \$run_flag, \$total, \$count, \$progress
+    );
+    $top->g_wm_resizable(1, 0);
+    # $top->update();
+    $top->g_wm_deiconify;
     $self->enable_analysis_buttons(0);
-    $top->waitWindow($top);
+    # $top->waitWindow($top);
     $self->enable_analysis_buttons(1);
-    return Tk::break();
+    # return Tk::break();
 }
+
 
 sub cmd_clear_input {
     my $self = shift;
-    my $app_conf = $self->get_app_conf();
-    my $in_table_disp = $app_conf->get("in-table-disp");
-    if ($in_table_disp) {
-        $self->put_table($self->{"in_table"}, "",
-                         $app_conf->get("in-readonly"));
+
+    my $app_conf = $self->_data->{"app-conf"};
+    if ( $app_conf->get("in-table-disp") ) {
+        $self->put_table(
+            $self->_data->{"in_table"}, "",
+            $app_conf->get("in-readonly")
+        );
     } else {
-        $self->put_text($self->{"in_text"}, "");
+        $self->put_text($self->_data->{"in_text"}, "");
     }
-    $self->{"in-pathname"} = "";
-    my $out_table_disp = $app_conf->get("out-table-disp");
-    if ($out_table_disp) {
-        $self->put_table($self->{"out_table"}, "",
-                         $app_conf->get("out-readonly"));
+    $self->_data->{"in-pathname"} = "";
+
+    if ($app_conf->get("out-table-disp")) {
+        $self->put_table(
+            $self->_data->{"out_table"}, "",
+            $app_conf->get("out-readonly")
+        );
     } else {
-        $self->put_text($self->{"out_text"}, "");
+        $self->put_text($self->_data->{"out_text"}, "");
     }
-    $self->{"out-pathname"} = "";
+    $self->_data->{"out-pathname"} = "";
 }
 
 sub cmd_clear_cache {
     my $self = shift;
-    my $app_conf = $self->get_app_conf();
+    my $app_conf = $self->_data->{"app-conf"};
     my $tmp_dir = $app_conf->get("tmp-dir");
-    my $cache_dir = $tmp_dir;
-    my $message = $cache_dir."\n".$self->{"msg"}{"MSG_CLEAR_CACHE"};
-    my $res = $self->messageBox(
-        -message=>$message,
-        -icon=>"warning",
-        -type=>"yesno", -default=>"no"
+    my $message = $tmp_dir . "\n" . $self->_data->{msg}{MSG_CLEAR_CACHE};
+
+    my $res = Tkx::tk___messageBox(
+        -message => $message,
+        -icon    => "warning",
+        -type    => "yesno",
+        -default => "no"
     );
     if ($res =~ /^yes/i) {
-        if (-d $cache_dir) {
-            $self->rm_fr($cache_dir);
-        }
+        $self->rm_fr($tmp_dir) if -d $tmp_dir;
     }
 }
 
 sub rm_fr {
-    my $self = shift;
-    my ($dir) = @_;
+    my ($self, $dir) = @_;
+
     opendir(my $dh, $dir);
     foreach my $file (readdir($dh)) {
-        if ($file =~ /^\./) {
-            next;
-        } elsif (-f $dir."/".$file) {
-            unlink($dir."/".$file);
-        } elsif (-d $dir."/".$file) {
-            $self->rm_fr($dir."/".$file);
+        next if $file =~ /^\./;
+        if (-f $dir . "/" . $file) {
+            unlink $dir . "/" . $file;
+        } elsif (-d $dir . "/" . $file) {
+            $self->rm_fr($dir . "/" . $file);
         }
     }
     closedir($dh);
     rmdir($dir);
 }
 
+
 sub put_text {
-    my $self = shift;
-    my ($text, $str) = @_;
+    my ($self, $text, $str) = @_;
+
     my $state = $text->cget(-state);
-    $text->configure(-state=>"normal");
+    $text->configure(-state => "normal");
     $text->delete("1.0", "end");
     $text->insert("end", $str);
-    $text->configure(-state=>$state);
+    $text->configure(-state => $state);
     return;
 }
 
 sub get_text {
-    my $self = shift;
-    my ($text) = @_;
+    my ($self, $text) = @_;
+
     my $str = $text->get("1.0", "end");
     $str =~ s/([^\n])\n$/$1/s;
     $str =~ s/^\n$//s;
@@ -1512,179 +1499,117 @@ sub get_text {
 }
 
 sub put_table {
-    my $self = shift;
-    my ($table, $str, $readonly) = @_;
-    my $sep = ($str =~ /\t/)?"\t":" ";
-    $table->{"__sep"} = $sep;
+    my ($self, $table, $str, $readonly) = @_;
+
+    my $sep = ($str =~ /\t/) ? "\t" : " ";
+    $table->_data->{__sep} = $sep;
     my $or = 1;
     my $oc = 1;
-    # $or = 0; $oc = 0;
     my $state = $readonly ? "disabled" : "normal";
+
     $str =~ s/\n$//s;
     my $row_list = [split(/\n/, $str, -1)];
-    my $rows = scalar(@$row_list);
+    my $rows = scalar @$row_list;
     my $columns = 0;
     for (my $r = 0; $r < $rows; ++$r) {
         my $line = $row_list->[$r];
         my $column_list = [split(/$sep/, $line, -1)];
-        if ($columns < scalar(@$column_list)) {
-            $columns = scalar(@$column_list);
-        }
+        $columns = scalar @$column_list if $columns < scalar @$column_list;
         $row_list->[$r] = $column_list;
     }
+
     my $bg = $table->cget(-background);
     my $fg = $table->cget(-foreground);
-    $table->configure(-rows => $rows + $or,
-                      -columns => $columns + $oc);
-    $table->configure(-fixedrows => $or,
-                      -fixedcolumns => $oc);
+    $table->configure(
+        -rows => $rows + $or,
+        -cols => $columns + $oc,
+        -roworigin => $or,
+        -colorigin => $oc,
+    );
+
+    my $variables;
     if ($or > 0) {
         for (my $c = 0; $c < $columns; ++$c) {
-            my $cell = $table->get(0, $c + 1);
-            if (!$cell) {
-                $cell = $table->Entry();
-                $cell->pack(-side => "left", -fill => "x", -expand => "yes");
-                $cell->configure(
-                    -width => -1,
-                    -relief => "flat",
-                    -foreground => $fg,
-                    -disabledforeground => $fg,
-                );
-            }
-            $cell->configure(-state => "normal");
-            $cell->delete("0", "end");
-            $cell->insert("end", $c + 1);
-            $cell->configure(-state => "disabled");
-            $self->bind_wheel($cell, $table);
-            $table->put(0, $c + 1, $cell);
+            my $index = sprintf('%d,%d', 0, $c + 1);
+            my $cell = $table->get($index) || ($c + 1);
+            $variables->{$index} = $cell;
         }
     }
+
     for (my $r = 0; $r < $rows; ++$r) {
         for (my $c = 0; $c < $columns; ++$c) {
             if ($oc > 0) {
-                my $cell = $table->get($r + 1, 0);
-                if (!$cell) {
-                    $cell = $table->Entry();
-                    $cell->pack(-side => "left", -fill => "x", -expand => "yes");
-                    $cell->configure(
-                        -width => -1,
-                        -relief => "flat",
-                        -foreground => $fg,
-                        -disabledforeground => $fg,
-                    );
-                }
-                $cell->configure(-state => "normal");
-                $cell->delete("0", "end");
-                $cell->insert("end", $r + 1);
-                $cell->configure(-state => "disabled");
-                $self->bind_wheel($cell, $table);
-                $table->put($r + 1, 0, $cell);
+                my $index = sprintf('%d,%d', $r + 1, 0);
+                my $cell = $table->get($index) || ($r + 1);
+                $variables->{$index} = $cell;
             }
-            my $item = $row_list->[$r][$c];
-            # my $w = length($item) * 2;
+            my $item = $row_list->[$r][$c] // '';
             my $w = length($item) + 4;
-            if ($w > 20) {
-                $w = 20;
-            }
-            my $cell = $table->get($r + $or, $c + $oc);
-            if (!$cell) {
-                $cell = $table->Entry();
-                $cell->pack(-side => "left", -fill => "x", -expand => "yes");
-                # print STDERR "CREATE: ".$cell."\n";
-            } else {
-                # print STDERR $cell."\n";
-            }
-            $cell->configure(
-                -width => $w,
-                -relief => "flat",
-                -background => $bg,
-                -foreground => $fg,
-                -disabledbackground => $bg,
-                -disabledforeground => $fg
-            );
-            $cell->configure(-state => "normal");
-            $cell->delete("0", "end");
-            $cell->insert("end", $item);
-            my $relief = $state eq "disabled" ? "flat" : "sunken";
-            $cell->configure(
-                -state => $state,
-                -relief => $relief
-            );
-            $self->bind_wheel($cell, $table);
-            $table->put($r + $or, $c + $oc, $cell);
+            $w = 20 if $w > 20;
+
+            my $index = sprintf('%d,%d', $r + $or, $c + $oc);
+            my $cell = $table->get($index) || $item;
+            $variables->{$index} = $cell;
         }
     }
+    $table->configure(-variable => $variables);
+
     return;
 }
 
 sub get_table {
-    my $self = shift;
-    my ($table) = @_;
-    my $sep = $table->{"__sep"};
+    my ($self, $table) = @_;
+
+    my $sep = $table->_data->{__sep};
     my $or = 1;
     my $oc = 1;
-    # $or = 0; $oc = 0;
-    my $rows = $table->cget("rows") - $or;
-    my $columns = $table->cget("columns") - $oc;
+    my $rows = $table->cget(-rows) - $or;
+    my $columns = $table->cget(-cols) - $oc;
+
     my $row_list = [];
     for (my $r = 0; $r < $rows; ++$r) {
         my $column_list = [];
         for (my $c = 0; $c < $columns; ++$c) {
-            my $cell = $table->get($r + $or, $c + $oc);
-            my $item = $cell->get();
-            # $item =~ s/([^\n])\n$/$1/s;
-            # $item =~ s/^\n$//s;
-            push(@$column_list, $item);
+            my $cell = $table->get(($r + $or) . ',' . ($c + $oc)) or next;
+            push @$column_list, $cell;
         }
-        push(@$row_list, join($sep, @$column_list));
+        push @$row_list, join($sep, @$column_list);
     }
     my $str = join("\n", @$row_list);
-    if ($str ne "") {
-        $str .= "\n";
-    }
+    $str .= "\n" if $str ne "";
+
     return $str;
 }
 
 sub change_state_table {
-    my $self = shift;
-    my ($table, $state) = @_;
-    my $or = 1;
-    my $oc = 1;
-    # $or = 0; $oc = 0;
-    my $rows = $table->totalRows() - $or;
-    my $columns = $table->totalColumns() - $oc;
-    for (my $r = 0; $r < $rows; ++$r) {
-        for (my $c = 0; $c < $columns; ++$c) {
-            my $cell = $table->get($r + $or, $c + $oc);
-            my $relief = $state eq "disabled" ? "flat" : "sunken";
-            $cell->configure(-state => $state,
-                             -relief => $relief);
-        }
-    }
+    my ($self, $table, $state) = @_;
+
+    $table->configure(-state => $state eq "disabled" ? "disabled" : "normal");
 }
 
 sub change_table_disp {
-    my $self = shift;
-    my ($text, $table, $table_disp, $readonly) = @_;
+    my ($self, $text, $table, $table_disp, $readonly) = @_;
+
     my $f = $table;
     my $p = $text;
     if ($table_disp) {
         $f = $text;
         $p = $table;
         my $str = $self->get_text($text);
-        $table->clear();
+        $table->clear('all');
         $self->put_table($table, $str, $readonly);
     } else {
         my $str = $self->get_table($table);
         $self->put_text($text, $str);
     }
-    $f->packForget();
-    $p->pack(-side=>"top", -fill=>"both", -expand=>"yes");
+    Tkx::pack('forget', $f);
+    $p->g_pack(-side => "top", -fill => "both", -expand => "yes");
 }
 
+
 sub calc_color {
-    my $self= shift;
-    my ($start_color, $end_color, $i, $region) = @_;
+    my ($self, $start_color, $end_color, $i, $region) = @_;
+
     my ($rs, $gs, $bs) = ($start_color =~ /^\#(..)(..)(..)$/);
     my ($re, $ge, $be) = ($end_color =~ /^\#(..)(..)(..)$/);
     $rs = hex($rs);
@@ -1697,87 +1622,64 @@ sub calc_color {
     my $gc = $gs + ($ge - $gs) * $i / $region;
     my $bc = $bs + ($be - $bs) * $i / $region;
     my $c = sprintf("#%02x%02x%02x", $rc, $gc, $bc);
+
     return $c;
 }
 
 sub enable_analysis_buttons {
-    my $self = shift;
-    my ($flag) = @_;
-    if ($flag == 0) {
-        $self->{"_analysis_button"}->configure(-state=>"disabled");
-        $self->{"_batch_analysis_button"}->configure(-state=>"disabled");
-        $self->{"_clear_input_button"}->configure(-state=>"disabled");
-        $self->{"_clear_cache_button"}->configure(-state=>"disabled");
-    } else {
-        $self->{"_analysis_button"}->configure(-state=>"normal");
-        $self->{"_batch_analysis_button"}->configure(-state=>"normal");
-        $self->{"_clear_input_button"}->configure(-state=>"normal");
-        $self->{"_clear_cache_button"}->configure(-state=>"normal");
+    my ($self, $flag) = @_;
+
+    my $data = $self->_data;
+    my @buttons = (
+        "_analysis_button",
+        "_batch_analysis_button",
+        "_clear_input_button",
+        "_clear_cache_button",
+    );
+    for (@buttons) {
+        $data->{$_}->configure(-state => $flag ? "normal" : "disabled");
     }
-    $self->update();
-    return;
+    # $self->update();
 }
 
 sub execute_analysis_file_on_gui {
-    my $self = shift;
-    my ($in_file, $out_file, $top, $progress_func) = @_;
-    $self->cmd_open($in_file);
-    if(Tk::Exists($top)) { $top->raise(); }
-    $self->update();
-    $self->cmd_analysis(1, $progress_func);
-    if(Tk::Exists($top)) { $top->raise(); }
-    $self->update();
-    $self->cmd_save_as($out_file);
-    if(Tk::Exists($top)) { $top->raise(); }
-    $self->update();
-}
+    my ($self, $in_file, $out_file, $top, $progress_func) = @_;
 
-sub execute_analysis_file {
-    my $self = shift;
-    my ($in_file, $out_file) = @_;
-    my $in_data = "";
-    my $out_data = "";
-    {
-        open(my $in_fh, $in_file);
-        $in_data = join("", (<$in_fh>));
-        $in_data = Encode::decode("utf-8", $in_data);
-        close($in_fh);
-    }
-    if ($in_data ne "") {
-        $self->execute_analysis_data($in_data, $out_data);
-        {
-            open(my $out_fh, ">", $out_file);
-            binmode($out_fh);
-            $out_data = Encode::encode("utf-8", $out_data);
-            printf($out_fh "%s", $out_data);
-            close($out_fh);
-        }
-    }
-    return;
+    $self->cmd_open($in_file);
+    $top->g_raise if $top;
+    # $self->update();
+    $self->cmd_analysis(1, $progress_func);
+    $top->g_raise if $top;
+    # $self->update();
+    $self->cmd_save_as($out_file);
+    $top->g_raise if $top;
+    # $self->update();
 }
 
 sub execute_analysis_data {
-    my $self = shift;
-    my ($in_data, $progress_func) = @_;
-    my $app_conf = $self->get_app_conf();
-    my $mecab_dir = $app_conf->get("mecab-dir");
+    my ($self, $in_data, $progress_func) = @_;
+    my $app_conf = $self->_data->{"app-conf"};
+
+    my $mecab_dir     = $app_conf->get("mecab-dir");
     my $mecab_dic_dir = $app_conf->get("mecab-dic-dir");
-    my $unidic_db = $app_conf->get("unidic-db");
-    my $yamcha_dir = $app_conf->get("yamcha-dir");
-    my $crf_dir = $app_conf->get("crf-dir");
-    my $java = $app_conf->get("java");
+    my $unidic_db     = $app_conf->get("unidic-db");
+    my $yamcha_dir    = $app_conf->get("yamcha-dir");
+    my $crf_dir       = $app_conf->get("crf-dir");
+    my $java          = $app_conf->get("java");
     my $mstparser_dir = $app_conf->get("mstparser-dir");
-    my $comainu_home = $app_conf->get("comainu-home");
-    my $comainu_crf_model = $app_conf->get("comainu-crf-model");
-    my $comainu_svm_model = $app_conf->get("comainu-svm-model");
-    my $comainu_svm_bnst_model = $app_conf->get("comainu-svm-bnst-model");
-    my $comainu_svm_bip_model = $app_conf->get("comainu-svm-bip-model");
-    my $comainu_mst_model = $app_conf->get("comainu-mst-model");
-    my $comainu_input_type = $app_conf->get("comainu-input-type");
-    my $comainu_output_type = $app_conf->get("comainu-output-type");
+
+    my $comainu_home            = $app_conf->get("comainu-home");
+    my $comainu_crf_model       = $app_conf->get("comainu-crf-model");
+    my $comainu_svm_model       = $app_conf->get("comainu-svm-model");
+    my $comainu_svm_bnst_model  = $app_conf->get("comainu-svm-bnst-model");
+    my $comainu_svm_bip_model   = $app_conf->get("comainu-svm-bip-model");
+    my $comainu_mst_model       = $app_conf->get("comainu-mst-model");
+    my $comainu_input_type      = $app_conf->get("comainu-input-type");
+    my $comainu_output_type     = $app_conf->get("comainu-output-type");
     my $comainu_long_model_type = $app_conf->get("comainu-model-type");
-    my $comainu_tagger = $app_conf->get("comainu-tagger-type");
-    my $comainu_boundary = $app_conf->get("comainu-boundary-type");
+    my $comainu_tagger          = $app_conf->get("comainu-tagger-type");
+    my $comainu_boundary        = $app_conf->get("comainu-boundary-type");
+
     my $tmp_dir = $app_conf->get("tmp-dir");
 
     my $luwmrph = "with";
@@ -1808,15 +1710,13 @@ sub execute_analysis_data {
     }
 
     my $comainu_long_model = $comainu_crf_model;
-    if ($comainu_long_model_type =~ /svm/) {
-        $comainu_long_model = $comainu_svm_model;
-    }
-
+    $comainu_long_model = $comainu_svm_model if $comainu_long_model_type =~ /svm/;
     my $comainu_mid_model = $comainu_mst_model;
     my $comainu_bnst_model = $comainu_svm_bnst_model;
 
-    if(!-d $tmp_dir) { mkdir($tmp_dir); }
-    if(-f $out_file) { unlink($out_file); }
+    mkdir $tmp_dir unless -d $tmp_dir;
+    unlink $out_file if -f $out_file;
+
     eval {
         open(my $fh, ">", $comainu_test);
         binmode($fh);
@@ -1825,109 +1725,97 @@ sub execute_analysis_data {
         close($fh);
     };
 
-    $yamcha_dir = File::Spec->rel2abs($yamcha_dir);
-    $mecab_dir = File::Spec->rel2abs($mecab_dir);
-    $mecab_dic_dir = File::Spec->rel2abs($mecab_dic_dir);
-    $unidic_db = File::Spec->rel2abs($unidic_db);
-    $comainu_home = File::Spec->rel2abs($comainu_home);
+    $yamcha_dir         = File::Spec->rel2abs($yamcha_dir);
+    $mecab_dir          = File::Spec->rel2abs($mecab_dir);
+    $mecab_dic_dir      = File::Spec->rel2abs($mecab_dic_dir);
+    $unidic_db          = File::Spec->rel2abs($unidic_db);
+    $comainu_home       = File::Spec->rel2abs($comainu_home);
     $comainu_long_model = File::Spec->rel2abs($comainu_long_model);
-    $comainu_mid_model = File::Spec->rel2abs($comainu_mid_model);
-    $tmp_dir = File::Spec->rel2abs($tmp_dir);
-    $comainu_test = File::Spec->rel2abs($comainu_test);
+    $comainu_mid_model  = File::Spec->rel2abs($comainu_mid_model);
+    $tmp_dir            = File::Spec->rel2abs($tmp_dir);
+    $comainu_test       = File::Spec->rel2abs($comainu_test);
 
     my $runcom = $Bin."/../bin/runcom.exe";
-    if (! -f $runcom) {
-        $runcom = $self->{"perl"};
-    }
+    $runcom = $self->_data->{perl} unless -f $runcom;
+
     $ENV{"PERL"} = $runcom;
     my $comainu_opts = {
-        "debug" => $self->{"debug"},
-        "comainu-home" => $comainu_home,
-        "mecab-dir" => $mecab_dir,
-        "mecab-dic-dir" => $mecab_dic_dir,
-        "unidic-db" => $unidic_db,
-        "yamcha-dir" => $yamcha_dir,
-        "crf-dir" => $crf_dir,
-        "java" => $java,
-        "mstparser-dir" => $mstparser_dir,
-        "comainu-output" => $tmp_dir,
-        "comainu-temp" => $tmp_dir."/temp",
+        "debug"                 => $self->_data->{debug},
+        "comainu-home"          => $comainu_home,
+        "mecab-dir"             => $mecab_dir,
+        "mecab-dic-dir"         => $mecab_dic_dir,
+        "unidic-db"             => $unidic_db,
+        "yamcha-dir"            => $yamcha_dir,
+        "crf-dir"               => $crf_dir,
+        "java"                  => $java,
+        "mstparser-dir"         => $mstparser_dir,
+        "comainu-output"        => $tmp_dir,
+        "comainu-temp"          => $tmp_dir."/temp",
         "comainu-svm-bip-model" => $comainu_svm_bip_model,
-        "boundary" => $comainu_boundary,
-        "suwmodel" => $comainu_tagger,
-        "luwmodel" => uc($comainu_long_model_type),
-        "luwmrph" => $luwmrph,
+        "boundary"              => $comainu_boundary,
+        "luwmodel"              => uc($comainu_long_model_type),
+        "luwmrph"               => $luwmrph,
     };
+
     my $comainu_opts_str = join(" ", map {"--".$_." \"".$comainu_opts->{$_}."\"";} keys %$comainu_opts);
-    my $comainu_com = sprintf("\"%s\" \"%s/script/comainu.pl\" %s \"%s\" \"%s\" \"%s\" \"%s\"",
-                              $runcom,
-                              $comainu_home, $comainu_opts_str,
-                              $comainu_method,
-                              $comainu_test, $comainu_long_model, $tmp_dir
-                          );
-    if($comainu_method =~ /(plain|bccwj|kc)2bnstout/) {
-        # BunSetsu Analysis
-        $comainu_com = sprintf("\"%s\" \"%s/script/comainu.pl\" %s \"%s\" \"%s\" \"%s\" \"%s\" \"%s\"",
-			       $runcom,
-                               $comainu_home, $comainu_opts_str,
-                               $comainu_method,
-                               $comainu_test, $comainu_bnst_model, $tmp_dir
-                           );
-    }
-    if($comainu_method =~ /(plain|bccwj|kc)2longbnstout/) {
-        # Long & BunSetsu Analysis
-        $comainu_com = sprintf("\"%s\" \"%s/script/comainu.pl\" %s \"%s\" \"%s\" \"%s\" \"%s\" \"%s\"",
-                               $runcom,
-                               $comainu_home, $comainu_opts_str,
-                               $comainu_method,
-                               $comainu_test, $comainu_long_model, $comainu_bnst_model, $tmp_dir
-                           );
-    }
-    if($comainu_method =~ /(plain|bccwj|kc)2midout/) {
-        # Mid Analysis
-        $comainu_com = sprintf("\"%s\" \"%s/script/comainu.pl\" %s \"%s\" \"%s\" \"%s\" \"%s\" \"%s\"",
-			       $runcom,
-                               $comainu_home, $comainu_opts_str,
-                               $comainu_method,
-                               $comainu_test, $comainu_long_model, $comainu_mid_model, $tmp_dir
-                           );
-    }
-    if($comainu_method =~ /(plain|bccwj|kc)2midbnstout/) {
-        # Long & Mid Analysis % BunSetsu
-        $comainu_com = sprintf("\"%s\" \"%s/script/comainu.pl\" %s \"%s\" \"%s\" \"%s\" \"%s\" \"%s\" \"%s\"",
-                               $runcom,
-                               $comainu_home, $comainu_opts_str,
-                               $comainu_method,
-                               $comainu_test, $comainu_long_model, $comainu_mid_model, $comainu_bnst_model, $tmp_dir
-                           );
-    }
-    if($comainu_method =~ /(bccwjlong|kclong)2midout/) {
-        # Mid Analysis
-        $comainu_com = sprintf("\"%s\" \"%s/script/comainu.pl\" %s \"%s\" \"%s\" \"%s\" \"%s\" \"%s\"",
-                               $runcom,
-                               $comainu_home, $comainu_opts_str,
-                               $comainu_method,
-                               $comainu_test, $comainu_mid_model, $tmp_dir
-                           );
-    }
+    my $comainu_com = do {
+        if($comainu_method =~ /(plain|bccwj|kc)2bnstout/) {
+            # BunSetsu Analysis
+            sprintf(
+                "\"%s\" \"%s/script/comainu.pl\" %s \"%s\" \"%s\" \"%s\" \"%s\"",
+                $runcom, $comainu_home, $comainu_opts_str, $comainu_method,
+                $comainu_test, $comainu_bnst_model, $tmp_dir
+            );
+        } elsif($comainu_method =~ /(plain|bccwj|kc)2longbnstout/) {
+            # Long & BunSetsu Analysis
+            sprintf(
+                "\"%s\" \"%s/script/comainu.pl\" %s \"%s\" \"%s\" \"%s\" \"%s\" \"%s\"",
+                $runcom, $comainu_home, $comainu_opts_str, $comainu_method,
+                $comainu_test, $comainu_long_model, $comainu_bnst_model, $tmp_dir
+            );
+        } elsif($comainu_method =~ /(plain|bccwj|kc)2midout/) {
+            # Mid Analysis
+            sprintf(
+                "\"%s\" \"%s/script/comainu.pl\" %s \"%s\" \"%s\" \"%s\" \"%s\" \"%s\"",
+                $runcom, $comainu_home, $comainu_opts_str, $comainu_method,
+                $comainu_test, $comainu_long_model, $comainu_mid_model, $tmp_dir
+            );
+        } elsif($comainu_method =~ /(plain|bccwj|kc)2midbnstout/) {
+            # Long & Mid Analysis % BunSetsu
+            sprintf(
+                "\"%s\" \"%s/script/comainu.pl\" %s \"%s\" \"%s\" \"%s\" \"%s\" \"%s\" \"%s\"",
+                $runcom, $comainu_home, $comainu_opts_str, $comainu_method,
+                $comainu_test, $comainu_long_model, $comainu_mid_model, $comainu_bnst_model, $tmp_dir
+            );
+        } elsif($comainu_method =~ /(bccwjlong|kclong)2midout/) {
+            # Mid Analysis
+            sprintf(
+                "\"%s\" \"%s/script/comainu.pl\" %s \"%s\" \"%s\" \"%s\" \"%s\"",
+                $runcom, $comainu_home, $comainu_opts_str, $comainu_method,
+                $comainu_test, $comainu_mid_model, $tmp_dir
+            );
+        } else {
+            sprintf(
+                "\"%s\" \"%s/script/comainu.pl\" %s \"%s\" \"%s\" \"%s\" \"%s\"",
+                $runcom, $comainu_home, $comainu_opts_str, $comainu_method,
+                $comainu_test, $comainu_long_model, $tmp_dir
+            );
+        }
+    };
 
     $comainu_com =~ s/\\/\//sg;
     while ($comainu_com =~ s/\/[^\/]+\/\.\.//sg) { ; }
 
-    if ($Config{"osname"} eq "MSWin32") {
-        $comainu_com =~ s/\//\\/sg;
-    }
-
-    if ($self->{"debug"} > 0) {
+    $comainu_com =~ s/\//\\/sg if $Config{"osname"} eq "MSWin32";
+    if ($self->_data->{debug} > 0) {
         printf(STDERR "# COMAINU_COM: %s\n", $comainu_com);
     }
 
-
     my $proc_end_flag = 0;
-    my $com_worker = $self->{"_com_worker"};
+    my $com_worker = $self->_data->{_com_worker};
     $com_worker->system_nb($comainu_com);
     while ($com_worker->is_running()) {
-        if (ref($progress_func)) {
+        if (ref $progress_func) {
             $progress_func->();
         }
         &Time::HiRes::sleep(1.0);
@@ -1942,6 +1830,7 @@ sub execute_analysis_data {
     return $out_data;
 }
 
-1;
 
-#################### END OF FILE ####################
+1;
+__END__
+

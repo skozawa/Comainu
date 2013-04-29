@@ -1,15 +1,12 @@
 # -*- mode: perl; coding: utf-8 -*-
-
-use strict;
-
 package CommandWorker;
 
+use strict;
 use utf8;
 use Config;
 use Time::HiRes;
 
-my $DEFAULT_VALUES =
-{
+my $DEFAULT_VALUES = {
     "debug" => 0,
     "timer" => 0.2,
 };
@@ -30,7 +27,7 @@ sub DESTROY {
 sub system_nb {
     my $self = shift;
     my ($com) = @_;
-    if ($self->{"debug"} > 0) {
+    if ($self->{debug} > 0) {
         printf(STDERR "%s: queue_num=%d\n", $self, $self->{"_com_queue"}->pending());
     }
     $self->{"_res"} = system($com);
