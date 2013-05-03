@@ -594,11 +594,35 @@ sub make_pathname_entry {
         }
     };
 
-    my $e = $f->new_ttk__combobox(
+    my $e;
+    $e = $f->new_entry(
         -textvariable => $textvariable,
-        -width => 60, # TODO
+        -width => 70,
         %$entry_opts,
+        -validate => "all",
+        -validatecommand => sub {
+            my $new_value = defined $e ? $e->get : '';
+            my $new_value_enc = $self->encode_pathname($new_value);
+            my $new_value2 = $new_value;
+            $new_value2 = $$dirnamevariable."/".$new_value
+                if defined $dirnamevariable && ref $dirnamevariable;
+            my $new_value2_enc = $self->encode_pathname($new_value2);
+
+            return 1 unless defined $e;
+
+            my $is_invalid = ($pathnametype =~ /dirname/ && !-d $new_value_enc) ||
+                ($pathnametype =~ /pathname/ && !-f $new_value_enc) ||
+                ($pathnametype =~ /filename/ && !-f $new_value2_enc);
+            my $foreground = $is_invalid ? $opts->{-invalidforeground} : $opts->{-foreground};
+            $e->configure(-foreground => $foreground);
+            my $background = $is_invalid ? $opts->{-invalidbackground} : $opts->{-background};
+            $e->configure(-background => $background);
+
+            # always return true because of just checking
+            return 1;
+        },
     );
+    $e->validate;
     $e->g_bind("<Key-Return>", sub { $func_get_reference->($self, $e, $pathnametype); });
     $e->g_pack(-side => "left", -fill => "x", -expand => "yes");
     my $b = $f->new_button(
