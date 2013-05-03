@@ -618,7 +618,9 @@ sub make_mainframe {
             -bg         => "#ffffff",
             -wrap       => $app_conf->get("in-wrap"),
         );
-        my $in_table = $input_frame->new_table(
+        my $in_table = $input_frame->new_tkx_Scrolled(
+            "table",
+            -scrollbars => "se",
             -rows      => 1,
             -cols      => 1,
             -height    => 200,
@@ -714,7 +716,9 @@ sub make_mainframe {
             -bg         => "#ffffff",
             -wrap       => $app_conf->get("out-wrap")
         );
-        my $out_table = $output_frame->new_table(
+        my $out_table = $output_frame->new_tkx_Scrolled(
+            'table',
+            -scrollbars => "se",
             -rows      => 1,
             -cols      => 1,
             -height    => 200,
