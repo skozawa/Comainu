@@ -157,7 +157,7 @@ sub initialize {
     ) unless $self->_parent;
 
     unless ( $self->_parent ) {
-        # $self->update;
+        Tkx::update();
         $self->g_wm_deiconify;
     }
 
@@ -307,7 +307,7 @@ sub cmd_show_help {
     my $top = $self->new_toplevel;
     $top->g_wm_title($self->_data->{msg}{STR_HELP});
     $top->g_wm_withdraw;
-    # $top->update();
+    Tkx::update();
     $self->g_wm_iconphoto($self->_data->{img}) if exists $self->_data->{img};
 
     my $text_frame = $top->new_frame;
@@ -336,7 +336,7 @@ sub cmd_show_help {
     $text->g_bind("<Button>", sub { $text->g_focus; });
     $top->g_bind("<Control-Key-w>", sub { $top->_data->{bt}->invoke; });
     $top->g_bind("<Key-Escape>", sub { $top->_data->{bt}->invoke; });
-    # $top->update();
+    Tkx::update();
     $top->g_wm_deiconify;
     $self->_data->{_help_window} = $top;
     # $self->_data->{_help_window}->_data->{text}->focus();
@@ -360,7 +360,7 @@ sub cmd_show_about {
     my $top = $self->new_toplevel;
     $top->g_wm_title($title);
     $top->g_wm_withdraw;
-    # $top->update();
+    Tkx::update();
     $top->g_wm_geometry(sprintf("+%s+%s", $cx, $cy));
 
     my $frame = $top->new_frame;
@@ -405,7 +405,7 @@ sub cmd_show_about {
     $self->_data->{_about_window} = $top;
     $top->g_bind("<Key-Escape>", sub { $top->_data->{bt}->invoke; });
     $top->g_wm_resizable(0, 0);
-    # $top->update();
+    Tkx::update();
     $top->g_wm_deiconify;
     $top->g_grab;
 }
@@ -426,7 +426,7 @@ sub popup_configuration_dialogue {
     my $top = $self->new_toplevel;
     $top->g_wm_title($self->_data->{msg}{STR_CONFIGURATION});
     $top->g_wm_withdraw;
-    # $top->update();
+    Tkx::update();
     $top->g_wm_iconphoto($self->_data->{img}) if $self->_data->{img};
     $top->g_wm_geometry($self->_data->{"conf_geometry"});
 
@@ -513,9 +513,9 @@ sub popup_configuration_dialogue {
     $top->g_bind("<Key-Escape>", sub { $top->_data->{cancel}->invoke; });
 
     $top->g_wm_resizable(1, 1);
-    # $top->update();
+    Tkx::update();
     $top->g_wm_deiconify;
-    # $top->update();
+    Tkx::update();
     # $top->_data->{ok}->focus();
     $top->g_grab;
 }

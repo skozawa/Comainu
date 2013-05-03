@@ -1118,7 +1118,7 @@ sub cmd_batch_analysis {
     my $top = $self->new_toplevel;
     $top->g_wm_title($title);
     $top->g_wm_withdraw;
-    # $top->update;
+    Tkx::update();
     $top->g_wm_iconphoto($self->_data->{img}) if exists $self->_data->{img};
     $top->g_grab;
 
@@ -1201,16 +1201,16 @@ sub cmd_batch_analysis {
             ++$$count_ref;
             $$progress_ref = 100 * ($$count_ref - 1 + 0.01) / $total;
             my $next_progress = 100 * $$count_ref / $total;
-            # $self->update();
+            Tkx::update();
             my $progress_func = sub {
                 my $delta = ($next_progress - $$progress_ref) / 2.0;
                 $delta = 1 if $delta > 1;
                 $$progress_ref += $delta;
-                # $self->update();
+                Tkx::update();
             };
             $self->execute_analysis_file_on_gui($in_file, $out_file, $top, $progress_func);
             $$progress_ref = 100 * $$count_ref / $total;
-            # $self->update();
+            Tkx::update();
         }
         $$run_flag_ref = 0;
     };
@@ -1414,7 +1414,7 @@ sub cmd_batch_analysis {
         \$run_flag, \$total, \$count, \$progress
     );
     $top->g_wm_resizable(1, 0);
-    # $top->update();
+    Tkx::update();
     $top->g_wm_deiconify;
     $self->enable_analysis_buttons(0);
     # $top->waitWindow($top);
@@ -1643,7 +1643,7 @@ sub enable_analysis_buttons {
     for (@buttons) {
         $data->{$_}->configure(-state => $flag ? "normal" : "disabled");
     }
-    # $self->update();
+    Tkx::update();
 }
 
 sub execute_analysis_file_on_gui {
@@ -1651,13 +1651,13 @@ sub execute_analysis_file_on_gui {
 
     $self->cmd_open($in_file);
     $top->g_raise if $top;
-    # $self->update();
+    Tkx::update();
     $self->cmd_analysis(1, $progress_func);
     $top->g_raise if $top;
-    # $self->update();
+    Tkx::update();
     $self->cmd_save_as($out_file);
     $top->g_raise if $top;
-    # $self->update();
+    Tkx::update();
 }
 
 sub execute_analysis_data {
