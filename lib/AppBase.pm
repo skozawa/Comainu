@@ -13,7 +13,6 @@ use Encode;
 use Config;
 
 use AppConf;
-use Text_patch;
 
 my $DEFAULT_VALUES = {
     "debug" => 0,

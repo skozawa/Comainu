@@ -10,7 +10,7 @@ use lib "$Bin/lib";
 use Getopt::Long;
 use File::Basename;
 
-use Tk;
+use Tkx;
 use WinComainu;
 
 my $APP_NAME = "WinComainu";
@@ -75,9 +75,10 @@ sub main {
             $opts->{"conf-file"} = $conf_file;
         }
     }
-    my $mw = MainWindow->new();
-    my $wc = $mw->WinComainu("opts"=>$opts);
-    MainLoop();
+
+    my $mw = WinComainu->new('.');
+    $mw->initialize($opts);
+    Tkx::MainLoop();
 }
 
 main();

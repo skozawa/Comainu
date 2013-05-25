@@ -43,17 +43,9 @@ PP_OPTS=\
 -M Time::HiRes \
 -M DBI \
 -M DBD::SQLite \
--M Tk \
--M Tk::Panedwindow \
--M Tk::Table \
--M Tk::Text \
--M Tk::TextUndo \
--M Tk::Photo \
--M Tk::ProgressBar \
--M Tk::BrowseEntry \
--M Tk::DropSite \
+-M Tkx \
+-M Tkx::Scrolled \
 -M Win32::OLE \
-
 
 all:
 
