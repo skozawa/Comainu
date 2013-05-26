@@ -1,6 +1,17 @@
 #!@PERL@
 # -*- mode: perl; coding: utf-8 -*-
 
+BEGIN {
+    $ENV{PERL_DL_NONLAZY} = 1;
+    if ( exists $ENV{PAR_PROGNAME} ) {
+        use File::Spec::Functions;
+        use Config ();
+        $ENV{PERL_TCL_DL_PATH} = catfile(
+            $ENV{PAR_TEMP}, 'tkkit.' . $Config::Config{dlext},
+        );
+    }
+}
+
 use strict;
 use utf8;
 use Encode;
