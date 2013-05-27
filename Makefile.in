@@ -35,6 +35,7 @@ PP_OPTS=\
 -M parent \
 -M encoding \
 -M Encode \
+-M Encode::JP \
 -M Getopt::Long \
 -M File::Basename \
 -M File::Spec \
