@@ -27,8 +27,8 @@ sub add_feature {
     # my $noun_sahen = $self->load_dic1($dir,$NAME,".Noun.sahen.dic");
     # my $noun_hukusi = $self->load_dic1($dir,$NAME,".Noun.hukusi.dic");
     # my $noun_koyuu = $self->load_dic1($dir,$NAME,".Noun.koyuu.dic");
-    my $postp = $self->load_dic2($dir, $NAME, ".Postp.dic");
-    my $auxv = $self->load_dic2($dir, $NAME, ".AuxV.dic");
+    my $postp = $self->load_dic2($dir . '/' . $NAME . ".Postp.dic");
+    my $auxv  = $self->load_dic2($dir . '/' . $NAME . ".AuxV.dic");
 
     my $postp_state = 0;
     my $auxv_state = 0;
@@ -223,12 +223,11 @@ sub load_dic1 {
 }
 
 sub load_dic2 {
-    my $self = shift;
-    my ($dir, $NAME, $file) = @_;
+    my ($self, $file) = @_;
 
     my %dic;
     my @terms = ();
-    open(my $fh, $dir."/".$NAME.$file) or die "Cannot open '$file'";
+    open(my $fh, $file) or die "Cannot open '$file'";
     binmode($fh);
     while ( my $line = <$fh> ) {
         $line = Encode::decode("utf-8", $line);
