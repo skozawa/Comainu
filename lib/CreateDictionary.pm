@@ -28,9 +28,8 @@ sub new {
 # 複数の短単位から成る長単位「助詞」辞書
 # 複数の短単位から成る長単位「助動詞」辞書
 #
-sub create_dictionary{
-    my $self = shift;
-    my ($train_kc, $dir, $NAME) = @_;
+sub create_dictionary {
+    my ($self, $train_kc, $dir, $NAME) = @_;
 
     my %postp;
     my %auxv;
@@ -41,7 +40,7 @@ sub create_dictionary{
     my $long_term = "";
     my @short_terms;
     foreach my $line (split(/\r?\n/,$buff)) {
-        next if($line =~ /^\*B/);
+        next if $line =~ /^\*B/;
         if ($line eq 'EOS') {
             if ($state == 8 && $#short_terms >= 2) {
                 $postp{join("\n",@short_terms)} = $#short_terms;
@@ -91,21 +90,26 @@ sub create_dictionary{
         $pre_sterm = (split(/\-/, $items[3]))[0]." ".(split(/\-/, $items[4]))[0]." ".(split(/\-/, $items[5]))[0];
     }
 
-    $self->write_to_file($dir."/".$NAME.".Postp.dic",join("\n\n",sort {$postp{$b} <=> $postp{$a}} keys %postp));
-    $self->write_to_file($dir."/".$NAME.".AuxV.dic",join("\n\n",sort {$auxv{$b}<=>$auxv{$a}} keys %auxv));
+    $self->write_to_file(
+        $dir . "/" . $NAME . ".Postp.dic",
+        join("\n\n",sort {$postp{$b} <=> $postp{$a}} keys %postp)
+    );
+    $self->write_to_file(
+        $dir . "/" . $NAME . ".AuxV.dic",
+        join("\n\n",sort {$auxv{$b}<=>$auxv{$a}} keys %auxv)
+    );
 }
 
 ############################################################
 # Utilities
 ############################################################
 sub read_from_file {
-    my $self = shift;
-    my ($file) = @_;
+    my ($self, $file) = @_;
     my $data = "";
     open(my $fh, $file) or die "Cannot open '$file'";
     binmode($fh);
     while(my $line = <$fh>) {
-	$data .= $line;
+        $data .= $line;
     }
     close($fh);
     $data = Encode::decode("utf-8", $data);
@@ -113,8 +117,7 @@ sub read_from_file {
 }
 
 sub write_to_file {
-    my $self = shift;
-    my ($file, $data) = @_;
+    my ($self, $file, $data) = @_;
     $data = Encode::encode("utf-8", $data);
     open(my $fh, ">", $file) or die "Cannot open '$file'";
     binmode($fh);
