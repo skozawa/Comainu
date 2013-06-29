@@ -16,7 +16,7 @@ BEGIN {
 subtest add_feature_pos => sub {
     my $g = mock_guard(
         AddFeature => {
-            load_dic2 => sub { {}; }
+            load_dic => sub { {}; }
         },
     );
 
@@ -137,7 +137,7 @@ DATA
     is $lines[3], "！ * ！ 補助記号-句点 * * * * 記号 補助記号 句点 * * * * * * * * EE 0 0";
 };
 
-subtest load_dic2_auxv => sub {
+subtest load_dic_auxv => sub {
     my $data = <<DATA;
 名詞 * *
 か カ か 助詞-副助詞 * *
@@ -171,7 +171,7 @@ DATA
     close $fh;
 
     my $add_feature = AddFeature->new;
-    my $dic = $add_feature->load_dic2($filename);
+    my $dic = $add_feature->load_dic($filename);
 
     is_deeply $dic, {
         5 => {
@@ -195,7 +195,7 @@ DATA
     };
 };
 
-subtest load_dic2_postp => sub {
+subtest load_dic_postp => sub {
     my $data = <<DATA;
 名詞 * *
 と ト と 助詞-格助詞 * *
@@ -223,7 +223,7 @@ DATA
     close $fh;
 
     my $add_feature = AddFeature->new;
-    my $dic = $add_feature->load_dic2($filename);
+    my $dic = $add_feature->load_dic($filename);
 
     is_deeply $dic, {
         4 => {

@@ -23,12 +23,8 @@ sub new {
 sub add_feature {
     my ($self, $buff, $NAME, $dir) = @_;
 
-    # my $noun_ippan = $self->load_dic1($dir,$NAME,".Noun.ippan.dic");
-    # my $noun_sahen = $self->load_dic1($dir,$NAME,".Noun.sahen.dic");
-    # my $noun_hukusi = $self->load_dic1($dir,$NAME,".Noun.hukusi.dic");
-    # my $noun_koyuu = $self->load_dic1($dir,$NAME,".Noun.koyuu.dic");
-    my $postp = $self->load_dic2($dir . '/' . $NAME . ".Postp.dic");
-    my $auxv  = $self->load_dic2($dir . '/' . $NAME . ".AuxV.dic");
+    my $postp = $self->load_dic($dir . '/' . $NAME . ".Postp.dic");
+    my $auxv  = $self->load_dic($dir . '/' . $NAME . ".AuxV.dic");
 
     my $postp_state = 0;
     my $auxv_state = 0;
@@ -93,41 +89,6 @@ sub add_feature {
         } else {
             push @out_items, '*';
         }
-
-        ## 出現形がひらがなのみで構成されているか
-        # if ( $items[0] =~ /^(?:\xE3\x81[\x81-\xBF]|\xE3\x82[\x80-\x93])+$/ ) {
-        #     push @out_items, "1";
-        # } else {
-        #     push @out_items, "0";
-        # }
-
-        ## 名詞-普通名詞-一般を構成する短単位か(名詞or動詞)
-        # if ( defined $$noun_ippan{$items[2]} ) {
-        #     push @out_items, "1";
-        # } else {
-        #     push @out_items, "0";
-        # }
-
-        ## 名詞-普通名詞-サ変を構成する短単位か(名詞or動詞)
-        # if ( defined $$noun_sahen{$items[2]} ) {
-        #     push @out_items, "1";
-        # } else {
-        #     push @out_items, "0";
-        # }
-
-        ## 名詞-普通名詞-副詞可能を構成する短単位か(名詞or動詞)
-        # if ( defined $$noun_hukusi{$items[2]} ) {
-        #     push @out_items, "1";
-        # } else {
-        #     push @out_items, "0";
-        # }
-
-        ## 名詞-固有名詞を構成する短単位か(名詞-普通名詞or接尾辞)
-        # if ( defined $$noun_koyuu{$items[2]} ) {
-        #     push @out_items, "1";
-        # } else {
-        #     push @out_items, "0";
-        # }
 
         ## 複数の短単位からなる助詞を構成する短単位であるか
         if ( $postp_state >= 1 ) {
@@ -205,24 +166,7 @@ sub add_feature {
     return $res;
 }
 
-sub load_dic1 {
-    my $self = shift;
-    my ($dir,$NAME,$file) = @_;
-
-    my %dic;
-    open(my $fh, $dir."/".$NAME.$file) or die "Cannot open '$file'";
-    binmode($fh);
-    while ( my $line = <$fh> ) {
-        $line = Encode::decode("utf-8", $line);
-        chomp($line);
-        $dic{$line} = 1;
-    }
-    close($fh);
-
-    return \%dic;
-}
-
-sub load_dic2 {
+sub load_dic {
     my ($self, $file) = @_;
 
     my %dic;
