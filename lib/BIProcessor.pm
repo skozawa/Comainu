@@ -283,10 +283,10 @@ sub long2feature {
     my $feature = "";
     if ( $#{$long_unit} >= 1 ) {
         for my $i ( 0 .. 1 ) {
-            $feature .= $self->short2feature($$long_unit[$i], $is_test);
+            $feature .= $self->short2feature($long_unit->[$i], $is_test);
         }
         for my $i ( 0 .. 1 ) {
-            $feature .= $self->short2feature($$long_unit[$#{$long_unit}+$i-1], $is_test);
+            $feature .= $self->short2feature($long_unit->[$#{$long_unit}+$i-1], $is_test);
         }
     } else {
         $feature .= $self->short2feature($$long_unit[0], $is_test);
@@ -358,7 +358,7 @@ sub exec_test {
 
 
 sub merge_data {
-    my ($self, $TESTNAME, $temp_dir, $long_units, $BI_units, $label) = @_;
+    my ($self, $TESTNAME, $temp_dir, $long_units, $BI_units) = @_;
 
     my $pos_file   = $temp_dir."/pos/".$TESTNAME.".BI_pos.out";
     my $cType_file = $temp_dir."/cType/".$TESTNAME.".BI_cType.out";
@@ -370,13 +370,14 @@ sub merge_data {
     my %h_label  = reverse %{$self->{h_label}};
     my %k1_label = reverse %{$self->{k1_label}};
     my %k2_label = reverse %{$self->{k2_label}};
-    for my $i ( 0..$#{$BI_units} ) {
-        my $l_term = $$long_units[$$BI_units[$i]];
-        my @first = split(/ /,$$l_term[0]);
+
+    for my $i ( 0 .. $#{$BI_units} ) {
+        my $l_term = $long_units->[$BI_units->[$i]];
+        my @first = split(/ /, $l_term->[0]);
         $first[14] = $h_label{$pos[$i]};
         if ( $pos[$i] ~~ ["H080", "H081", "H090", "H091", "H100"] ) {
-            for my $j ( 0..$#{$l_term} ) {
-                my @items = split(/ /,$$l_term[$#{$l_term}-$j]);
+            for my $j ( 0 .. $#{$l_term} ) {
+                my @items = split(/ /, $l_term->[$#{$l_term}-$j]);
                 $first[15] = $items[5];
                 $first[16] = $items[6];
                 last if $first[15] ne "*" && $first[16] ne "*";
@@ -484,41 +485,16 @@ sub create_cForm_dat {
     undef $buff;
 }
 
-sub merge_data_and_out {
-    my $self = shift;
-    my ($out, $file) = @_;
-    my $data = "";
-    open(my $fh1, $out) or die "Cannot open '$file'";
-    binmode($fh1);
-    open(my $fh2, $file) or die "Cannot open '$file'";
-    binmode($fh2);
-    my $data1 = Encode::decode("utf-8", <$fh1>);
-    my $data2 = Encode::decode("utf-8", <$fh2>);
-    while ( $data1 && $data2 ) {
-        $data1 =~ s/\r?\n//g;
-        $data2 =~ s/\r?\n//g;
-        my @items = split(/\t/,$data1);
-        $data .= join(" ",@items)." ".$data2."\n";
-
-        $data1 = Encode::decode("utf-8", <$fh1>);
-        $data2 = Encode::decode("utf-8", <$fh2>);
-    }
-    $data .= "\n";
-    $self->write_to_file($file, $data);
-    undef $data;
-}
-
 sub read_from_out {
-    my $self = shift;
-    my ($file) = @_;
+    my ($self, $file) = @_;
     my $data = "";
     open(my $fh, $file) or die "Cannot open '$file'";
     binmode($fh);
     while ( my $line = <$fh> ) {
         $line = Encode::decode("utf-8", $line);
         $line =~ s/\r?\n//g;
-        next if($line eq "" || $line eq "EOS");
-        my @items = split(/\t/,$line);
+        next if $line eq "" || $line eq "EOS";
+        my @items = split(/\t/, $line);
         $data .= $items[$#items]." ";
     }
     close($fh);
@@ -527,8 +503,7 @@ sub read_from_out {
 }
 
 sub load_comp_file {
-    my $self = shift;
-    my ($file) = @_;
+    my ($self, $file) = @_;
 
     my %comp;
     open(my $fh, $file) or die "Cannot open '$file'";;
@@ -538,7 +513,7 @@ sub load_comp_file {
         $line =~ s/\r?\n//g;
 
         my @items = split(/\t/, $line);
-        next if($items[0] !~ /助詞|助動詞/);
+        next if $items[0] !~ /助詞|助動詞/;
         $comp{join("_",@items[1..2])} = $items[0];
     }
     close($fh);
