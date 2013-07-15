@@ -2,19 +2,23 @@ package t::BIProcessor;
 use strict;
 use warnings;
 use utf8;
-use Encode;
-use File::Temp;
+
+use parent 'Test::Class';
 use Test::More;
 use Test::Mock::Guard;
-use Data::Dumper;
 
-BEGIN {
+use Encode;
+use File::Temp;
+
+use BIProcessor;
+
+sub _use_ok (startup => 1) {
     use_ok 'BIProcessor';
-}
+};
 
-# subtest extract_from_train => sub {};
+# sub extract_from_train : Tests {};
 
-subtest execute_test => sub {
+sub execute_test : Test(1) {
     my $g = mock_guard('BIProcessor' => {
         make_long_unit => sub {
             my $units = [
@@ -63,7 +67,7 @@ LOUT
     }), $res;
 };
 
-subtest make_long_unit => sub {
+sub make_long_unit : Test(11) {
     my $lout_data = <<LOUT;
 Ba 駒 コマ 駒 名詞-普通名詞-一般 * * コマ コマ 駒 駒 * * 和 名詞-普通名詞-一般 * * コマ 駒 駒
 Ba と ト と 助詞-格助詞 * * ト ト と と * * 和 助詞-格助詞 * * ト と と
@@ -118,7 +122,7 @@ DATA
 
 };
 
-subtest extract_BI_data_train => sub {
+sub extract_BI_data_train : Test(3) {
     my ($pos_dat, $ctype_dat, $cform_dat);
     my $g = mock_guard("BIProcessor" => {
         write_to_file => sub {
@@ -185,7 +189,7 @@ subtest extract_BI_data_train => sub {
 
 };
 
-subtest extract_BI_data_test => sub {
+sub extract_BI_data_test : Test(3) {
     my ($pos_dat, $ctype_dat, $cform_dat);
     my $g = mock_guard("BIProcessor" => {
         write_to_file => sub {
@@ -248,7 +252,7 @@ subtest extract_BI_data_test => sub {
 
 };
 
-subtest long2feature => sub {
+sub long2feature : Test(4) {
     my $bip = BIProcessor->new;
     is $bip->long2feature([
         "き クル 来る 動詞-非自立可能 カ行変格 連用形-一般"
@@ -280,7 +284,7 @@ subtest long2feature => sub {
 
 };
 
-subtest short2feature => sub {
+sub short2feature : Test(4) {
     my $bip = BIProcessor->new;
     is $bip->short2feature("き クル 来る 動詞-非自立可能 カ行変格 連用形-一般"),
         " き クル 来る 動詞-非自立可能 動詞 非自立可能 * * カ行変格 カ行変格 * * 連用形-一般 連用形 一般 *";
@@ -295,9 +299,9 @@ subtest short2feature => sub {
         " フリー フリー フリー 名詞-普通名詞-形状詞可能 名詞 普通名詞 形状詞可能 * * * * * * * * *";
 };
 
-# subtest exec_test => sub {};
+# sub exec_test : Tests {};
 
-subtest merge_data => sub {
+sub merge_data : Test(2) {
     my $g = mock_guard('BIProcessor' => {
         read_from_out => sub {
             my ($self, $file) = @_;
@@ -325,7 +329,7 @@ subtest merge_data => sub {
     is $long_units->[1]->[0], "B フリー フリー フリー 名詞-普通名詞-形状詞可能 * * フリー フリー フリー フリー * * 外 名詞-普通名詞-一般 * * フリー フリー フリー";
 };
 
-subtest create_cType_dat => sub {
+sub create_cType_dat : Test(4) {
     my $out = <<DATA;
 来る\tて\tテ\tて\t助詞-接続助詞\t助詞\t接続助詞\t*\t*\t*\t*\t*\t*\t*\t*\t*\t*\t*\t*\t*\t*\t*\t*\t*\t*\t*\t*\t*\t*\t*\t*\t*\t*\t*\t*\t*\t*\t*\t*\t*\t*\t*\t*\t*\t*\t*\t*\t*\t*\tて\tテ\tて\t助詞-接続助詞\t助詞\t接続助詞\t*\t*\t*\t*\t*\t*\t*\t*\t*\t*\tき\tクル\t来る\t動詞-非自立可能\t動詞\t非自立可能\t*\t*\tカ行変格\tカ行変格\t*\t*\t連用形-一般\t連用形\t一般\t*\t*\t*\t*\t*\t*\t*\t*\t*\t*\t*\t*\t*\t*\t*\t*\t*\t*\t*\t*\t*\t*\t*\t*\t*\t*\t*\t*\t*\t*\t*\t*\t*\tき\tクル\t来る\t動詞-非自立可能\t動詞\t非自立可能\t*\t*\tカ行変格\tカ行変格\t*\t*\t連用形-一般\t連用形\t一般\t*\tまし\tマス\tます\t助動詞\t助動詞\t*\t*\t*\t助動詞-マス\t助動詞\tマス\t*\t連用形-一般\t連用形\t一般\t*\t*\t*\t*\t*\t*\t*\t*\t*\t*\t*\t*\t*\t*\t*\t*\t*\t*\t*\t*\t*\t*\t*\t*\t*\t*\t*\t*\t*\t*\t*\t*\t*\tまし\tマス\tます\t助動詞\t助動詞\t*\t*\t*\t助動詞-マス\t助動詞\tマス\t*\t連用形-一般\t連用形\t一般\t*\tH080
 て居る\t持っ\tモツ\t持つ\t動詞-一般\t動詞\t一般\t*\t*\t五段-タ行\t五段\tタ行\t*\t連用形-促音便\t連用形\t促音便\t*\t*\t*\t*\t*\t*\t*\t*\t*\t*\t*\t*\t*\t*\t*\t*\t*\t*\t*\t*\t*\t*\t*\t*\t*\t*\t*\t*\t*\t*\t*\t*\t*\t持っ\tモツ\t持つ\t動詞-一般\t動詞\t一般\t*\t*\t五段-タ行\t五段\tタ行\t*\t連用形-促音便\t連用形\t促音便\t*\tて\tテ\tて\t助詞-接続助詞\t助詞\t接続助詞\t*\t*\t*\t*\t*\t*\t*\t*\t*\t*\tい\tイル\t居る\t動詞-非自立可能\t動詞\t非自立可能\t*\t*\t上一段-ア行\t上一段\tア行\t*\t連用形-一般\t連用形\t一般\t*\tて\tテ\tて\t助詞-接続助詞\t助詞\t接続助詞\t*\t*\t*\t*\t*\t*\t*\t*\t*\t*\tい\tイル\t居る\t動詞-非自立可能\t動詞\t非自立可能\t*\t*\t上一段-ア行\t上一段\tア行\t*\t連用形-一般\t連用形\t一般\t*\tませ\tマス\tます\t助動詞\t助動詞\t*\t*\t*\t助動詞-マス\t助動詞\tマス\t*\t未然形-一般\t未然形\t一般\t*\t*\t*\t*\t*\t*\t*\t*\t*\t*\t*\t*\t*\t*\t*\t*\t*\t*\t*\t*\t*\t*\t*\t*\t*\t*\t*\t*\t*\t*\t*\t*\t*\tませ\tマス\tます\t助動詞\t助動詞\t*\t*\t*\t助動詞-マス\t助動詞\tマス\t*\t未然形-一般\t未然形\t一般\t*\tH100
@@ -366,7 +370,7 @@ DATA
     is $buffs[3], "他 も モ も 助詞-係助詞 助詞 係助詞 * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * も モ も 助詞-係助詞 助詞 係助詞 * * * * * * * * * * 他 タ 他 名詞-普通名詞-副詞可能 名詞 普通名詞 副詞可能 * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * 他 タ 他 名詞-普通名詞-副詞可能 名詞 普通名詞 副詞可能 * * * * * * * * * の ノ の 助詞-格助詞 助詞 格助詞 * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * の ノ の 助詞-格助詞 助詞 格助詞 * * * * * * * * * * H000 K1999";
 };
 
-subtest create_cForm_dat => sub {
+sub create_cForm_dat : Test(3) {
     my $out = <<DATA;
 来る\tて\tテ\tて\t助詞-接続助詞\t助詞\t接続助詞\t*\t*\t*\t*\t*\t*\t*\t*\t*\t*\t*\t*\t*\t*\t*\t*\t*\t*\t*\t*\t*\t*\t*\t*\t*\t*\t*\t*\t*\t*\t*\t*\t*\t*\t*\t*\t*\t*\t*\t*\t*\t*\tて\tテ\tて\t助詞-接続助詞\t助詞\t接続助詞\t*\t*\t*\t*\t*\t*\t*\t*\t*\t*\tき\tクル\t来る\t動詞-非自立可能\t動詞\t非自立可能\t*\t*\tカ行変格\tカ行変格\t*\t*\t連用形-一般\t連用形\t一般\t*\t*\t*\t*\t*\t*\t*\t*\t*\t*\t*\t*\t*\t*\t*\t*\t*\t*\t*\t*\t*\t*\t*\t*\t*\t*\t*\t*\t*\t*\t*\t*\t*\tき\tクル\t来る\t動詞-非自立可能\t動詞\t非自立可能\t*\t*\tカ行変格\tカ行変格\t*\t*\t連用形-一般\t連用形\t一般\t*\tまし\tマス\tます\t助動詞\t助動詞\t*\t*\t*\t助動詞-マス\t助動詞\tマス\t*\t連用形-一般\t連用形\t一般\t*\t*\t*\t*\t*\t*\t*\t*\t*\t*\t*\t*\t*\t*\t*\t*\t*\t*\t*\t*\t*\t*\t*\t*\t*\t*\t*\t*\t*\t*\t*\t*\t*\tまし\tマス\tます\t助動詞\t助動詞\t*\t*\t*\t助動詞-マス\t助動詞\tマス\t*\t連用形-一般\t連用形\t一般\t*\tH080\tK1050
 て居る\t持っ\tモツ\t持つ\t動詞-一般\t動詞\t一般\t*\t*\t五段-タ行\t五段\tタ行\t*\t連用形-促音便\t連用形\t促音便\t*\t*\t*\t*\t*\t*\t*\t*\t*\t*\t*\t*\t*\t*\t*\t*\t*\t*\t*\t*\t*\t*\t*\t*\t*\t*\t*\t*\t*\t*\t*\t*\t*\t持っ\tモツ\t持つ\t動詞-一般\t動詞\t一般\t*\t*\t五段-タ行\t五段\tタ行\t*\t連用形-促音便\t連用形\t促音便\t*\tて\tテ\tて\t助詞-接続助詞\t助詞\t接続助詞\t*\t*\t*\t*\t*\t*\t*\t*\t*\t*\tい\tイル\t居る\t動詞-非自立可能\t動詞\t非自立可能\t*\t*\t上一段-ア行\t上一段\tア行\t*\t連用形-一般\t連用形\t一般\t*\tて\tテ\tて\t助詞-接続助詞\t助詞\t接続助詞\t*\t*\t*\t*\t*\t*\t*\t*\t*\t*\tい\tイル\t居る\t動詞-非自立可能\t動詞\t非自立可能\t*\t*\t上一段-ア行\t上一段\tア行\t*\t連用形-一般\t連用形\t一般\t*\tませ\tマス\tます\t助動詞\t助動詞\t*\t*\t*\t助動詞-マス\t助動詞\tマス\t*\t未然形-一般\t未然形\t一般\t*\t*\t*\t*\t*\t*\t*\t*\t*\t*\t*\t*\t*\t*\t*\t*\t*\t*\t*\t*\t*\t*\t*\t*\t*\t*\t*\t*\t*\t*\t*\t*\t*\tませ\tマス\tます\t助動詞\t助動詞\t*\t*\t*\t助動詞-マス\t助動詞\tマス\t*\t未然形-一般\t未然形\t一般\t*\tH100\tK1020
@@ -403,7 +407,7 @@ DATA
 
 };
 
-subtest read_from_out => sub {
+sub read_from_out : Test(1) {
     my $data = <<DATA;
 暇\t「\t*\t「\t補助記号-括弧開\t補助記号\t括弧開\t*\t*\t*\t*\t*\t*\t*\t*\t*\t*\t*\t*\t*\t*\t*\t*\t*\t*\t*\t*\t*\t*\t*\t*\t*\t*\t*\t*\t*\t*\t*\t*\t*\t*\t*\t*\t*\t*\t*\t*\t*\t*\t「\t*\t「\t補助記号-括弧開\t補助記号\t括弧開\t*\t*\t*\t*\t*\t*\t*\t*\t*\t*\t暇\tヒマ\t暇\t名詞-普通名詞-形状詞可能\t名詞\t普通名詞\t形状詞可能\t*\t*\t*\t*\t*\t*\t*\t*\t*\t*\t*\t*\t*\t*\t*\t*\t*\t*\t*\t*\t*\t*\t*\t*\t*\t*\t*\t*\t*\t*\t*\t*\t*\t*\t*\t*\t*\t*\t*\t*\t*\t暇\tヒマ\t暇\t名詞-普通名詞-形状詞可能\t名詞\t普通名詞\t形状詞可能\t*\t*\t*\t*\t*\t*\t*\t*\t*\tな\tダ\tだ\t助動詞\t助動詞\t*\t*\t*\t助動詞-ダ\t助動詞\tダ\t*\t連体形-一般\t連体形\t一般\t*\t*\t*\t*\t*\t*\t*\t*\t*\t*\t*\t*\t*\t*\t*\t*\t*\t*\t*\t*\t*\t*\t*\t*\t*\t*\t*\t*\t*\t*\t*\t*\t*\tな\tダ\tだ\t助動詞\t助動詞\t*\t*\t*\t助動詞-ダ\t助動詞\tダ\t*\t連体形-一般\t連体形\t一般\t*\tH030
 時\tな\tダ\tだ\t助動詞\t助動詞\t*\t*\t*\t助動詞-ダ\t助動詞\tダ\t*\t連体形-一般\t連体形\t一般\t*\t*\t*\t*\t*\t*\t*\t*\t*\t*\t*\t*\t*\t*\t*\t*\t*\t*\t*\t*\t*\t*\t*\t*\t*\t*\t*\t*\t*\t*\t*\t*\t*\tな\tダ\tだ\t助動詞\t助動詞\t*\t*\t*\t助動詞-ダ\t助動詞\tダ\t*\t連体形-一般\t連体形\t一般\t*\t時\tトキ\t時\t名詞-普通名詞-副詞可能\t名詞\t普通名詞\t副詞可能\t*\t*\t*\t*\t*\t*\t*\t*\t*\t*\t*\t*\t*\t*\t*\t*\t*\t*\t*\t*\t*\t*\t*\t*\t*\t*\t*\t*\t*\t*\t*\t*\t*\t*\t*\t*\t*\t*\t*\t*\t*\t時\tトキ\t時\t名詞-普通名詞-副詞可能\t名詞\t普通名詞\t副詞可能\t*\t*\t*\t*\t*\t*\t*\t*\t*\tに\tニ\tに\t助詞-格助詞\t助詞\t格助詞\t*\t*\t*\t*\t*\t*\t*\t*\t*\t*\t*\t*\t*\t*\t*\t*\t*\t*\t*\t*\t*\t*\t*\t*\t*\t*\t*\t*\t*\t*\t*\t*\t*\t*\t*\t*\t*\t*\t*\t*\t*\t*\tに\tニ\tに\t助詞-格助詞\t助詞\t格助詞\t*\t*\t*\t*\t*\t*\t*\t*\t*\t*\tH000
@@ -423,7 +427,7 @@ DATA
     is $outdata, "H030 H000 H080 H100 ";
 };
 
-subtest load_comp_file => sub {
+sub load_comp_file : Test(1) {
     my $data = <<DATA;
 助詞-格助詞\tニツレテ\tに連れて\tニツレテ\tにつれて
 助動詞\tコトガアル\t事が有る\tコトガアル\tことがある
@@ -448,4 +452,4 @@ DATA
 };
 
 
-done_testing;
+__PACKAGE__->runtests;

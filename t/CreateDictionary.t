@@ -2,12 +2,16 @@ package t::CreateDictionary;
 use strict;
 use warnings;
 use utf8;
+
+use parent 'Test::Class';
 use Test::More;
 use Test::Mock::Guard;
 
-BEGIN {
+use CreateDictionary;
+
+sub _use_ok (startup => 1) {
     use_ok 'CreateDictionary';
-}
+};
 
 
 my $postp_buff = "";
@@ -115,16 +119,17 @@ DATA
 );
 
 
-my $create_dictionary = CreateDictionary->new;
-$create_dictionary->create_dictionary;
+sub create_dictionary : Test(2) {
+    my $create_dictionary = CreateDictionary->new;
+    $create_dictionary->create_dictionary;
 
-is $postp_buff, "助動詞 助動詞 終止形
+    is $postp_buff, "助動詞 助動詞 終止形
 と ト と 助詞-格助詞 * *
 し スル 為る 動詞-非自立可能 サ行変格 連用形-一般
 たら タ た 助動詞 助動詞-タ 仮定形-一般
 名詞";
 
-is $auxv_buff, "動詞 五段 連用形
+    is $auxv_buff, "動詞 五段 連用形
 て テ て 助詞-接続助詞 * *
 いる イル 居る 動詞-非自立可能 上一段-ア行 連体形-一般
 助詞
@@ -133,5 +138,6 @@ is $auxv_buff, "動詞 五段 連用形
 の ノ の 助詞-準体助詞 * *
 です デス です 助動詞 助動詞-デス 終止形-一般
 助詞";
+};
 
-done_testing;
+__PACKAGE__->runtests;

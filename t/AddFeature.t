@@ -2,18 +2,22 @@ package t::AddFeature;
 use strict;
 use warnings;
 use utf8;
+
+use parent 'Test::Class';
+use Test::More;
+use Test::Mock::Guard;
+
 use Encode;
 use File::Temp;
 use File::Basename;
-use Test::More;
-use Test::Mock::Guard;
-use Data::Dumper;
 
-BEGIN {
+use AddFeature;
+
+sub _use_ok : Test(startup => 1) {
     use_ok 'AddFeature';
-}
+};
 
-subtest add_feature_pos => sub {
+sub add_feature_pos : Test(11) {
     my $g = mock_guard(
         AddFeature => {
             load_dic => sub { {}; }
@@ -51,7 +55,7 @@ DATA
     is $lines[10], "。 * 。 補助記号-句点 * * * * 記号 補助記号 句点 * * * * * * * * EE 0 0";
 };
 
-subtest add_feature_postp => sub {
+sub add_feature_postp : Test(5) {
     my $data = <<DATA;
 代名詞 * *
 と ト と 助詞-格助詞 * *
@@ -96,7 +100,7 @@ DATA
 };
 
 
-subtest add_feature_auxv => sub {
+sub add_feature_auxv : Test(4) {
     my $data = <<DATA;
 動詞 下一段 連用形
 て テ て 助詞-接続助詞 * *
@@ -137,7 +141,7 @@ DATA
     is $lines[3], "！ * ！ 補助記号-句点 * * * * 記号 補助記号 句点 * * * * * * * * EE 0 0";
 };
 
-subtest load_dic_auxv => sub {
+sub load_dic_auxv : Test(1) {
     my $data = <<DATA;
 名詞 * *
 か カ か 助詞-副助詞 * *
@@ -195,7 +199,7 @@ DATA
     };
 };
 
-subtest load_dic_postp => sub {
+sub load_dic_postp : Test(1) {
     my $data = <<DATA;
 名詞 * *
 と ト と 助詞-格助詞 * *
@@ -244,5 +248,5 @@ DATA
     };
 };
 
-done_testing;
+__PACKAGE__->runtests;
 
