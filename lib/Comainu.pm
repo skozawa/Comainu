@@ -550,7 +550,7 @@ sub merge_mst_result {
     my $output_file = $save_dir . "/" .
         File::Basename::basename($test_kc) . ".mout";
 
-    my $buff = $self->merge_mout_with_kc_mstout_file($test_kc, $mstout_file);
+    my $buff = $self->merge_kc_with_mstout($test_kc, $mstout_file);
     $self->write_to_file($output_file, $buff);
     undef $buff;
 
@@ -2975,11 +2975,11 @@ sub merge_iof {
     my ($self, $bccwj_data, $lout_data) = @_;
     my $res = "";
     my $cn1 = 16;
-    #my $cn1 = 26;
+    # my $cn1 = 26;
     if ( $self->{"boundary"} eq "word" ) {
-        #$cn1 = 23;
+        # $cn1 = 23;
         $cn1 = 27;
-        #$cn1 = 34;
+        # $cn1 = 34;
     }
     my $cn2 = 19;
     $lout_data =~ s/^EOS.*?\n//mg;
@@ -3156,7 +3156,7 @@ sub merge_mecab_with_kc_mout_file {
     undef $mout_data;
 }
 
-sub merge_mout_with_kc_mstout_file {
+sub merge_kc_with_mstout {
     my ($self, $kc_file, $out_file) = @_;
     my $res = "";
 

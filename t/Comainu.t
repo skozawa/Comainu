@@ -16,6 +16,9 @@ sub _use_ok : Test(startup => 1) {
     use_ok 'Comainu';
 };
 
+
+
+
 # sub USAGE_kc2longout : Tests {};
 # sub METHOD_kc2longout : Tests {};
 # sub kc2longout_internal : Tests {};
@@ -122,25 +125,108 @@ sub _use_ok : Test(startup => 1) {
 # sub short2long : Tests {};
 # sub short2bnst : Tests {};
 # sub short2middle : Tests {};
-# sub merge_bccwj_with_kc_lout_file : Tests {};
+
+sub merge_bccwj_with_kc_lout_file : Test(1) {
+    my $lout_buff = "";
+    my $g = guard_write_to_file(\$lout_buff);
+
+    my $comainu = Comainu->new;
+    $comainu->merge_bccwj_with_kc_lout_file("t/sample/test.bccwj.txt", "t/sample/test.bccwj.KC.lout", "lout_file");
+
+    my $gold_lout_buff = $comainu->read_from_file("t/sample/test.bccwj.lout");
+
+    is $gold_lout_buff, $lout_buff;
+};
+
 # sub merge_iof : Tests {};
-# sub merge_bccwj_with_kc_bout_file : Tests {};
-# sub merge_bccwj_with_kc_mout_file : Tests {};
-# sub merge_mecab_with_kc_lout_file : Tests {};
-# sub merge_mecab_with_kc_bout_file : Tests {};
-# sub merge_mecab_with_kc_mout_file : Tests {};
-# sub merge_mout_with_kc_mstout_file : Tests {};
-# sub merge_kc_with_svmout : Tests {};
-# sub merge_kc_with_bout : Tests {};
+
+sub merge_bccwj_with_kc_bout_file : Test(1) {
+    my $bout_buff = "";
+    my $g = guard_write_to_file(\$bout_buff);
+
+    my $comainu = Comainu->new;
+    $comainu->merge_bccwj_with_kc_bout_file("t/sample/test.bccwj.txt", "t/sample/test.bccwj.KC.bout", "bout_file");
+
+    my $gold_bout_buff = $comainu->read_from_file("t/sample/test.bccwj.bout");
+
+    is $gold_bout_buff, $bout_buff;
+};
+
+sub merge_bccwj_with_kc_mout_file : Test(1) {
+    my $mout_buff = "";
+    my $g = guard_write_to_file(\$mout_buff);
+
+    my $comainu = Comainu->new;
+    $comainu->merge_bccwj_with_kc_mout_file("t/sample/test.bccwj.long.txt", "t/sample/test.bccwj.long.KC.mout", "mout_file");
+
+    my $gold_mout_buff = $comainu->read_from_file("t/sample/test.bccwj.long.mout");
+
+    is $gold_mout_buff, $mout_buff;
+};
+
+sub merge_mecab_with_kc_lout_file : Test(1) {
+    my $lout_buff = "";
+    my $g = guard_write_to_file(\$lout_buff);
+
+    my $comainu = Comainu->new;
+    $comainu->merge_mecab_with_kc_lout_file("t/sample/test.plain.mecab", "t/sample/test.plain.KC.lout", "lout_file");
+
+    my $gold_lout_buff = $comainu->read_from_file("t/sample/test.plain.lout");
+
+    is $gold_lout_buff, $lout_buff;
+};
+
+sub merge_mecab_with_kc_bout_file : Test(1) {
+    my $bout_buff = "";
+    my $g = guard_write_to_file(\$bout_buff);
+
+    my $comainu = Comainu->new;
+    $comainu->merge_mecab_with_kc_bout_file("t/sample/test.plain.mecab", "t/sample/test.plain.KC.bout", "bout_file");
+
+    my $gold_bout_buff = $comainu->read_from_file("t/sample/test.plain.bout");
+
+    is $gold_bout_buff, $bout_buff;
+};
+
+sub merge_mecab_with_kc_mout_file : Test(1) {
+    my $mout_buff = "";
+    my $g = guard_write_to_file(\$mout_buff);
+
+    my $comainu = Comainu->new;
+    $comainu->merge_mecab_with_kc_mout_file("t/sample/test.plain.mecab", "t/sample/test.plain.KC.mout", "mout_file");
+
+    my $gold_mout_buff = $comainu->read_from_file("t/sample/test.plain.mout");
+
+    is $gold_mout_buff, $mout_buff;
+};
+
+sub merge_kc_with_mstout : Test(1) {
+    my $comainu = Comainu->new;
+    my $buff = $comainu->merge_kc_with_mstout("t/sample/test.plain.KC", "t/sample/test.plain.mstout");
+    my $gold_buff = $comainu->read_from_file("t/sample/test.plain.KC.mout");
+
+    is $gold_buff, $buff;
+};
+
+sub merge_kc_with_svmout : Test(1) {
+    my $comainu = Comainu->new;
+    my $buff = $comainu->merge_kc_with_svmout("t/sample/test.plain.KC", "t/sample/test.plain.svmout");
+    my $gold_buff = $comainu->read_from_file("t/sample/test.plain.KC.svmout.lout");
+
+    is $gold_buff, $buff;
+};
+
+sub merge_kc_with_bout : Test(1) {
+    my $comainu = Comainu->new;
+    my $buff = $comainu->merge_kc_with_bout("t/sample/test.KC", "t/sample/test.svmdata.bout");
+    my $gold_buff = $comainu->read_from_file("t/sample/test.bout");
+
+    is $gold_buff, $buff;
+};
 
 sub create_template : Test(1) {
     my $template_buff = "";
-    my $g = mock_guard('Comainu', {
-        write_to_file => sub {
-            my ($self, $tmp_file, $buff) = @_;
-            $template_buff = $buff;
-        }
-    });
+    my $g = guard_write_to_file(\$template_buff);
 
     my $comainu = Comainu->new;
     $comainu->create_template("file", 6);
@@ -298,11 +384,7 @@ MULTI_CLASS=2
 
 CONF
 
-    my $fh = File::Temp->new;
-    my $file = $fh->filename;
-    print $fh encode_utf8 $confdata;
-    close $fh;
-
+    my $file = create_tmp_file($confdata);
     my $comainu = Comainu->new;
     my $conf = $comainu->load_yamcha_training_conf($file);
 
@@ -331,11 +413,7 @@ sub proc_stdin2stdout : Test(1) {
 };
 
 sub proc_stdin2file : Test(1) {
-    my $out_fh = File::Temp->new;
-    my $outfile = $out_fh->filename;
-    print $out_fh encode_utf8 "";
-    close $out_fh;
-
+    my $outfile = create_tmp_file("");
     my $comainu = Comainu->new;
     $comainu->proc_stdin2file('cat', 'test', $outfile);
 
@@ -351,15 +429,8 @@ sub proc_stdin2file : Test(1) {
 };
 
 sub proc_file2file : Test(1) {
-    my $in_fh = File::Temp->new;
-    my $infile = $in_fh->filename;
-    print $in_fh encode_utf8 "test";
-    close $in_fh;
-
-    my $out_fh = File::Temp->new;
-    my $outfile = $out_fh->filename;
-    print $out_fh encode_utf8 "";
-    close $out_fh;
+    my $infile  = create_tmp_file("test");
+    my $outfile = create_tmp_file("");
 
     my $comainu = Comainu->new;
     $comainu->proc_file2file('cat', $infile, $outfile);
@@ -374,6 +445,31 @@ sub proc_file2file : Test(1) {
 
     is $out_data, "test\n";
 };
+
+
+
+
+sub create_tmp_file {
+    my $data = shift;
+
+    my $fh   = File::Temp->new;
+    my $file = $fh->filename;
+    print $fh encode_utf8 $data;
+    close $fh;
+
+    return ($file, $fh);
+}
+
+sub guard_write_to_file {
+    my $data = shift;
+
+    mock_guard('Comainu', {
+        write_to_file => sub {
+            my ($self, $tmp_file, $buff) = @_;
+            $$data = $buff;
+        }
+    });
+}
 
 
 
