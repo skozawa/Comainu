@@ -2127,7 +2127,7 @@ sub create_long_lemma {
     	$comp{$items[0]."_".$items[1]."_".$items[2]} = $items[3]."_".$items[4];
     }
 
-    my $res = "";
+    # 長単位の配列を生成
     my @luws;
     my $luw_id = 0;
     foreach my $line (split(/\r?\n/,$data)) {
@@ -2139,6 +2139,7 @@ sub create_long_lemma {
         } else {
             @items[17..19] = ("*","*","*");
         }
+        # form,formBase,formOrthBase,formOrth がない場合
         if ( $items[7] eq "*" && $items[8] eq "*" &&
                  $items[9] eq "*" && $items[10] eq "*") {
             @items[7..10] = @items[2,2,3,3];
@@ -2150,78 +2151,84 @@ sub create_long_lemma {
     }
     undef $data;
 
+    my $res = "";
     for my $i ( 0 .. $#luws ) {
         my $luw = $luws[$i];
-        my $first = $$luw[0];
-        if ( $$first[0] eq "EOS" ) {
+        my $first = $luw->[0];
+        if ( $first->[0] eq "EOS" ) {
             $res .= "EOS\n";
             next;
         }
-        if ( $$first[14] =~ /助詞|助動詞/ && $#{$luw} == 0 ) {
-        } elsif ( $$first[14] ~~ ["英単語", "URL", "言いよどみ", "漢文", "web誤脱", "ローマ字文"] ) {
+        # 1短単位から構成される助詞、助動詞はそのまま(何もしない)
+        if ( $first->[14] =~ /助詞|助動詞/ && $#{$luw} == 0 ) {
+        }
+        # 特定の品詞の場合は、長単位語彙素、語彙素読みを空文字にする
+        elsif ( $first->[14] ~~ ["英単語", "URL", "言いよどみ", "漢文", "web誤脱", "ローマ字文"] ) {
             @$first[17,18] = ("","");
-        } elsif ( $$first[19] ~~ ["（）内", "〔〕内", "「」内", "｛｝内",
+        }
+        # 括弧内
+        elsif ( $$first[19] ~~ ["（）内", "〔〕内", "「」内", "｛｝内",
                                   "〈〉内", "［］内", "《　》内"] ) {
             @$first[17,18] = ("カッコナイ","括弧内");
-        } else {
+        }
+        else {
             @$first[17,18] = ("","");
-            my $parential = -1;
-            for my $j ( 0 .. $#{$luw}-1 ) {
-                my $suw = $$luw[$j];
-                $self->generate_long_lemma($luw, $first, $suw, 0, 0);
-                if ( $$suw[4] eq "補助記号-括弧開" || $$suw[4] eq "補助記号-括弧閉") {
+            my $parential = 0; # 括弧があるか
+            for my $j ( 0 .. $#{$luw} - 1 ) {
+                $self->generate_long_lemma($luw, $j);
+                my $suw = $luw->[$j];
+                if ( $suw->[4] eq "補助記号-括弧開" || $suw->[4] eq "補助記号-括弧閉") {
                     $parential++;
                 }
             }
-            my $last = $$luw[$#{$luw}];
-            if($$last[8] eq "補助記号-括弧開" || $$last[8] eq "補助記号-括弧閉") {
+            $self->generate_long_lemma($luw, $#{$luw});
+            my $last = $luw->[-1];
+            if($last->[8] eq "補助記号-括弧開" || $last->[8] eq "補助記号-括弧閉") {
                 $parential++;
             }
-            $self->generate_long_lemma($luw, $first, $last, 1, 0);
 
-            if ( $parential >= 0 && $#{$luw} > 1 ) {
-                if($$first[8] eq "補助記号-括弧開" || $$first[8] eq "補助記号-括弧閉") {
-                    @$first[17,18] = ("","");
-                } elsif ( $$first[4] =~ /名詞-固有名詞-人名|名詞-固有名詞-地名/ ) {
-                    @$first[17,18] = @$first[7,1]; ## form, orthToken
-                } elsif ( $$first[3] eq "○" && $#{$luw} > 1 ) {
-                    @$first[17,18] = @$first[3,9]; ## lemma, formOrthBase
-                } elsif ( $$first[5] eq "*" || $$first[5] eq "" ) {
-                    @$first[17,18] = @$first[7,9]; ## form, formOrthBase
-                } else {
-                    @$first[17,18] = @$first[7,10]; ## form, formOrth
-                }
+            # 括弧がある複数短単位から構成される長単位の場合は、
+            # 語彙素、語彙素読みを作り直す
+            if ( $parential && $#{$luw} > 1 ) {
+                @$first[17,18] = ("","");
+                $self->generate_long_lemma($luw, 0);
+
                 my $j;
                 for ($j =1; $j <= $#{$luw}-2; $j++) {
-                    my $suw = $$luw[$j];
-                    my $suw2 = $$luw[$j+2];
-                    if ( $$suw[8] eq "補助記号-括弧開" && $$suw2[8] eq "補助記号-括弧閉" ) {
-                        my $pre_suw = $$luw[$j-1];
-                        my $post_suw = $$luw[$j+1];
+                    my $suw  = $luw->[$j];
+                    my $suw2 = $luw->[$j+2];
+                    # 括弧の前後の短単位の語形が同じ場合は
+                    # 語彙素、語彙素読みには追加しないので、スキップする
+                    # ex. 萎縮(いしゅく)する
+                    if ( $suw->[4] eq "補助記号-括弧開" && $suw2->[4] eq "補助記号-括弧閉" ) {
+                        my $pre_suw  = $luw->[$j-1];
+                        my $post_suw = $luw->[$j+1];
                         if ( join(" ", @$pre_suw[3,2,4..6]) eq join(" ",@$post_suw[3,2,4..6]) ) {
                             $j += 2;
                             next;
                         }
                     }
-                    $self->generate_long_lemma($luw, $first, $suw, 0, 1);
+                    $self->generate_long_lemma($luw, $j);
                 }
                 for ($j; $j <= $#{$luw}-1; $j++) {
-                    my $suw = $$luw[$j];
-                    $self->generate_long_lemma($luw, $first, $suw, 0, 1);
+                    $self->generate_long_lemma($luw, $j);
                 }
-                $self->generate_long_lemma($luw, $first, $last, 1, 1);
+                $self->generate_long_lemma($luw, $#{$luw});
             }
-            if ( defined $comp{$$first[14]."_".$$first[17]."_".$$first[18]} ) {
-                my ($reading, $lemma) = split(/\_/, $comp{$$first[14]."_".$$first[17]."_".$$first[18]});
-                if( $$first[18] ~~ ["に因る", "に拠る", "による"] && $$last[6] eq "連用形-一般" ) {
+
+            # 複合辞
+            my $pos_lemma_reading = join("_", @$first[14,17,18]);
+            if ( defined $comp{$pos_lemma_reading} ) {
+                my ($reading, $lemma) = split(/\_/, $comp{$pos_lemma_reading});
+                if( $first->[18] ~~ ["に因る", "に拠る", "による"] && $last->[6] eq "連用形-一般" ) {
                     ($reading, $lemma) = ("ニヨリ", "により");
-                } elsif ( $$first[18] eq "に対する" && $$last[6] eq "連用形-一般" ) {
+                } elsif ( $first->[18] eq "に対する" && $last->[6] eq "連用形-一般" ) {
                     ($reading, $lemma) = ("ニタイシ", "に対し");
-                } elsif ( $$first[18] eq "に渡る" && $$last[6] eq "連用形-一般" ) {
+                } elsif ( $first->[18] eq "に渡る" && $last->[6] eq "連用形-一般" ) {
                     ($reading, $lemma) = ("ニワタリ", "にわたり");
                 }
-                $$first[17] = $reading;
-                $$first[18] = $lemma;
+                $first->[17] = $reading;
+                $first->[18] = $lemma;
             }
         }
         foreach my $suw (@$luw) {
@@ -2235,27 +2242,31 @@ sub create_long_lemma {
 }
 
 sub generate_long_lemma {
-    my ($self, $luw, $first, $suw, $is_last, $is_multi) = @_;
+    my ($self, $luw, $index) = @_;
 
-    if( ($$suw[8] eq "補助記号-括弧開" || $$suw[8] eq "補助記号-括弧閉") && !$is_multi ) {
-    	$$first[17] .= $$suw[8]; ## fromBase
-        $$first[18] .= $$suw[9]; ## formOrthBase
-    } elsif ( $$suw[4] =~ /名詞-固有名詞-人名|名詞-固有名詞-地名/ ) {
-        $$first[17] .= $$suw[7]; ## form
-        $$first[18] .= $$suw[1]; ## orthToken
-    } elsif ( $$suw[3] eq "○" && $#{$luw} > 1 ) {
-        $$first[17] .= $$suw[3]; ## lemma
-        $$first[18] .= $$suw[9]; ## formOrthBase
-    } elsif ( $$suw[5] eq "*" || $$suw[5] eq "" ) {
-        $$first[17] .= $$suw[7]; ## form
-        $$first[18] .= $$suw[9]; ## formOrthBase
+    my $first = $luw->[0];
+    my $suw   = $luw->[$index];
+    if( $suw->[4] eq "補助記号-括弧開" || $suw->[4] eq "補助記号-括弧閉" ) {
+        if ( $#{$luw} == 0) {
+            $first->[17] .= $suw->[8]; ## fromBase
+            $first->[18] .= $suw->[9]; ## formOrthBase
+        }
+    } elsif ( $suw->[4] =~ /名詞-固有名詞-人名|名詞-固有名詞-地名/ ) {
+        $first->[17] .= $suw->[7]; ## form
+        $first->[18] .= $suw->[1]; ## orthToken
+    } elsif ( $suw->[3] eq "○" && $#{$luw} > 1 ) {
+        $first->[17] .= $suw->[3]; ## lemma
+        $first->[18] .= $suw->[9]; ## formOrthBase
+    } elsif ( $suw->[5] eq "*" || $suw->[5] eq "" ) {
+        $first->[17] .= $suw->[7]; ## form
+        $first->[18] .= $suw->[9]; ## formOrthBase
     } else {
-    	if ( !$is_last ) {
-            $$first[17] .= $$suw[7]; ## form
-            $$first[18] .= $$suw[10]; ## formOrth
+        if ( $#{$luw} != $index ) { # not last suw
+            $first->[17] .= $suw->[7];  ## form
+            $first->[18] .= $suw->[10]; ## formOrth
         } else {
-            $$first[17] .= $$suw[8]; ## fromBase
-            $$first[18] .= $$suw[9]; ## formOrthBase
+            $first->[17] .= $suw->[8]; ## fromBase
+            $first->[18] .= $suw->[9]; ## formOrthBase
         }
     }
 }
