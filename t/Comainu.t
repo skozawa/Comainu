@@ -17,8 +17,6 @@ sub _use_ok : Test(startup => 1) {
 };
 
 
-
-# sub USAGE_kc2longout : Tests {};
 # sub METHOD_kc2longout : Tests {};
 # sub kc2longout_internal : Tests {};
 
@@ -69,66 +67,54 @@ sub chunk_luw : Test(1) {
 # sub merge_chunk_result : Tests {};
 # sub post_process : Tests {};
 
-# sub USAGE_kc2bnstout : Tests {};
+
 # sub METHOD_kc2bnstout : Tests {};
 # sub kc2bnstout_internal : Tests {};
-# sub format_bnstdata : Tests {};
-# sub chunk_bnst : Tests {};
+sub format_bnstdata : Test(1) {
+    my $comainu = Comainu->new(boundary => "sentence");
+    my $svmdata = "";
+    my $g = guard_write_to_file(\$svmdata);
 
-# sub USAGE_kclong2midout : Tests {};
+    $comainu->format_bnstdata("t/sample/test.KC");
+
+    is $svmdata, $comainu->read_from_file("t/sample/test.KC.bnst.svmdata");
+};
+# sub chunk_bnst : Tests {}
+
+
 # sub METHOD_kclong2midout : Tests {};
 # sub kclong2midout_internal : Tests {};
 # sub create_mstin : Tests {};
 # sub parse_muw : Tests {};
 # sub merge_mst_result : Tests {};
 
-# sub USAGE_bccwj2longout : Tests {};
 # sub METHOD_bccwj2longout : Tests {};
 # sub bccwj2longout_internal : Tests {};
-
-# sub USAGE_bccwj2bnstout : Tests {};
 # sub METHOD_bccwj2bnstout : Tests {};
 # sub bccwj2bnstout_internal : Tests {};
-
-# sub USAGE_bccwj2longbnstout : Tests {};
 # sub METHOD_bccwj2longbnstout : Tests {};
 # sub bccwj2longbnstout_internal : Tests {};
-
-# sub USAGE_bccwj2midout : Tests {};
 # sub METHOD_bccwj2midout : Tests {};
 # sub bccwj2midout_internal : Tests {};
-
-# sub USAGE_bccwj2midbnstout : Tests {};
 # sub METHOD_bccwj2midbnstout : Tests {};
 # sub bccwj2midbnstout_internal : Tests {};
-
-# sub USAGE_bccwjlong2midout : Tests {};
 # sub METHOD_bccwjlong2midout : Tests {};
 # sub bccwjlong2midout_internal : Tests {};
 
-# sub USAGE_plain2longout : Tests {};
 # sub METHOD_plain2longout : Tests {};
 # sub plain2longout_internal : Tests {};
-
-# sub USAGE_plain2bnstout : Tests {};
 # sub METHOD_plain2bnstout : Tests {};
 # sub plain2bnstout_internal : Tests {};
-
-# sub USAGE_plain2longbnstout : Tests {};
 # sub METHOD_plain2longbnstout : Tests {};
 # sub plain2longbnstout_internal : Tests {};
-
-# sub USAGE_plain2midout : Tests {};
 # sub METHOD_plain2midout : Tests {};
 # sub plain2midout_internal : Tests {};
-
-# sub USAGE_plain2midbnstout : Tests {};
 # sub METHOD_plain2midbnstout : Tests {};
 # sub plain2midbnstout_internal : Tests {};
+
 # sub plain2mecab_file : Tests {};
 # sub mecab2kc_file : Tests {};
 
-# sub USAGE_kc2longmodel : Tests {};
 # sub METHOD_kc2longmodel : Tests {};
 # sub make_luw_traindata : Tests {};
 # sub add_luw_label : Tests {};
@@ -136,30 +122,26 @@ sub chunk_luw : Test(1) {
 # sub train_luwmodel_crf : Tests {};
 # sub train_bi_model : Tests {};
 
-# sub USAGE_kc2bnstmodel : Tests {};
 # sub METHOD_kc2bnstmodel : Tests {};
 # sub train_bnstmodel : Tests {};
 # sub add_bnst_label : Tests {};
 
-# sub USAGE_kclong2midmodel : Tests {};
 # sub METHOD_kclong2midmodel : Tests {};
 # sub create_mid_traindata : Tests {};
 # sub train_midmodel : Tests {};
 
-# sub USAGE_kc2longeval : Tests {};
 # sub METHOD_kc2longeval : Tests {};
 # sub kc2longeval_internal : Tests {};
 # sub compare : Tests {};
 
-# sub USAGE_kc2bnsteval : Tests {};
 # sub METHOD_kc2bnsteval : Tests {};
 # sub kc2bnsteval_internal : Tests {};
 # sub compare_bnst : Tests {};
 
-# sub USAGE_kclong2mideval : Tests {};
 # sub METHOD_kclong2mideval : Tests {};
 # sub kclong2mideval_internal : Tests {};
 # sub compare_mid : Tests {};
+
 # sub eval_long : Tests {};
 # sub diff_perl : Tests {};
 
