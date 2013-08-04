@@ -18,12 +18,54 @@ sub _use_ok : Test(startup => 1) {
 
 
 
-
 # sub USAGE_kc2longout : Tests {};
 # sub METHOD_kc2longout : Tests {};
 # sub kc2longout_internal : Tests {};
-# sub create_features : Tests {};
-# sub chunk_luw : Tests {};
+
+sub create_features : Test(3) {
+    my $g = mock_guard("AddFeature", {
+        load_dic => sub { {}; },
+    });
+
+    my $kc2_data = "";
+    my $g = guard_write_to_file(\$kc2_data);
+
+    subtest "sentence boundary" => sub {
+        my $comainu = Comainu->new(boundary => "sentence");
+        $comainu->create_features("t/sample/test.KC", "t/sample/test.model");
+        is $kc2_data, $comainu->read_from_file('t/sample/test.KC2');
+    };
+
+    subtest "word boundary" => sub {
+        my $comainu = Comainu->new(boundary => "word");
+        $comainu->create_features("t/sample/test.KC", "t/sample/test.model");
+        is $kc2_data, $comainu->read_from_file('t/sample/test.KC2.word');
+    };
+
+    subtest "none boundary" => sub {
+        my $comainu = Comainu->new(boundary => "none");
+        $comainu->create_features("t/sample/test.KC", "t/sample/test.model");
+        is $kc2_data, $comainu->read_from_file('t/sample/test.KC2.none');
+    };
+};
+
+sub chunk_luw : Test(1) {
+    my $comainu = Comainu->new(
+        boundary => "sentence",
+        "comainu-temp" => "t/sample",
+    );
+
+    my $svmout_data = "";
+    my $g1 = guard_write_to_file(\$svmout_data);
+    my $g2 = mock_guard('Comainu', {
+        proc_stdin2stdout => sub { $comainu->read_from_file('t/sample/test.KC.svm.output') },
+    });
+
+    $comainu->chunk_luw('t/sample/test.KC', 't/sample/test.KC.model');
+
+    is $svmout_data, $comainu->read_from_file('t/sample/test.KC.svmout.gold');
+};
+
 # sub merge_chunk_result : Tests {};
 # sub post_process : Tests {};
 
