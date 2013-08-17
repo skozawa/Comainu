@@ -322,7 +322,7 @@ sub _check_tool_path {
     my ($tool_dir, $tool_cmd, $tool_name) = @_;
 
     unless ( -f $tool_dir . "/" . $tool_cmd ||
-                 -f $tool_dir . "/" . $tool_cmd . "exe" ) {
+                 -f $tool_dir . "/" . $tool_cmd . ".exe" ) {
         printf(STDERR "# Error: Not found %s: '%s'\n",
                $tool_name || $tool_cmd . ' command',
                $tool_dir . "/" . $tool_cmd);
