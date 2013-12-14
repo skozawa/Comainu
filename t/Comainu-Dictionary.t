@@ -1,4 +1,3 @@
-package t::CreateDictionary;
 use strict;
 use warnings;
 use utf8;
@@ -7,17 +6,15 @@ use parent 'Test::Class';
 use Test::More;
 use Test::Mock::Guard;
 
-use CreateDictionary;
-
-sub _use_ok (startup => 1) {
-    use_ok 'CreateDictionary';
+sub load (startup => 1) {
+    use_ok 'Comainu::Dictionary';
 };
 
 
 my $postp_buff = "";
 my $auxv_buff = "";
 
-my $g = mock_guard('CreateDictionary' => {
+my $g = mock_guard('Comainu::Dictionary' => {
     read_from_file => sub {
         my $data = <<DATA;
 *B
@@ -117,9 +114,9 @@ DATA
 });
 
 
-sub create_dictionary : Test(2) {
-    my $create_dictionary = CreateDictionary->new;
-    $create_dictionary->create_dictionary("", "", "");
+sub create : Test(2) {
+    my $dic = Comainu::Dictionary->new;
+    $dic->create("", "", "");
 
     is $postp_buff, "助動詞 助動詞 終止形
 と ト と 助詞-格助詞 * *

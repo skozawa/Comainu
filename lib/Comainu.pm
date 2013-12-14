@@ -13,7 +13,7 @@ use Config;
 use SUW2LUW;
 use LCSDiff;
 
-use CreateDictionary;
+use Comainu::Dictionary;
 use AddFeature;
 use BIProcessor;
 
@@ -1388,8 +1388,8 @@ sub make_luw_traindata {
     # $buff = $self->add_column($buff);
 
     ## 辞書の作成
-    my $C_Dic = CreateDictionary->new;
-    $C_Dic->create_dictionary($tmp_train_kc, $model_dir, $basename);
+    my $comainu_dic = Comainu::Dictionary->new;
+    $comainu_dic->create($tmp_train_kc, $model_dir, $basename);
     ## 素性の追加
     my $AF = AddFeature->new;
     $buff = $AF->add_feature($buff, $basename, $model_dir);

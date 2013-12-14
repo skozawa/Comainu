@@ -2,7 +2,7 @@
 #
 # 訓練対象KCファイルから辞書を構築する
 #
-package CreateDictionary;
+package Comainu::Dictionary;
 
 use strict;
 use warnings;
@@ -24,7 +24,7 @@ sub new {
 # 複数の短単位から成る長単位「助詞」辞書
 # 複数の短単位から成る長単位「助動詞」辞書
 #
-sub create_dictionary {
+sub create {
     my ($self, $train_kc, $dir, $NAME) = @_;
 
     my %postp;
