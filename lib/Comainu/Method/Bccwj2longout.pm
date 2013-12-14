@@ -7,7 +7,6 @@ use parent 'Comainu::Method';
 use File::Basename qw(basename);
 use Config;
 
-use Comainu::Util qw(read_from_file write_to_file);
 use Comainu::Method::Kc2longout;
 
 sub new {

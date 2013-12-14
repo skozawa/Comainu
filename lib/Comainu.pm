@@ -89,67 +89,6 @@ sub new {
 }
 
 
-
-# 文節境界解析 BCCWJ
-sub USAGE_bccwj2bnstout {
-    my $self = shift;
-    printf("COMAINU-METHOD: bccwj2bnstout\n");
-    printf("  Usage: %s bccwj2bnstout <test-kc> <bnst-model-file> <out-dir>\n", $0);
-    printf("    This command analyzes <test-kc> with <bnst-model-file>.\n");
-    printf("    The result is put into <out-dir>.\n");
-    printf("\n");
-    printf("  ex.)\n");
-    printf("  \$ perl ./script/comainu.pl bccwj2bnstout sample/sample.bccwj.txt train/bnst.model out\n");
-    printf("    -> out/sample.bccwj.txt.bout\n");
-    printf("\n");
-}
-
-sub METHOD_bccwj2bnstout {
-    my ($self, $test_bccwj, $bnstmodel, $save_dir) = @_;
-
-    $self->check_args(scalar @_ == 4);
-    $self->check_file($bnstmodel);
-    mkdir $save_dir unless -d $save_dir;
-
-    if (-f $test_bccwj ) {
-        $self->bccwj2bnstout_internal($test_bccwj, $bnstmodel, $save_dir);
-    } elsif ( -d $test_bccwj ) {
-        opendir(my $dh, $test_bccwj);
-        while ( my $test_bccwj_file = readdir($dh) ) {
-            if ( $test_bccwj_file =~ /.txt$/ ) {
-                $self->bccwj2bnstout_internal($test_bccwj_file, $bnstmodel, $save_dir);
-            }
-        }
-        closedir($dh);
-    }
-
-    return 0;
-}
-
-sub bccwj2bnstout_internal {
-    my ($self, $test_bccwj, $bnstmodel, $save_dir ) = @_;
-
-    my $tmp_dir = $self->{"comainu-temp"};
-    my $basename = File::Basename::basename($test_bccwj);
-    my $tmp_test_bccwj = $tmp_dir . "/" . $basename;
-    $self->format_inputdata($test_bccwj, $tmp_test_bccwj, "input-bccwj", "bccwj");
-
-    my $kc_file = $tmp_dir . "/" . $basename . ".KC";
-    my $kc_bout_file = $tmp_dir . "/" . $basename . ".KC.bout";
-    my $bccwj_bout_file = $save_dir . "/" . $basename . ".bout";
-
-    $self->bccwj2kc_file($tmp_test_bccwj, $kc_file);
-    $self->METHOD_kc2bnstout($kc_file, $bnstmodel, $tmp_dir);
-    $self->merge_bccwj_with_kc_bout_file($tmp_test_bccwj, $kc_bout_file, $bccwj_bout_file);
-
-    unless ( $self->{debug} ) {
-        do { unlink $_ if -f $_; } for ($kc_bout_file, $tmp_test_bccwj);
-    }
-
-    return 0;
-}
-
-
 # 文節，長単位の同時出力
 sub USAGE_bccwj2longbnstout {
     my $self = shift;
