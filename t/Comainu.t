@@ -17,18 +17,6 @@ sub _use_ok : Test(startup => 1) {
 };
 
 
-# sub METHOD_kc2bnstout : Tests {};
-# sub kc2bnstout_internal : Tests {};
-sub format_bnstdata : Test(1) {
-    my $comainu = Comainu->new(boundary => "sentence");
-    my $svmdata = "";
-    my $g = guard_write_to_file(\$svmdata);
-
-    $comainu->format_bnstdata("t/sample/test.KC");
-
-    is $svmdata, $comainu->read_from_file("t/sample/test.KC.bnst.svmdata");
-};
-# sub chunk_bnst : Tests {}
 
 
 # sub METHOD_kclong2midout : Tests {};

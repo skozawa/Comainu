@@ -38,10 +38,7 @@ sub usage {
 sub run {
     my ($self, $test_kc, $luwmodel, $save_dir) = @_;
 
-    unless ( $self->args_num == scalar @_ ) {
-        $self->usage;
-        return 1;
-    }
+    $self->check_args_num(scalar @_);
     $self->comainu->check_luwmodel($luwmodel);
     mkdir $save_dir unless -d $save_dir;
 

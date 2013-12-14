@@ -13,4 +13,12 @@ sub comainu {
     $self->{comainu};
 }
 
+sub check_args_num {
+    my ($self, $num) = @_;
+
+    return if $self->args_num == $num;
+    $self->usage;
+    exit 1;
+}
+
 1;
