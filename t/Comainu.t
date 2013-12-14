@@ -17,14 +17,6 @@ sub _use_ok : Test(startup => 1) {
 };
 
 
-
-
-# sub METHOD_kclong2midout : Tests {};
-# sub kclong2midout_internal : Tests {};
-# sub create_mstin : Tests {};
-# sub parse_muw : Tests {};
-# sub merge_mst_result : Tests {};
-
 # sub METHOD_bccwj2longout : Tests {};
 # sub bccwj2longout_internal : Tests {};
 # sub METHOD_bccwj2bnstout : Tests {};
