@@ -26,11 +26,12 @@ sub read_from_file {
 
 sub write_to_file {
     my ($file, $data) = @_;
-    $data = encode_utf8 $data;
+    $data = encode_utf8 $data if Encode::is_utf8 $data;
     open(my $fh, ">", $file) or die "Cannot open '$file'";
     binmode($fh);
     print $fh $data;
     close($fh);
+    undef $data;
 }
 
 1;

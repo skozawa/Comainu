@@ -1,3 +1,4 @@
+package t::Comainu::Dictioanry;
 use strict;
 use warnings;
 use utf8;
