@@ -16,9 +16,14 @@ BEGIN {
     push(@INC, "$Bin/../lib");
 }
 
+use constant {
+    METHOD_DIR => $Bin . '/../lib/Comainu/Method',
+};
+
 use utf8;
 use Config;
 use Getopt::Long;
+use Module::Load;
 
 use Comainu;
 
@@ -185,12 +190,15 @@ sub comainu {
         exit 0;
     }
 
+    my $comainu_method_names = method_names();
+
     if ( defined $opts->{"help-method"} ) {
         my $flag = 0;
-        foreach my $method_name ( @{method_names()} ) {
-            my $usage_name = "USAGE_".$method_name;
+        foreach my $method_name ( @$comainu_method_names ) {
             if (!$ARGV[0] || $method_name eq $ARGV[0]) {
-                Comainu->$usage_name();
+                my $method = "Comainu::Method::" . ucfirst $method_name;
+                load $method;
+                $method->usage;
                 ++$flag;
             }
         }
@@ -202,7 +210,7 @@ sub comainu {
 
     if ( defined $opts->{"list-method"} ) {
         print "--- list of methods ---\n";
-        foreach my $method_name ( @{method_names()} ) {
+        foreach my $method_name ( @$comainu_method_names ) {
             printf("  %s\n", $method_name);
         }
         exit 0;
@@ -214,17 +222,17 @@ sub comainu {
 
     $ENV{"DBG"} = "ON";
 
-    my $comainu_method = "METHOD_" . $ARGV[0];
-    $opts->{method} = $ARGV[0];
-    my $comainu = Comainu->new(%$opts);
-    unless ( $comainu->can($comainu_method) ) {
+    unless ( scalar grep { $ARGV[0] eq $_ } @$comainu_method_names ) {
         printf(STDERR "Not found method : %s\n", $ARGV[0]);
         printf(STDERR "Supported methods are:\n");
-        foreach my $method_name ( @{method_names()} ) {
+        foreach my $method_name ( @$comainu_method_names ) {
             printf("  %s\n", $method_name);
         }
         exit 3;
     }
+
+    $opts->{method} = $ARGV[0];
+    my $comainu = Comainu->new(%$opts);
 
     $ENV{PRCCHARCODE} = "utf8";
 
@@ -238,15 +246,20 @@ sub comainu {
     $ENV{TEMP_FILELIST} = $ENV{COMAINU_TEMP} . "/filelist";
     unlink $ENV{TEMP_FILELIST} unless -d $ENV{TEMP_FILELIST};
 
+    my $comainu_module = "Comainu::Method::" . ucfirst( lc $opts->{method} );
+    load $comainu_module;
+    my $module= $comainu_module->new(comainu => $comainu);
+
     if ( $opts->{debug} ) {
-        printf(STDERR "# method: %s->%s(%s)\n", $comainu, $comainu_method,
+        printf(STDERR "# method: %s->run(%s)\n", $comainu_module,
                join(", ", map {
                    my $x = "\"".$_."\"";
                    $x =~ s/\\/\\\\/gs;
                    $x;
                } @ARGV[1..$#ARGV]));
     }
-    my $ret_code = $comainu->$comainu_method(@ARGV[1..$#ARGV]);
+
+    my $ret_code = $module->run(@ARGV[1..$#ARGV]);
 
     print "\n";
     if ( $ret_code == 0 ) {
@@ -256,12 +269,13 @@ sub comainu {
 
 sub method_names {
     my $method_names = [];
-    foreach my $method_name (sort keys %Comainu::) {
-        if ($method_name =~ /^METHOD_/) {
-            $method_name =~ s/^METHOD_//;
-            push @$method_names, $method_name;
-        }
+    opendir(DIR, METHOD_DIR);
+    foreach my $method (sort readdir(DIR)) {
+        next unless $method =~ /\.pm$/;
+        $method =~ s/\.pm//;
+        push @$method_names, lc($method);
     }
+    closedir(DIR);
     return $method_names;
 }
 

@@ -38,6 +38,7 @@ PP_OPTS=\
 -M FileHandle \
 -M File::Basename \
 -M File::Spec \
+-M Module::Load \
 -M threads \
 -M Thread::Queue \
 -M Time::HiRes \
