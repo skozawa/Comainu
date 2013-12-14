@@ -38,26 +38,15 @@ sub usage {
 sub run {
     my ($self, $test_kc, $luwmodel, $save_dir) = @_;
 
-    $self->check_args_num(scalar @_);
+    $self->before_analyze(scalar @_, $save_dir);
     $self->comainu->check_luwmodel($luwmodel);
-    mkdir $save_dir unless -d $save_dir;
 
-    if ( -f $test_kc ) {
-        $self->kc2longout($test_kc, $luwmodel, $save_dir);
-    } elsif ( -d $test_kc ) {
-        opendir(my $dh, $test_kc);
-        while ( my $test_kc_file = readdir($dh) ) {
-            if ( $test_kc_file =~ /.KC$/ ) {
-                $self->kc2longout($test_kc_file, $luwmodel, $save_dir);
-            }
-        }
-        closedir($dh);
-    }
+    $self->analyze($test_kc, $luwmodel, $save_dir);
 
     return 0;
 }
 
-sub kc2longout {
+sub analyze {
     my ($self, $test_kc, $luwmodel, $save_dir) = @_;
 
     my $tmp_test_kc = $self->{comainu}->{"comainu-temp"} . "/" . basename($test_kc);

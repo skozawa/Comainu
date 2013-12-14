@@ -8,7 +8,9 @@ use Encode qw(encode_utf8 decode_utf8);
 use Exporter 'import';
 
 our @EXPORT_OK = qw(
-    read_from_file write_to_file
+    read_from_file
+    write_to_file
+    get_analyze_files
 );
 
 sub read_from_file {
@@ -32,6 +34,21 @@ sub write_to_file {
     print $fh $data;
     close($fh);
     undef $data;
+}
+
+sub get_analyze_files {
+    my ($target, $ext) = @_;
+    if ( -f $target ) {
+        return [ $target ];
+    } elsif ( -d $target ) {
+        my $files = [];
+        opendir(my $dh, $target);
+        while ( my $file = readdir($dh) ) {
+            push @$files, $file if $file =~ /\.$ext$/;
+        }
+        closedir($dh);
+        return $files;
+    }
 }
 
 1;
