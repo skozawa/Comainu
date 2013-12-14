@@ -1,25 +1,21 @@
 # -*- mode: perl; coding: utf-8; -*-
-
 #
 # 訓練対象KCファイルから辞書を構築する
 #
-
 package CreateDictionary;
 
 use strict;
+use warnings;
 use utf8;
 
-my $DEFAULT_VALUES =
-{
-    "train-kc" => "",
-};
+use Comainu::Util qw(read_from_file write_to_file);
 
 sub new {
-    my $proto = shift;
-    my $class = ref($proto) || $proto;
-    my $self = {%$DEFAULT_VALUES, @_};
-    bless $self, $class;
-    return $self;
+    my ($class, %args) = @_;
+
+    bless {
+        %args
+    }, $class;
 }
 
 # 辞書を構築
@@ -35,11 +31,12 @@ sub create_dictionary {
     my %auxv;
     my $pre_sterm = "";
 
-    my $buff = $self->read_from_file($train_kc);
+    my $buff = read_from_file($train_kc);
     my $state = 0;
     my $long_term = "";
     my @short_terms;
     foreach my $line (split(/\r?\n/,$buff)) {
+        next unless $line;
         next if $line =~ /^\*B/;
         if ($line eq 'EOS') {
             if ($state == 8 && $#short_terms >= 2) {
@@ -90,40 +87,16 @@ sub create_dictionary {
         $pre_sterm = (split(/\-/, $items[3]))[0]." ".(split(/\-/, $items[4]))[0]." ".(split(/\-/, $items[5]))[0];
     }
 
-    $self->write_to_file(
+    write_to_file(
         $dir . "/" . $NAME . ".Postp.dic",
         join("\n\n",sort {$postp{$b} <=> $postp{$a}} keys %postp)
     );
-    $self->write_to_file(
+    write_to_file(
         $dir . "/" . $NAME . ".AuxV.dic",
         join("\n\n",sort {$auxv{$b}<=>$auxv{$a}} keys %auxv)
     );
 }
 
-############################################################
-# Utilities
-############################################################
-sub read_from_file {
-    my ($self, $file) = @_;
-    my $data = "";
-    open(my $fh, $file) or die "Cannot open '$file'";
-    binmode($fh);
-    while(my $line = <$fh>) {
-        $data .= $line;
-    }
-    close($fh);
-    $data = Encode::decode("utf-8", $data);
-    return $data;
-}
-
-sub write_to_file {
-    my ($self, $file, $data) = @_;
-    $data = Encode::encode("utf-8", $data);
-    open(my $fh, ">", $file) or die "Cannot open '$file'";
-    binmode($fh);
-    print $fh $data;
-    close($fh);
-}
 
 1;
 #################### END OF FILE ####################

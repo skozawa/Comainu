@@ -17,10 +17,9 @@ sub _use_ok (startup => 1) {
 my $postp_buff = "";
 my $auxv_buff = "";
 
-my $g = mock_guard(
-    CreateDictionary => {
-        read_from_file => sub {
-            my $data = <<DATA;
+my $g = mock_guard('CreateDictionary' => {
+    read_from_file => sub {
+        my $data = <<DATA;
 *B
 そう ソウ そう 副詞 * * ソウ ソウ そう そう * * 和 副詞 * * ソウ そう そう
 だ ダ だ 助動詞 助動詞-ダ 終止形-一般 ダ ダ だ だ * * 和 助動詞 助動詞-ダ 終止形-一般 ダ だ だ
@@ -106,22 +105,21 @@ EOS
 EOS
 
 DATA
-        },
-        write_to_file => sub {
-            my ($self, $file, $data) = @_;
-            if ( $file =~ /Postp/ ) {
-                $postp_buff = $data;
-            } elsif ( $file =~ /AuxV/ ) {
-                $auxv_buff = $data;
-            }
-        }
     },
-);
+    write_to_file => sub {
+        my ($file, $data) = @_;
+        if ( $file =~ /Postp/ ) {
+            $postp_buff = $data;
+        } elsif ( $file =~ /AuxV/ ) {
+            $auxv_buff = $data;
+        }
+    }
+});
 
 
 sub create_dictionary : Test(2) {
     my $create_dictionary = CreateDictionary->new;
-    $create_dictionary->create_dictionary;
+    $create_dictionary->create_dictionary("", "", "");
 
     is $postp_buff, "助動詞 助動詞 終止形
 と ト と 助詞-格助詞 * *
