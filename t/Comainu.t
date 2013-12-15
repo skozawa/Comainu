@@ -16,10 +16,6 @@ sub _use_ok : Test(startup => 1) {
     use_ok 'Comainu';
 };
 
-
-# sub METHOD_bccwjlong2midout : Tests {};
-# sub bccwjlong2midout_internal : Tests {};
-
 # sub METHOD_plain2longout : Tests {};
 # sub plain2longout_internal : Tests {};
 # sub METHOD_plain2bnstout : Tests {};

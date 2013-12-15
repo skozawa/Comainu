@@ -89,66 +89,6 @@ sub new {
 }
 
 
-# 中単位解析 BCCWJ
-sub USAGE_bccwjlong2midout {
-    my $self = shift;
-    printf("COMAINU-METHOD: bccwjlong2midout\n");
-    printf("  Usage: %s bccwjlong2midout <test-kc> <mid-model-file> <out-dir>\n", $0);
-    printf("    This command analyzes <test-kc> with <mid-model-file>.\n");
-    printf("    The result is put into <out-dir>.\n");
-    printf("\n");
-    printf("  ex.)\n");
-    printf("  \$ perl ./script/comainu.pl bccwjlong2midout sample/sample.bccwj.txt train/MST/train.KC.model out\n");
-    printf("    -> out/sample.bccwj.txt.mout\n");
-    printf("\n");
-}
-
-sub METHOD_bccwjlong2midout {
-    my ($self, $test_bccwj, $muwmodel, $save_dir) = @_;
-
-    $self->check_args(scalar @_ == 4);
-    $self->check_file($muwmodel);
-    mkdir $save_dir unless -d $save_dir;
-
-    if ( -f $test_bccwj ) {
-        $self->bccwjlong2midout_internal($test_bccwj, $muwmodel, $save_dir);
-    } elsif ( -d $test_bccwj ) {
-        opendir(my $dh, $test_bccwj);
-        while ( my $test_bccwj_file = readdir($dh) ) {
-            if ( $test_bccwj_file =~ /.txt$/ ) {
-                $self->bccwjlong2midout_internal($test_bccwj_file, $muwmodel, $save_dir);
-            }
-        }
-        closedir($dh);
-    }
-
-    return 0;
-}
-
-sub bccwjlong2midout_internal {
-    my ($self, $test_bccwj, $muwmodel, $save_dir) = @_;
-
-    my $tmp_dir = $self->{"comainu-temp"};
-    my $basename = File::Basename::basename($test_bccwj);
-    my $tmp_test_bccwj = $tmp_dir . "/" . $basename;
-    $self->format_inputdata($test_bccwj, $tmp_test_bccwj, "input-bccwj", "bccwj");
-
-    my $kc_file = $tmp_dir . "/" . $basename . ".KC";
-    my $kc_mout_file = $tmp_dir . "/" . $basename . ".KC.mout";
-    my $bccwj_mout_file = $save_dir . "/" . $basename . ".mout";
-
-    $self->bccwjlong2kc_file($tmp_test_bccwj, $kc_file);
-    $self->METHOD_kclong2midout($kc_file, $muwmodel, $tmp_dir);
-    $self->merge_bccwj_with_kc_mout_file($tmp_test_bccwj, $kc_mout_file, $bccwj_mout_file);
-
-    unless ( $self->{debug} ) {
-        do { unlink $_ if -f $_; } for ($kc_mout_file, $tmp_test_bccwj);
-    }
-
-    return 0;
-}
-
-
 ############################################################
 # 平文からの解析
 ############################################################
