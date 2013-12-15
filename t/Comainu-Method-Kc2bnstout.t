@@ -18,14 +18,14 @@ sub _use_ok : Test(startup => 1) {
 
 # sub METHOD_kc2bnstout : Tests {};
 # sub kc2bnstout_internal : Tests {};
-sub _format_bnstdata : Test(1) {
+sub format_bnstdata : Test(1) {
     my $comainu = Comainu->new(boundary => "sentence");
     my $kc2bnstout = Comainu::Method::Kc2bnstout->new(comainu => $comainu);
 
     my $svmdata = "";
     my $g = guard_write_to_file('Comainu::Method::Kc2bnstout', \$svmdata);
 
-    $kc2bnstout->_format_bnstdata("t/sample/test.KC");
+    $kc2bnstout->format_bnstdata("t/sample/test.KC");
 
     is $svmdata, read_from_file("t/sample/test.KC.bnst.svmdata");
 };

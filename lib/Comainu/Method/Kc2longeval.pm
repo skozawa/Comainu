@@ -61,12 +61,12 @@ sub run {
 
 sub evaluate {
     my ($self, $correct_kc, $result_kc_lout, $save_dir) = @_;
-    $self->_compare($correct_kc, $result_kc_lout, $save_dir);
+    $self->compare($correct_kc, $result_kc_lout, $save_dir);
 }
 
 # 正解KCファイルと長単位解析結果KCファイルを受け取り、
 # 処理して".eval.long"ファイルを出力する。
-sub _compare {
+sub compare {
     my ($self, $kc_file, $lout_file, $save_dir) = @_;
     print STDERR "_compare\n";
     my $res = "";

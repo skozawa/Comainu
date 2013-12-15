@@ -37,12 +37,12 @@ sub run {
     $model_dir = dirname($train_kc) if $train_kc && !$model_dir;
     $self->before_analyze(scalar @_, $model_dir);
 
-    $self->_train_bnstmodel($train_kc, $model_dir);
+    $self->train_bnstmodel($train_kc, $model_dir);
 
     return 0;
 }
 
-sub _train_bnstmodel {
+sub train_bnstmodel {
     my ($self, $train_kc, $model_dir) = @_;
     print STDERR "# TRAIN BNST MODEL\n";
 
@@ -51,7 +51,7 @@ sub _train_bnstmodel {
     my $svmin_buff = read_from_file($train_kc);
     $svmin_buff = $self->comainu->trans_dataformat($svmin_buff, "input-kc", "kc");
     $svmin_buff = $self->comainu->kc2bnstsvmdata($svmin_buff, 1);
-    $svmin_buff = $self->_add_bnst_label($svmin_buff);
+    $svmin_buff = $self->add_bnst_label($svmin_buff);
     $svmin_buff =~ s/^EOS.*?\n//mg;
     $svmin_buff .= "\n";
     write_to_file($svmin, $svmin_buff);
@@ -70,7 +70,7 @@ sub _train_bnstmodel {
 
 
 # 文節境界ラベルを付与
-sub _add_bnst_label {
+sub add_bnst_label {
     my ($self, $data) = @_;
     my $res = "";
     my ($prev, $curr, $next) = (0, 1, 2);

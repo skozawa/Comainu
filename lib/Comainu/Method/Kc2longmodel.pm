@@ -45,16 +45,16 @@ sub run {
     my $tmp_train_kc = $self->comainu->{"comainu-temp"} . "/" . basename($train_kc);
     $self->comainu->format_inputdata($train_kc, $tmp_train_kc, "input-kc", "kc");
 
-    $self->_make_luw_traindata($tmp_train_kc, $model_dir);
-    $self->_add_luw_label($tmp_train_kc, $model_dir);
+    $self->make_luw_traindata($tmp_train_kc, $model_dir);
+    $self->add_luw_label($tmp_train_kc, $model_dir);
 
     if ( $self->comainu->{"luwmodel"} eq "SVM" ) {
-        $self->_train_luwmodel_svm($tmp_train_kc, $model_dir);
+        $self->train_luwmodel_svm($tmp_train_kc, $model_dir);
     } elsif ( $self->comainu->{"luwmodel"} eq "CRF" ) {
-        $self->_train_luwmodel_crf($tmp_train_kc, $model_dir);
+        $self->train_luwmodel_crf($tmp_train_kc, $model_dir);
     }
     if ( $self->comainu->{"luwmrph"} eq "with" ) {
-        $self->_train_bi_model($tmp_train_kc, $model_dir);
+        $self->train_bi_model($tmp_train_kc, $model_dir);
     }
     unlink($tmp_train_kc);
 
@@ -63,7 +63,7 @@ sub run {
 
 
 # 長単位解析モデル学習用データを作成
-sub _make_luw_traindata {
+sub make_luw_traindata {
     my ($self, $tmp_train_kc, $model_dir) = @_;
     print STDERR "# MAKE TRAIN DATA\n";
 
@@ -90,7 +90,7 @@ sub _make_luw_traindata {
 
 # 長単位学習用のラベルを付与
 # BIのみから構成されるデータを作成
-sub _add_luw_label {
+sub add_luw_label {
     my ($self, $tmp_train_kc, $model_dir) = @_;
     print STDERR "# ADD LUW LABEL\n";
 
@@ -127,7 +127,7 @@ sub _add_luw_label {
     return 0;
 }
 
-sub _train_luwmodel_svm {
+sub train_luwmodel_svm {
     my ($self, $train_kc, $model_dir) = @_;
     print STDERR "# TRAIN LUWMODEL\n";
 
@@ -144,7 +144,7 @@ sub _train_luwmodel_svm {
     return 0;
 }
 
-sub _train_luwmodel_crf {
+sub train_luwmodel_crf {
     my ($self, $train_kc, $model_dir) = @_;
     print STDERR "# TRAIN LUWMODEL\n";
 
@@ -174,7 +174,7 @@ sub _train_luwmodel_crf {
 }
 
 ## BIのみに関する処理（後処理用）
-sub _train_bi_model {
+sub train_bi_model {
     my ($self, $train_kc, $model_dir) = @_;
     print STDERR "# TRAIN BI MODEL\n";
 

@@ -50,15 +50,15 @@ sub analyze {
 
     my $tmp_test_kc = $self->comainu->{"comainu-temp"} . "/" . basename($test_kc);
     $self->comainu->format_inputdata($test_kc, $tmp_test_kc, 'input-kc', 'kc');
-    $self->_create_mstin($tmp_test_kc);
-    $self->_parse_muw($tmp_test_kc, $muwmodel);
-    $self->_merge_mst_result($tmp_test_kc, $save_dir);
+    $self->create_mstin($tmp_test_kc);
+    $self->parse_muw($tmp_test_kc, $muwmodel);
+    $self->merge_mst_result($tmp_test_kc, $save_dir);
 
     unlink $tmp_test_kc if !$self->comainu->{debug} && -f $tmp_test_kc;
 }
 
 # 中単位解析(MST)用のデータを作成
-sub _create_mstin {
+sub create_mstin {
     my ($self, $test_kc) = @_;
     print STDERR "# CREATE MSTIN\n";
 
@@ -75,7 +75,7 @@ sub _create_mstin {
 }
 
 # mstparserを利用して中単位解析
-sub _parse_muw {
+sub parse_muw {
     my ($self, $test_kc, $muwmodel) = @_;
     print STDERR "# PARSE MUW\n";
 
@@ -111,7 +111,7 @@ sub _parse_muw {
     return 0;
 }
 
-sub _merge_mst_result {
+sub merge_mst_result {
     my ($self, $test_kc, $save_dir) = @_;
     print STDERR "# MERGE RESULT\n";
     my $ret = 0;

@@ -37,14 +37,14 @@ sub run {
     $model_dir = dirname($train_kc) if $train_kc && !$model_dir;
     $self->before_analyze(scalar @_, $model_dir);
 
-    $self->_create_mid_traindata($train_kc, $model_dir);
-    $self->_train_midmodel($train_kc, $model_dir);
+    $self->create_mid_traindata($train_kc, $model_dir);
+    $self->train_midmodel($train_kc, $model_dir);
 
     return 0;
 }
 
 ## 中単位解析モデル学習用データの作成
-sub _create_mid_traindata {
+sub create_mid_traindata {
     my ($self, $train_kc, $model_dir) = @_;
     print STDERR "# CREATE MUW TRAINDATA\n";
 
@@ -60,7 +60,7 @@ sub _create_mid_traindata {
 }
 
 ## 中単位解析モデルの学習
-sub _train_midmodel {
+sub train_midmodel {
     my ($self, $train_kc, $model_dir) = @_;
     print STDERR "# TRAIN MUW MODEL\n";
 

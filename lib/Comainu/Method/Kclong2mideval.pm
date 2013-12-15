@@ -44,10 +44,10 @@ sub run {
 
 sub evaluate {
     my ($self, $correct_kc, $result_kc_mout, $save_dir) = @_;
-    $self->_compare($correct_kc, $result_kc_mout, $save_dir);
+    $self->compare($correct_kc, $result_kc_mout, $save_dir);
 }
 
-sub _compare {
+sub compare {
     my ($self, $kc_file, $mout_file, $save_dir) = @_;
     print STDERR "_compare\n";
     my $res = "";

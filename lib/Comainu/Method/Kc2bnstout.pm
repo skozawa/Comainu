@@ -49,15 +49,15 @@ sub analyze {
 
     my $tmp_test_kc = $self->comainu->{"comainu-temp"} . "/" . basename($test_kc);
     $self->comainu->format_inputdata($test_kc, $tmp_test_kc, "input-kc", "kc");
-    $self->_format_bnstdata($tmp_test_kc);
-    $self->_chunk_bnst($tmp_test_kc, $bnstmodel, $save_dir);
+    $self->format_bnstdata($tmp_test_kc);
+    $self->chunk_bnst($tmp_test_kc, $bnstmodel, $save_dir);
 
     unlink $tmp_test_kc if !$self->comainu->{debug} && -f $tmp_test_kc;
 }
 
 
 # 文節解析用の形式に変換
-sub _format_bnstdata {
+sub format_bnstdata {
     my ($self, $tmp_test_kc) = @_;
     print STDERR "# FORMAT FOR BNSTDATA\n";
 
@@ -88,7 +88,7 @@ sub _format_bnstdata {
 }
 
 # yamchaを利用して文節境界解析
-sub _chunk_bnst {
+sub chunk_bnst {
     my ($self, $tmp_test_kc, $bnstmodel, $save_dir) = @_;
     print STDERR "# CHUNK BNST\n";
     my $yamcha_opt = "";
