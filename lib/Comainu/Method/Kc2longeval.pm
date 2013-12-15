@@ -90,7 +90,7 @@ sub compare {
             output_type      => 'kc',
             data_format_file => $self->comainu->{data_format},
         });
-        $buff = $self->comainu->short2long($buff);
+        $buff = $self->short2long($buff);
         write_to_file($tmp1_file, $buff);
         undef $buff;
     }
@@ -104,7 +104,7 @@ sub compare {
     my $tmp2_file = $self->comainu->{"comainu-temp"} . "/" .
         basename($lout_file, ".lout") . ".svmout_create.long";
     my $buff = read_from_file($lout_file);
-    $buff = $self->comainu->short2long($buff);
+    $buff = $self->short2long($buff);
     write_to_file($tmp2_file, $buff);
     undef $buff;
 
@@ -117,6 +117,29 @@ sub compare {
 
     return $res;
 }
+
+sub short2long {
+    my ($self, $data) = @_;
+    my $res = "";
+
+    foreach ( split(/\r?\n/, $data) ) {
+    	next if /^\*B/ || /^EOS/;
+
+        my @elem = split(/[ \t]/);
+        if ($elem[0] =~ /^[BI]/) { # remove B,Ba,I,Ia field *.lout
+            shift(@elem);
+        }
+        $elem[16] = "*" if($elem[16] eq "");
+        $elem[17] = "*" if($elem[17] eq "");
+        if ($elem[13] ne "" && $elem[13] ne "*") {
+            $res .= join(" ",@elem[18,16,17,13..15])."\n";
+        }
+    }
+    undef $data;
+
+    return $res;
+}
+
 
 
 1;

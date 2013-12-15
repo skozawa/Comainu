@@ -64,7 +64,7 @@ sub compare {
             return $res;
         }
         my $buff = read_from_file($kc_file);
-        $buff = $self->comainu->short2bnst($buff);
+        $buff = $self->short2bnst($buff);
         write_to_file($tmp1_file, $buff);
         undef $buff;
     }
@@ -78,7 +78,7 @@ sub compare {
     my $tmp2_file = $self->comainu->{"comainu-temp"} . "/" .
         basename($bout_file, ".bout") . ".svmout_create.bnst";
     my $buff = read_from_file($bout_file);
-    $buff = $self->comainu->short2bnst($buff);
+    $buff = $self->short2bnst($buff);
     write_to_file($tmp2_file, $buff);
     undef $buff;
 
@@ -88,6 +88,31 @@ sub compare {
     $res = $self->comainu->eval_long($tmp1_file, $tmp2_file, 1);
     write_to_file($output_file, $res);
     print $res;
+
+    return $res;
+}
+
+sub short2bnst {
+    my ($self, $data) = @_;
+    my $res = "";
+
+    my $BOB = "B";
+    foreach ( split(/\r?\n/, $data) ) {
+        my @morph = split(/[ \t]/);
+        if ( $morph[0] =~ /^\*B|^EOS/ ) {
+            $BOB = "B";
+            next;
+        } elsif ( $morph[0] eq "B" || $morph[0] eq "I" ) {
+            $BOB = shift(@morph);
+        }
+        if ( $BOB eq "B" ) {
+            $BOB = "I";
+            $res .= "\n" if $res ne "";
+        }
+        $res .= $morph[0];
+    }
+
+    undef $data;
 
     return $res;
 }

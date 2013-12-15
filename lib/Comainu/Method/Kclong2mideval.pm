@@ -64,7 +64,7 @@ sub compare {
             return $res;
         }
         my $buff = read_from_file($kc_file);
-        $buff = $self->comainu->short2middle($buff);
+        $buff = $self->short2middle($buff);
         write_to_file($tmp1_file, $buff);
         undef $buff;
     }
@@ -77,7 +77,7 @@ sub compare {
     my $tmp2_file = $self->comainu->{"comainu-temp"} . "/" .
         basename($mout_file, ".mout") . ".svmout_create.mid";
     my $buff = read_from_file($mout_file);
-    $buff = $self->comainu->short2middle($buff);
+    $buff = $self->short2middle($buff);
     write_to_file($tmp2_file, $buff);
     undef $buff;
 
@@ -87,6 +87,31 @@ sub compare {
     $res = $self->comainu->eval_long($tmp1_file, $tmp2_file, 1);
     write_to_file($output_file, $res);
     print $res;
+
+    return $res;
+}
+
+sub short2middle {
+    my ($self, $data) = @_;
+    my $res = "";
+
+    my @muws;
+    my $muw_id = -1;
+    foreach my $line ( split(/\r?\n/,$data) ) {
+        my $mrph = [split(/[ \t]/, $line)];
+        next if $$mrph[0] =~ /^\*B|^EOS/;
+
+        $muw_id++ if $$mrph[21] ne "" && $$mrph[21] ne "*";
+        push @{$muws[$muw_id]},$mrph;
+    }
+    foreach my $muw (@muws) {
+        if ( scalar(@$muw) > 0 ) {
+            my $first = $$muw[0];
+            $res .= $$first[21]."\n";
+        }
+    }
+
+    undef $data;
 
     return $res;
 }
