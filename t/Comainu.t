@@ -19,10 +19,6 @@ sub _use_ok : Test(startup => 1) {
 # sub plain2mecab_file : Tests {};
 # sub mecab2kc_file : Tests {};
 
-# sub METHOD_kclong2mideval : Tests {};
-# sub kclong2mideval_internal : Tests {};
-# sub compare_mid : Tests {};
-
 # sub eval_long : Tests {};
 # sub diff_perl : Tests {};
 
