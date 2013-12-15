@@ -27,11 +27,24 @@ sub before_analyze {
     my ($self, $args) = @_;
     $self->check_args_num($args->{args_num});
     mkdir $args->{dir} if $args->{dir} && !-d $args->{dir};
-    $self->comainu->check_luwmodel($args->{luwmodel}) if $args->{luwmodel};
+    $self->check_luwmodel($args->{luwmodel}) if $args->{luwmodel};
     foreach ( qw(bnstmodel muwmodel) ) {
         check_file($args->{$_}) if $args->{$_};
     }
 }
+
+sub check_luwmodel {
+   my ($self, $luwmodel) = @_;
+
+   if ( $self->comainu->{luwmodel} eq "SVM" || $self->comainu->{luwmodel} eq "CRF" ) {
+       check_file($luwmodel);
+   } else {
+       printf(STDERR "ERROR: '%s' not found model name.\n",
+              $self->comainu->{luwmodel});
+       die;
+   }
+}
+
 
 sub analyze_files {
     my $self = shift;

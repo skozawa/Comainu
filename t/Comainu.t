@@ -461,8 +461,6 @@ sub merge_kc_with_bout : Test(1) {
     is $gold_buff, $buff;
 };
 
-# sub check_luwmodel : Tests {};
-
 # sub add_column : Tests {};
 # sub poscreate : Tests {};
 # sub pp_ctype : Tests {};

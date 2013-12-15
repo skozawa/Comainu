@@ -1187,25 +1187,6 @@ sub merge_kc_with_bout {
 
 
 ############################################################
-# Tool関連
-############################################################
-sub check_luwmodel {
-   my ($self, $luwmodel) = @_;
-
-   if ( $self->{luwmodel} eq "SVM" || $self->{luwmodel} eq "CRF" ) {
-       unless ( -f $luwmodel ) {
-           printf(STDERR "ERROR: '%s' not found or not a file.\n",
-                  $luwmodel);
-           die;
-       }
-   } else {
-       printf(STDERR "ERROR: '%s' not found model name.\n",
-              $self->{luwmodel});
-       die;
-   }
-}
-
-############################################################
 # 使ってない関数
 ############################################################
 # 文節情報に基づいたカラムを追加して出力する
