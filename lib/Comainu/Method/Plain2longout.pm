@@ -4,7 +4,7 @@ use strict;
 use warnings;
 use utf8;
 use parent 'Comainu::Method';
-use File::Basename qw(basename fileparse);
+use File::Basename qw(basename);
 use Config;
 
 use Comainu::Method::Kc2longout;

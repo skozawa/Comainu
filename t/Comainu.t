@@ -16,8 +16,6 @@ sub _use_ok : Test(startup => 1) {
     use_ok 'Comainu';
 };
 
-# sub METHOD_plain2bnstout : Tests {};
-# sub plain2bnstout_internal : Tests {};
 # sub METHOD_plain2longbnstout : Tests {};
 # sub plain2longbnstout_internal : Tests {};
 # sub METHOD_plain2midout : Tests {};

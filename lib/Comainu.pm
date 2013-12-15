@@ -89,65 +89,6 @@ sub new {
 }
 
 
-# 平文からの文節境界解析
-sub USAGE_plain2bnstout {
-    my $self = shift;
-    printf("COMAINU-METHOD: plain2bnstout\n");
-    printf("  Usage: %s plain2bnstout <test-text> <bnst-model-file> <out-dir>\n", $0);
-    printf("    This command analyzes <test-text> with MeCab and <bnst-model-file>.\n");
-    printf("    The result is put into <out-dir>.\n");
-    printf("\n");
-    printf("  ex.)\n");
-    printf("  \$ perl ./script/comainu.pl plain2bnstout sample/plain/sample.txt train/bnst.model out\n");
-    printf("    -> out/sample.txt.bout\n");
-    printf("\n");
-}
-
-sub METHOD_plain2bnstout {
-    my ($self, $test_file, $bnstmodel, $save_dir) = @_;
-
-    $self->check_args(scalar @_ == 4);
-    $self->check_file($bnstmodel);
-    mkdir $save_dir unless -d $save_dir;
-
-    if ( -f $test_file ) {
-        $self->plain2bnstout_internal($test_file, $bnstmodel, $save_dir);
-    } elsif ( -d $test_file ) {
-        opendir(my $dh, $test_file);
-        while ( my $test_file2 = readdir($dh) ) {
-            if ( $test_file2 =~ /.txt$/ ) {
-                $self->plain2bnstout_internal($test_file2, $bnstmodel, $save_dir);
-            }
-        }
-        closedir($dh);
-    }
-
-    return 0;
-}
-
-sub plain2bnstout_internal {
-    my ($self, $test_file, $bnstmodel, $save_dir) = @_;
-
-    my $tmp_dir = $self->{"comainu-temp"};
-    my $basename = File::Basename::basename($test_file);
-    my $mecab_file   = $tmp_dir . "/" . $basename . ".mecab";
-    my $kc_file      = $tmp_dir . "/" . $basename . ".KC";
-    my $kc_bout_file = $tmp_dir . "/" . $basename . ".KC.bout";
-    my $bout_file    = $save_dir . "/" . $basename . ".bout";
-
-    $self->plain2mecab_file($test_file, $mecab_file);
-    $self->mecab2kc_file($mecab_file, $kc_file);
-    $self->METHOD_kc2bnstout($kc_file, $bnstmodel, $tmp_dir);
-    $self->merge_mecab_with_kc_bout_file($mecab_file, $kc_bout_file, $bout_file);
-
-    unless ( $self->{debug} ) {
-        do { unlink $_ if -f $_; } for ($mecab_file, $kc_bout_file);
-    }
-
-    return 0;
-}
-
-
 # 平文からの長単位・文節解析
 sub USAGE_plain2longbnstout {
     my $self = shift;
