@@ -3,7 +3,7 @@ package Comainu::Method;
 use strict;
 use warnings;
 
-use Comainu::Util qw(get_analyze_files);
+use Comainu::Util qw(get_dir_files);
 
 sub args_num {
     my $self = shift;
@@ -35,8 +35,20 @@ sub analyze_files {
     my @args = @_;
 
     my $ext = ref($self) =~ /Comainu::Method::Kc/ ? 'KC' : 'txt';
-    foreach my $file ( @{get_analyze_files($test_file, $ext)} ) {
+    foreach my $file ( @{get_dir_files($test_file, $ext)} ) {
         $self->analyze($file, @args);
+    }
+}
+
+sub evaluate_files {
+    my $self = shift;
+    my $correct_file = shift;
+    my $result_file = shift;
+    my @args = @_;
+
+    my $ext = ref($self) =~ /Comainu::Method::Kc/ ? 'KC' : 'txt';
+    foreach my $file ( @{get_dir_files($result_file, $ext)} ) {
+        $self->evaluate($correct_file, $file, @args);
     }
 }
 

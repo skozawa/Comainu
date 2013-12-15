@@ -10,7 +10,7 @@ use Exporter 'import';
 our @EXPORT_OK = qw(
     read_from_file
     write_to_file
-    get_analyze_files
+    get_dir_files
 );
 
 sub read_from_file {
@@ -36,7 +36,7 @@ sub write_to_file {
     undef $data;
 }
 
-sub get_analyze_files {
+sub get_dir_files {
     my ($target, $ext) = @_;
     if ( -f $target ) {
         return [ $target ];
