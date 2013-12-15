@@ -89,69 +89,6 @@ sub new {
 }
 
 
-# 平文からの中単位解析
-sub USAGE_plain2midout {
-    my $self = shift;
-    printf("COMAINU-METHOD: plain2midout\n");
-    printf("  Usage: %s plain2midout <test-text> <long-model-file> <mid-model-file> <out-dir>\n", $0);
-    printf("    This command analyzes <test-text> with Mecab and <long-model-file> and <mid-model-file>.\n");
-    printf("    The result is put into <out-dir>.\n");
-    printf("\n");
-    printf("  ex.)\n");
-    printf("  \$ perl ./script/comainu.pl plain2midout sample/plain/sample.txt train/CRF/train.KC.model train/MST/train.KC.model out\n");
-    printf("    -> out/sample.txt.mout\n");
-    printf("\n");
-}
-
-sub METHOD_plain2midout {
-    my ($self, $test_file, $luwmodel, $muwmodel, $save_dir) = @_;
-
-    $self->check_args(scalar @_ == 5);
-    $self->check_luwmodel($luwmodel);
-    $self->check_file($muwmodel);
-    mkdir $save_dir unless -d $save_dir;
-
-    if ( -f $test_file ) {
-        $self->plain2midout_internal($test_file, $luwmodel, $muwmodel, $save_dir);
-    } elsif ( -d $test_file ) {
-        opendir(my $dh, $test_file);
-        while ( my $test_file2 = readdir($dh) ) {
-            if ( $test_file2 =~ /.txt$/ ) {
-                $self->plain2midout_internal($test_file2, $luwmodel, $muwmodel, $save_dir);
-            }
-        }
-        closedir($dh);
-    }
-
-    return 0;
-}
-
-sub plain2midout_internal {
-    my ($self, $test_file, $luwmodel, $muwmodel, $save_dir) = @_;
-
-    my $tmp_dir = $self->{"comainu-temp"};
-    my $basename = File::Basename::basename($test_file);
-    my $mecab_file   = $tmp_dir . "/" . $basename . ".mecab";
-    my $kc_file      = $tmp_dir . "/" . $basename . ".KC";
-    my $kc_lout_file = $tmp_dir . "/" . $basename . ".KC.lout";
-    my $kc_mout_file = $tmp_dir . "/" . $basename . ".KC.mout";
-    my $mout_file   = $save_dir . "/" . $basename . ".mout";
-
-    $self->plain2mecab_file($test_file, $mecab_file);
-    $self->mecab2kc_file($mecab_file, $kc_file);
-    $self->METHOD_kc2longout($kc_file, $luwmodel, $tmp_dir);
-    $self->lout2kc4mid_file($kc_lout_file, $kc_file);
-    $self->METHOD_kclong2midout($kc_file, $muwmodel, $tmp_dir);
-    $self->merge_mecab_with_kc_mout_file($mecab_file, $kc_mout_file, $mout_file);
-
-    unless ( $self->{debug} ) {
-        do { unlink $_ if -f $_; } for ($mecab_file, $kc_lout_file, $kc_mout_file);
-    }
-
-    return 0;
-}
-
-
 # 平文からの中単位・文節解析
 sub USAGE_plain2midbnstout {
     my $self = shift;
