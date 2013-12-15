@@ -10,6 +10,7 @@ use Exporter 'import';
 our @EXPORT_OK = qw(
     read_from_file
     write_to_file
+    check_file
     get_dir_files
 );
 
@@ -34,6 +35,14 @@ sub write_to_file {
     print $fh $data;
     close($fh);
     undef $data;
+}
+
+sub check_file {
+    my $file = shift;
+    unless ( -f $file ) {
+        printf(STDERR "Error: '%s' not Found.\n", $file);
+        die;
+    }
 }
 
 sub get_dir_files {

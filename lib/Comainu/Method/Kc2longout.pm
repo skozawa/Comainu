@@ -7,7 +7,7 @@ use parent 'Comainu::Method';
 use File::Basename qw(basename fileparse);
 use Config;
 
-use Comainu::Util qw(read_from_file write_to_file);
+use Comainu::Util qw(read_from_file write_to_file check_file);
 use AddFeature;
 use BIProcessor;
 
@@ -38,8 +38,9 @@ sub usage {
 sub run {
     my ($self, $test_kc, $luwmodel, $save_dir) = @_;
 
-    $self->before_analyze(scalar @_, $save_dir);
-    $self->comainu->check_luwmodel($luwmodel);
+    $self->before_analyze({
+        dir => $save_dir, luwmodel => $luwmodel, args_num => scalar @_,
+    });
 
     $self->analyze($test_kc, $luwmodel, $save_dir);
 
@@ -128,7 +129,7 @@ sub chunk_luw {
         basename($tmp_test_kc) . ".svmout";
     # すでに同じ名前の中間ファイルがあれば削除
     unlink($output_file) if -s $output_file;
-    $self->comainu->check_file($input_file);
+    check_file($input_file);
 
     my $buff = read_from_file($input_file);
     $buff =~ s/^EOS.*?//mg if $self->comainu->{luwmodel} eq'CRF';
@@ -167,7 +168,7 @@ sub merge_chunk_result {
     my $svmout_file = $self->comainu->{"comainu-temp"} . "/" . $basename . ".svmout";
     my $lout_file = $save_dir . "/" . $basename . ".lout";
 
-    $self->comainu->check_file($svmout_file);
+    check_file($svmout_file);
 
     my $buff = $self->comainu->merge_kc_with_svmout($tmp_test_kc, $svmout_file);
     write_to_file($lout_file, $buff);

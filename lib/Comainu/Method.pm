@@ -3,7 +3,7 @@ package Comainu::Method;
 use strict;
 use warnings;
 
-use Comainu::Util qw(get_dir_files);
+use Comainu::Util qw(get_dir_files check_file);
 
 sub args_num {
     my $self = shift;
@@ -24,9 +24,13 @@ sub check_args_num {
 }
 
 sub before_analyze {
-    my ($self, $num, $save_dir) = @_;
-    $self->check_args_num($num);
-    mkdir $save_dir unless -d $save_dir;
+    my ($self, $args) = @_;
+    $self->check_args_num($args->{args_num});
+    mkdir $args->{dir} if $args->{dir} && !-d $args->{dir};
+    $self->comainu->check_luwmodel($args->{luwmodel}) if $args->{luwmodel};
+    foreach ( qw(bnstmodel muwmodel) ) {
+        check_file($args->{$_}) if $args->{$_};
+    }
 }
 
 sub analyze_files {

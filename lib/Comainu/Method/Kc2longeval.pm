@@ -52,7 +52,7 @@ sub usage {
 sub run {
     my ($self, $correct_kc, $result_kc_lout, $save_dir) = @_;
 
-    $self->before_analyze(scalar @_, $save_dir);
+    $self->before_analyze({ dir => $save_dir, args_num => scalar @_ });
 
     $self->evaluate_files($correct_kc, $result_kc_lout, $save_dir);
 

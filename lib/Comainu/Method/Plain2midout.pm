@@ -36,9 +36,12 @@ sub usage {
 sub run {
     my ($self, $test_file, $luwmodel, $muwmodel, $save_dir) = @_;
 
-    $self->before_analyze(scalar @_, $save_dir);
-    $self->comainu->check_luwmodel($luwmodel);
-    $self->comainu->check_file($muwmodel);
+    $self->before_analyze({
+        dir       => $save_dir,
+        luwmodel  => $luwmodel,
+        muwmodel  => $muwmodel,
+        args_num  => scalar @_
+    });
 
     $self->analyze($test_file, $luwmodel, $muwmodel, $save_dir);
 

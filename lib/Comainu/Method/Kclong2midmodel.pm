@@ -35,7 +35,7 @@ sub run {
     my ($self, $train_kc, $model_dir) = @_;
 
     $model_dir = dirname($train_kc) if $train_kc && !$model_dir;
-    $self->before_analyze(scalar @_, $model_dir);
+    $self->before_analyze({ dir => $model_dir, args_num => scalar @_ });
 
     $self->create_mid_traindata($train_kc, $model_dir);
     $self->train_midmodel($train_kc, $model_dir);

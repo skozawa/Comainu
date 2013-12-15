@@ -41,7 +41,7 @@ sub run {
     my ($self, $train_kc, $model_dir) = @_;
 
     $model_dir = dirname($train_kc) if $train_kc && !$model_dir;
-    $self->before_analyze(scalar @_, $model_dir);
+    $self->before_analyze({ dir => $model_dir, args_num => scalar @_ });
 
     my $tmp_train_kc = $self->comainu->{"comainu-temp"} . "/" . basename($train_kc);
     $self->comainu->format_inputdata($train_kc, $tmp_train_kc, "input-kc", "kc");

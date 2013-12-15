@@ -36,9 +36,12 @@ sub usage {
 sub run {
     my ($self, $test_bccwj, $luwmodel, $bnstmodel, $save_dir) = @_;
 
-    $self->before_analyze(scalar @_, $save_dir);
-    $self->comainu->check_luwmodel($luwmodel);
-    $self->comainu->check_file($bnstmodel);
+    $self->before_analyze({
+        dir       => $save_dir,
+        bnstmodel => $bnstmodel,
+        luwmodel  => $luwmodel,
+        args_num  => scalar @_
+    });
 
     $self->analyze_files($test_bccwj, $luwmodel, $bnstmodel, $save_dir);
 

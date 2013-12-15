@@ -9,7 +9,7 @@ use parent 'Comainu::Method';
 use File::Basename qw(basename);
 use Config;
 
-use Comainu::Util qw(read_from_file write_to_file);
+use Comainu::Util qw(read_from_file write_to_file check_file);
 
 sub new {
     my ($class, %args) = @_;
@@ -36,8 +36,9 @@ sub usage {
 sub run {
     my ($self, $test_kc, $bnstmodel, $save_dir) = @_;
 
-    $self->before_analyze(scalar @_, $save_dir);
-    $self->comainu->check_file($bnstmodel);
+    $self->before_analyze({
+        dir => $save_dir, bnstmodel => $bnstmodel, args_num => scalar @_
+    });
 
     $self->analyze_files($test_kc, $bnstmodel, $save_dir);
 
@@ -111,7 +112,7 @@ sub chunk_bnst {
     # すでに同じ名前の中間ファイルがあれば削除
     unlink $output_file if -s $output_file;
 
-    $self->comainu->check_file($svmdata_file);
+    check_file($svmdata_file);
 
     my $buff = read_from_file($svmdata_file);
     # YAMCHA用に明示的に最終行に改行を付けさせる
