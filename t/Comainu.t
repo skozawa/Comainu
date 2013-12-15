@@ -19,10 +19,6 @@ sub _use_ok : Test(startup => 1) {
 # sub plain2mecab_file : Tests {};
 # sub mecab2kc_file : Tests {};
 
-# sub METHOD_kc2bnstmodel : Tests {};
-# sub train_bnstmodel : Tests {};
-# sub add_bnst_label : Tests {};
-
 # sub METHOD_kclong2midmodel : Tests {};
 # sub create_mid_traindata : Tests {};
 # sub train_midmodel : Tests {};
