@@ -10,6 +10,7 @@ use File::Basename qw(basename);
 use Config;
 
 use Comainu::Util qw(read_from_file write_to_file check_file);
+use Comainu::Format;
 
 sub new {
     my ($class, %args) = @_;
@@ -49,7 +50,13 @@ sub analyze {
     my ($self, $test_kc, $bnstmodel, $save_dir) = @_;
 
     my $tmp_test_kc = $self->comainu->{"comainu-temp"} . "/" . basename($test_kc);
-    $self->comainu->format_inputdata($test_kc, $tmp_test_kc, "input-kc", "kc");
+    Comainu::Format->format_inputdata({
+        input_file       => $test_kc,
+        input_type       => 'input-kc',
+        output_file      => $tmp_test_kc,
+        output_type      => 'kc',
+        data_format_file => $self->comainu->{data_format},
+    });
     $self->format_bnstdata($tmp_test_kc);
     $self->chunk_bnst($tmp_test_kc, $bnstmodel, $save_dir);
 

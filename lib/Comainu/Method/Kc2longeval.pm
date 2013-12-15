@@ -8,6 +8,7 @@ use File::Basename qw(basename dirname);
 use Config;
 
 use Comainu::Util qw(read_from_file write_to_file);
+use Comainu::Format;
 
 sub new {
     my ($class, %args) = @_;
@@ -84,7 +85,11 @@ sub compare {
             return $res;
         }
         my $buff = read_from_file($kc_file);
-        $buff = $self->comainu->trans_dataformat($buff, "input-kc", "kc");
+        Comainu::Format->trans_dataformat($buff, {
+            input_type       => 'input-kc',
+            output_type      => 'kc',
+            data_format_file => $self->comainu->{data_format},
+        });
         $buff = $self->comainu->short2long($buff);
         write_to_file($tmp1_file, $buff);
         undef $buff;

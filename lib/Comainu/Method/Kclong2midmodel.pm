@@ -8,6 +8,7 @@ use File::Basename qw(basename dirname);
 use Config;
 
 use Comainu::Util qw(read_from_file write_to_file);
+use Comainu::Format;
 
 sub new {
     my ($class, %args) = @_;
@@ -50,7 +51,11 @@ sub create_mid_traindata {
 
     my $basename = basename($train_kc);
     my $buff = read_from_file($train_kc);
-    $buff = $self->comainu->trans_dataformat($buff, "input-kc", "kc_mid");
+    Comainu::Format->trans_dataformat($buff, {
+        input_type       => 'input-kc',
+        output_type      => 'kc_mid',
+        data_format_file => $self->comainu->{data_format},
+    });
     $buff = $self->comainu->kc2mstin($buff);
 
     write_to_file($model_dir . "/" . $basename . ".mstin", $buff);

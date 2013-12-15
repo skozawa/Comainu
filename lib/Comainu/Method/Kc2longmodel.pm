@@ -9,6 +9,7 @@ use Encode qw(decode_utf8);
 use Config;
 
 use Comainu::Util qw(read_from_file write_to_file);
+use Comainu::Format;
 use Comainu::Dictionary;
 use Comainu::ExternalTool;
 use AddFeature;
@@ -44,7 +45,13 @@ sub run {
     $self->before_analyze({ dir => $model_dir, args_num => scalar @_ });
 
     my $tmp_train_kc = $self->comainu->{"comainu-temp"} . "/" . basename($train_kc);
-    $self->comainu->format_inputdata($train_kc, $tmp_train_kc, "input-kc", "kc");
+    Comainu::Format->format_inputdata({
+        input_file       => $train_kc,
+        input_type       => 'input-kc',
+        output_file      => $tmp_train_kc,
+        output_type      => 'kc',
+        data_format_file => $self->comainu->{data_format},
+    });
 
     $self->make_luw_traindata($tmp_train_kc, $model_dir);
     $self->add_luw_label($tmp_train_kc, $model_dir);

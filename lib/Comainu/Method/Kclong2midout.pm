@@ -8,6 +8,7 @@ use File::Basename qw(basename);
 use Config;
 
 use Comainu::Util qw(read_from_file write_to_file);
+use Comainu::Format;
 
 sub new {
     my ($class, %args) = @_;
@@ -38,7 +39,7 @@ sub run {
     my ($self, $test_kc, $muwmodel, $save_dir) = @_;
 
     $self->before_analyze({
-        dir => $save_dir, luwmodel => $luwmodel, args_num => scalar @_
+        dir => $save_dir, muwmodel => $muwmodel, args_num => scalar @_
     });
 
     $self->analyze_files($test_kc, $muwmodel, $save_dir);
@@ -50,7 +51,13 @@ sub analyze {
     my ($self, $test_kc, $muwmodel, $save_dir) = @_;
 
     my $tmp_test_kc = $self->comainu->{"comainu-temp"} . "/" . basename($test_kc);
-    $self->comainu->format_inputdata($test_kc, $tmp_test_kc, 'input-kc', 'kc');
+    Comainu::Format->format_inputdata({
+        input_file       => $test_kc,
+        input_type       => 'input-kc',
+        output_file      => $tmp_test_kc,
+        output_type      => 'kc',
+        data_format_file => $self->comainu->{data_format},
+    });
     $self->create_mstin($tmp_test_kc);
     $self->parse_muw($tmp_test_kc, $muwmodel);
     $self->merge_mst_result($tmp_test_kc, $save_dir);

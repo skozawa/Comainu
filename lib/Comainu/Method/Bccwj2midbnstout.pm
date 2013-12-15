@@ -7,6 +7,7 @@ use parent 'Comainu::Method';
 use File::Basename qw(basename);
 use Config;
 
+use Comainu::Format;
 use Comainu::Method::Kc2longout;
 use Comainu::Method::Kc2bnstout;
 use Comainu::Method::Kclong2midout;
@@ -56,7 +57,13 @@ sub analyze {
     my $tmp_dir = $self->comainu->{"comainu-temp"};
     my $basename = basename($test_bccwj);
     my $tmp_test_bccwj = $tmp_dir . "/" . $basename;
-    $self->comainu->format_inputdata($test_bccwj, $tmp_test_bccwj, "input-bccwj", "bccwj");
+    Comainu::Format->format_inputdata({
+        input_file       => $test_bccwj,
+        input_type       => 'input-bccwj',
+        output_file      => $tmp_test_bccwj,
+        output_type      => 'bccwj',
+        data_format_file => $self->comainu->{data_format},
+    });
 
     my $kc_file          = $tmp_dir  . "/" . $basename . ".KC";
     my $kc_lout_file     = $tmp_dir  . "/" . $basename . ".KC.lout";

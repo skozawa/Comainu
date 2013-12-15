@@ -8,6 +8,7 @@ use File::Basename qw(basename dirname);
 use Config;
 
 use Comainu::Util qw(read_from_file write_to_file);
+use Comainu::Format;
 use Comainu::ExternalTool;
 
 sub new {
@@ -50,7 +51,11 @@ sub train_bnstmodel {
     my $basename = basename($train_kc);
     my $svmin = $model_dir . "/" . $basename . ".svmin";
     my $svmin_buff = read_from_file($train_kc);
-    $svmin_buff = $self->comainu->trans_dataformat($svmin_buff, "input-kc", "kc");
+    Comainu::Format->trans_dataformat($svmin_buff, {
+        input_type       => 'input-kc',
+        output_type      => 'kc',
+        data_format_file => $self->comainu->{data_format},
+    });
     $svmin_buff = $self->comainu->kc2bnstsvmdata($svmin_buff, 1);
     $svmin_buff = $self->add_bnst_label($svmin_buff);
     $svmin_buff =~ s/^EOS.*?\n//mg;
