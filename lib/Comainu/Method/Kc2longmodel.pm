@@ -10,6 +10,7 @@ use Config;
 
 use Comainu::Util qw(read_from_file write_to_file);
 use Comainu::Dictionary;
+use Comainu::ExternalTool;
 use AddFeature;
 use BIProcessor;
 
@@ -134,7 +135,9 @@ sub train_luwmodel_svm {
     my $basename = basename($train_kc);
     my $svmin = $model_dir . "/" . $basename . ".svmin";
 
-    my $makefile = $self->comainu->create_yamcha_makefile($model_dir, $basename);
+    my $makefile = Comainu::ExternalTool->create_yamcha_makefile(
+        $self->comainu, $model_dir, $basename
+    );
     my $perl = $self->comainu->{perl};
     my $com = sprintf("make -f \"%s\" PERL=\"%s\" CORPUS=\"%s\" MODEL=\"%s\" train",
                       $makefile, $perl, $svmin, $model_dir . "/" . $basename);
@@ -163,7 +166,7 @@ sub train_luwmodel_crf {
     my $feature_num = scalar(split(/ /,$line))-2;
     close($fh_svmin);
 
-    $self->comainu->create_template($crf_template, $feature_num);
+    Comainu::ExternalTool->create_crf_template($crf_template, $feature_num);
 
     my $crf_model = $model_dir . "/" . $basename .".model";
     my $com = "\"$crf_learn\" \"$crf_template\" \"$svmin\" \"$crf_model\"";
@@ -179,7 +182,9 @@ sub train_bi_model {
     print STDERR "# TRAIN BI MODEL\n";
 
     my $basename = basename($train_kc);
-    my $makefile = $self->comainu->create_yamcha_makefile($model_dir, $basename);
+    my $makefile = Comainu::ExternalTool->create_yamcha_makefile(
+        $self->comainu, $model_dir, $basename
+    );
     my $perl = $self->comainu->{perl};
 
     my $pos_dat   = $model_dir . "/pos/" . $basename . ".BI_pos.dat";

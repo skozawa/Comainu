@@ -8,6 +8,7 @@ use File::Basename qw(basename dirname);
 use Config;
 
 use Comainu::Util qw(read_from_file write_to_file);
+use Comainu::ExternalTool;
 
 sub new {
     my ($class, %args) = @_;
@@ -57,7 +58,9 @@ sub train_bnstmodel {
     write_to_file($svmin, $svmin_buff);
     undef $svmin_buff;
 
-    my $makefile = $self->comainu->create_yamcha_makefile($model_dir, $basename);
+    my $makefile = Comainu::ExternalTool->create_yamcha_makefile(
+        $self->comainu, $model_dir, $basename
+    );
     my $perl = $self->comainu->{perl};
     my $com = sprintf("make -f \"%s\" PERL=\"%s\" CORPUS=\"%s\" MODEL=\"%s\" train",
                       $makefile, $perl, $svmin, $model_dir . "/" . $basename);
