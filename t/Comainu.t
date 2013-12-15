@@ -19,10 +19,6 @@ sub _use_ok : Test(startup => 1) {
 # sub plain2mecab_file : Tests {};
 # sub mecab2kc_file : Tests {};
 
-# sub METHOD_kclong2midmodel : Tests {};
-# sub create_mid_traindata : Tests {};
-# sub train_midmodel : Tests {};
-
 # sub METHOD_kc2longeval : Tests {};
 # sub kc2longeval_internal : Tests {};
 # sub compare : Tests {};

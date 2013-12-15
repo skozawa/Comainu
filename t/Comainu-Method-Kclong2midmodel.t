@@ -1,0 +1,27 @@
+package t::Comainu::Method::Kclong2midmodel;
+use strict;
+use warnings;
+use utf8;
+
+use lib 'lib', 't/lib';
+use Test::Comainu;
+
+use parent 'Test::Class';
+use Test::More;
+use Test::Mock::Guard;
+
+use Comainu;
+
+sub _use_ok : Test(startup => 1) {
+    use_ok 'Comainu::Method::Kclong2midmodel';
+}
+
+# sub run : Tests {};
+# sub _create_mid_traindata : Tests {};
+# sub _train_midmodel : Tests {};
+
+sub dummy : Test(1) {
+    ok 1;
+}
+
+__PACKAGE__->runtests;
