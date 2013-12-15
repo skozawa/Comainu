@@ -17,8 +17,6 @@ sub _use_ok : Test(startup => 1) {
 };
 
 
-# sub METHOD_bccwj2midout : Tests {};
-# sub bccwj2midout_internal : Tests {};
 # sub METHOD_bccwj2midbnstout : Tests {};
 # sub bccwj2midbnstout_internal : Tests {};
 # sub METHOD_bccwjlong2midout : Tests {};
