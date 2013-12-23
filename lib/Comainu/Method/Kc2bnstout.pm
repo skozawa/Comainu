@@ -9,7 +9,7 @@ use parent 'Comainu::Method';
 use File::Basename qw(basename);
 use Config;
 
-use Comainu::Util qw(read_from_file write_to_file check_file);
+use Comainu::Util qw(read_from_file write_to_file check_file proc_stdin2stdout);
 use Comainu::Format;
 
 sub new {
@@ -128,7 +128,7 @@ sub chunk_bnst {
     my $yamcha_com = "\"".$YAMCHA."\" ".$yamcha_opt." -m \"".$bnstmodel."\"";
     printf(STDERR "# YAMCHA_COM: %s\n", $yamcha_com) if $self->{debug};
 
-    $buff = $self->comainu->proc_stdin2stdout($yamcha_com, $buff);
+    $buff = proc_stdin2stdout($yamcha_com, $buff, $self->comainu->{"comainu-temp"});
     $buff =~ s/\x0d\x0a/\x0a/sg;
     $buff =~ s/^\r?\n//mg;
     $buff = $self->comainu->move_future_front($buff);

@@ -465,50 +465,6 @@ sub merge_kc_with_bout : Test(1) {
 # sub poscreate : Tests {};
 # sub pp_ctype : Tests {};
 # sub check_args : Tests {};
-# sub check_file : Tests {};
-# sub read_from_file : Tests {};
-# sub write_to_file : Tests {};
-
-sub proc_stdin2stdout : Test(1) {
-    my $comainu = Comainu->new;
-    is $comainu->proc_stdin2stdout('cat', 'test'), 'test';
-};
-
-sub proc_stdin2file : Test(1) {
-    my $outfile = create_tmp_file("");
-    my $comainu = Comainu->new;
-    $comainu->proc_stdin2file('cat', 'test', $outfile);
-
-    open(IN, $outfile);
-    my $out_data = "";
-    while (<IN>) {
-        chomp;
-        $out_data .= $_ . "\n";
-    }
-    close(IN);
-
-    is $out_data, "test\n";
-};
-
-sub proc_file2file : Test(1) {
-    my $infile  = create_tmp_file("test");
-    my $outfile = create_tmp_file("");
-
-    my $comainu = Comainu->new;
-    $comainu->proc_file2file('cat', $infile, $outfile);
-
-    open(IN, $outfile);
-    my $out_data = "";
-    while (<IN>) {
-        chomp;
-        $out_data .= $_ . "\n";
-    }
-    close(IN);
-
-    is $out_data, "test\n";
-};
-
-
 
 
 sub create_tmp_file {

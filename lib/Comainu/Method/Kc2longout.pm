@@ -7,7 +7,7 @@ use parent 'Comainu::Method';
 use File::Basename qw(basename fileparse);
 use Config;
 
-use Comainu::Util qw(read_from_file write_to_file check_file);
+use Comainu::Util qw(read_from_file write_to_file check_file proc_stdin2stdout);
 use Comainu::Format;
 use AddFeature;
 use BIProcessor;
@@ -51,7 +51,7 @@ sub run {
 sub analyze {
     my ($self, $test_kc, $luwmodel, $save_dir) = @_;
 
-    my $tmp_test_kc = $self->{comainu}->{"comainu-temp"} . "/" . basename($test_kc);
+    my $tmp_test_kc = $self->comainu->{"comainu-temp"} . "/" . basename($test_kc);
     Comainu::Format->format_inputdata({
         input_file       => $test_kc,
         input_type       => 'input-kc',
@@ -152,7 +152,7 @@ sub chunk_luw {
     }
     printf(STDERR "# COM: %s\n", $com) if $self->comainu->{debug};
 
-    $buff = $self->comainu->proc_stdin2stdout($com, $buff);
+    $buff = proc_stdin2stdout($com, $buff, $self->comainu->{"comainu-temp"});
     $buff =~ s/\x0d\x0a/\x0a/sg;
     $buff =~ s/^\r?\n//mg;
     $buff = $self->comainu->move_future_front($buff);
@@ -219,7 +219,7 @@ sub post_process {
     });
     undef $lout_data;
 
-    $buff = $self->comainu->create_long_lemma($buff, $comp_file);
+    $buff = $self->create_long_lemma($buff, $comp_file);
 
     write_to_file($lout_file, $buff);
     undef $buff;
@@ -246,6 +246,8 @@ sub create_long_lemma {
         my @items = split(/[ \t]/, $line);
         if ( $items[0] eq "EOS" ) {
             $luw_id = $#luws+1;
+            push @{$luws[$luw_id]}, \@items;
+            next;
         } elsif ( $items[0] =~ /B/ ) {
             $luw_id = $#luws+1;
         } else {

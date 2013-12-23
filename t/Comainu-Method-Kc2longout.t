@@ -55,7 +55,7 @@ sub chunk_luw : Test(1) {
 
     my $svmout_data = "";
     my $g1 = guard_write_to_file('Comainu::Method::Kc2longout', \$svmout_data);
-    my $g2 = mock_guard('Comainu', {
+    my $g2 = mock_guard('Comainu::Method::Kc2longout', {
         proc_stdin2stdout => sub { read_from_file('t/sample/test.KC.svm.output') },
     });
 
