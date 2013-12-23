@@ -8,6 +8,7 @@ use File::Basename qw(basename dirname);
 use Config;
 
 use Comainu::Util qw(read_from_file write_to_file);
+use Comainu::Evaluate;
 
 sub new {
     my ($class, %args) = @_;
@@ -85,7 +86,7 @@ sub compare {
     my $output_file = $save_dir . "/" .
         basename($bout_file, ".bout") . ".eval.bnst";
 
-    $res = $self->comainu->eval_long($tmp1_file, $tmp2_file, 1);
+    $res = Comainu::Evaluate->eval_long($tmp1_file, $tmp2_file, 1);
     write_to_file($output_file, $res);
     print $res;
 

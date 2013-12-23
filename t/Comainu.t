@@ -17,9 +17,6 @@ sub _use_ok : Test(startup => 1) {
 };
 
 
-# sub eval_long : Tests {};
-# sub diff_perl : Tests {};
-
 sub create_mstfeature : Test(1) {
     my $comainu = Comainu->new;
     my $short_terms = [

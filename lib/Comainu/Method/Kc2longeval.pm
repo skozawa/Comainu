@@ -9,6 +9,7 @@ use Config;
 
 use Comainu::Util qw(read_from_file write_to_file);
 use Comainu::Format;
+use Comainu::Evaluate;
 
 sub new {
     my ($class, %args) = @_;
@@ -111,7 +112,7 @@ sub compare {
     my $output_file = $save_dir . "/" .
         basename($lout_file, ".lout").".eval.long";
 
-    $res = $self->comainu->eval_long($tmp1_file, $tmp2_file);
+    $res = Comainu::Evaluate->eval_long($tmp1_file, $tmp2_file);
     write_to_file($output_file, $res);
     print $res;
 

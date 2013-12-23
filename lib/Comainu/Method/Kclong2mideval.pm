@@ -8,6 +8,7 @@ use File::Basename qw(basename dirname);
 use Config;
 
 use Comainu::Util qw(read_from_file write_to_file);
+use Comainu::Evaluate;
 
 sub new {
     my ($class, %args) = @_;
@@ -84,7 +85,7 @@ sub compare {
     my $output_file = $save_dir . "/" .
         basename($mout_file, ".mout").".eval.mid";
 
-    $res = $self->comainu->eval_long($tmp1_file, $tmp2_file, 1);
+    $res = Comainu::Evaluate->eval_long($tmp1_file, $tmp2_file, 1);
     write_to_file($output_file, $res);
     print $res;
 
@@ -101,7 +102,7 @@ sub short2middle {
         my $mrph = [split(/[ \t]/, $line)];
         next if $$mrph[0] =~ /^\*B|^EOS/;
 
-        $muw_id++ if $$mrph[21] ne "" && $$mrph[21] ne "*";
+        $muw_id++ if $$mrph[21] && $$mrph[21] ne "" && $$mrph[21] ne "*";
         push @{$muws[$muw_id]},$mrph;
     }
     foreach my $muw (@muws) {
