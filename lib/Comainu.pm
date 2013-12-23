@@ -7,15 +7,10 @@ use FindBin qw($Bin);
 use utf8;
 use Encode;
 use File::Basename;
-use File::Temp qw(tempfile);
 use Config;
 
 use SUW2LUW;
 use LCSDiff;
-
-use Comainu::Dictionary;
-use AddFeature;
-use BIProcessor;
 
 my $DEFAULT_VALUES = {
     "debug" => 0,
@@ -40,115 +35,12 @@ my $DEFAULT_VALUES = {
     "bnst_process" => "none",
 };
 
-my $KC_MECAB_TABLE_FOR_UNIDIC = {
-    # KC => MECAB
-    "0" => "0",
-    "1" => "0",
-    "2" => "2",
-    "3" => "3",
-    "4" => "1",
-    "5" => "4",
-    "6" => "5",
-    "7" => "6",
-    "8" => "*",
-    "9" => "*",
-    "10" => "*",
-};
-
-my $KC_MECAB_TABLE_FOR_CHAMAME = {
-    # KC => MECAB
-    "0" => "1",
-    "1" => "3",
-    "2" => "4",
-    "3" => "5",
-    "4" => "6",
-    "5" => "7",
-    #"6" => "10",
-    #"7" => "11",
-    #"8" => "12",
-    #"9" => "13",
-    "6" => "9",
-    "7" => "10",
-    "8" => "11",
-    "9" => "12",
-    "10" => "*",
-    "11" => "*",
-    #"12" => "9",
-    "12" => "8",
-};
-
-my $UNIDIC_MECAB_TYPE = "chamame";
-my $KC_MECAB_TABLE = $KC_MECAB_TABLE_FOR_CHAMAME;
-
 sub new {
     my $proto = shift;
     my $class = ref($proto) || $proto;
     my $self = {%$DEFAULT_VALUES, @_};
     bless $self, $class;
     return $self;
-}
-
-
-############################################################
-# 形態素解析
-############################################################
-sub plain2mecab_file {
-    my ($self, $test_file, $mecab_file) = @_;
-
-    my $mecab_dic_dir = $self->{"mecab-dic-dir"};
-    my $mecab_dir = $self->{"mecab-dir"};
-    my $mecabdic = $mecab_dic_dir . '/unidic';
-    $mecabdic = $mecab_dic_dir."/unidic-mecab" unless -d $mecabdic;
-    my $com = sprintf("\"%s/mecab\" -O%s -d\"%s\" -r\"%s\"",
-                      $mecab_dir, $UNIDIC_MECAB_TYPE, $mecabdic, $self->{mecab_rcfile});
-    $com =~ s/\//\\/g if $Config{osname} eq "MSWin32";
-
-    print STDERR "# COM: ".$com."\n";
-    my $in_buff = $self->read_from_file($test_file);
-    my $out_buffs = [];
-    $in_buff =~ s/\r?\n$//s;
-    foreach my $line (split(/\r?\n/, $in_buff)) {
-        $line .= "\n";
-        my $out = $self->proc_stdin2stdout($com, $line);
-        $out =~ s/\x0d\x0a/\x0a/sg;
-        $out .= "EOS" if $out !~ /EOS\s*$/s;
-        push @$out_buffs, $out;
-    }
-    my $out_buff = join "\n", @$out_buffs;
-    undef $out_buffs;
-    undef $in_buff;
-
-    $self->write_to_file($mecab_file, $out_buff);
-    undef $out_buff;
-}
-
-# extcorput.plを利用して付加情報を付与
-sub mecab2kc_file {
-    my ($self, $mecab_file, $kc_file) = @_;
-    my $mecab_ext_file = $mecab_file."_ext";
-    my $ext_def_file = $self->{"comainu-temp"}."/mecab_ext.def";
-
-    my $def_buff = "";
-    $def_buff .= "dbfile:".$self->{"unidic-db"}."\n";
-    $def_buff .= "table:lex\n";
-    $def_buff .= "input:sLabel,orth,pron,lForm,lemma,pos,cType?,cForm?\n";
-    $def_buff .= "output:sLabel,orth,pron,lForm,lemma,pos,cType?,cForm?,goshu,form,formBase,formOrthBase,formOrth\n";
-    $def_buff .= "key:lForm,lemma,pos,cType,cForm,orth,pron\n";
-    $self->write_to_file($ext_def_file, $def_buff);
-    undef $def_buff;
-
-    my $perl = $self->{perl};
-    my $com = sprintf("\"%s\" \"%s/script/extcorpus.pl\" -C \"%s\"",
-                      $perl, $self->{"comainu-home"}, $ext_def_file);
-    $self->proc_file2file($com, $mecab_file, $mecab_ext_file);
-
-    my $buff = $self->read_from_file($mecab_ext_file);
-    $buff = $self->mecab2kc($buff);
-    $self->write_to_file($kc_file, $buff);
-
-    unlink $mecab_ext_file if !$self->{debug} && -f $mecab_ext_file;
-
-    undef $buff;
 }
 
 
@@ -817,44 +709,6 @@ sub lout2kc4mid_file {
     undef $kc_buff;
 }
 
-sub mecab2kc {
-    my ($self, $buff) = @_;
-    my $table = $KC_MECAB_TABLE;
-    my $res_str = "";
-    my $first_flag = 0;
-    my $item_name_list = [keys %$table];
-    $buff =~ s/\r?\n$//;
-
-    foreach my $line ( split(/\r?\n/, $buff) ) {
-        if ( $line =~ /^EOS/ ) {
-            $first_flag = 1;
-            next;
-        }
-        my $item_list = [ split(/\t/, $line) ];
-        $item_list->[2] = $item_list->[1] if $item_list->[2] eq "";
-        $item_list->[3] = $item_list->[1] if $item_list->[3] eq "";
-        $item_list->[5] = "*"             if $item_list->[5] eq "";
-        $item_list->[6] = "*"             if $item_list->[6] eq "";
-        $item_list->[7] = "*"             if $item_list->[7] eq "";
-
-        my $value_list = [ map {
-            $table->{$_} eq "*" ? "*" : $item_list->[$table->{$_}];
-        } sort {$a <=> $b} keys %$table ];
-        $value_list = [ @$value_list, "*", "*", "*", "*", "*", "*", "*", "*" ];
-        if ( $first_flag == 1 ) {
-            $first_flag = 0;
-            $res_str .= "EOS\n";
-        }
-        $res_str .= sprintf("%s\n", join(" ", @$value_list));
-    }
-    $res_str .= "EOS\n";
-
-    undef $buff;
-    undef $item_name_list;
-
-    return $res_str;
-}
-
 ############################################################
 # ファイルのマージ
 ############################################################
@@ -1340,14 +1194,6 @@ sub pp_ctype {
 ############################################################
 # Utilities
 ############################################################
-sub check_file {
-    my ($self, $file) = @_;
-    unless ( -f $file ) {
-        printf(STDERR "Error: '%s' not Found.\n", $file);
-        die;
-    }
-}
-
 sub read_from_file {
     my ($self, $file) = @_;
     my $data = "";
@@ -1371,46 +1217,6 @@ sub write_to_file {
     undef $data;
 }
 
-sub proc_stdin2stdout {
-    my ($self, $proc, $in_data, $file_in_p) = @_;
-    my $out_data = "";
-    my ($tmp_in_fh, $tmp_in)   = tempfile(DIR => $self->{"comainu-temp"});
-    my ($tmp_out_fh, $tmp_out) = tempfile(DIR => $self->{"comainu-temp"});
-    close($tmp_in_fh);
-    close($tmp_out_fh);
-    $self->write_to_file($tmp_in, $in_data);
-    $self->proc_file2file($proc, $tmp_in, $tmp_out, $file_in_p);
-    $out_data = $self->read_from_file($tmp_out);
-    unlink($tmp_in);
-    unlink($tmp_out);
-    undef $in_data;
-    return $out_data;
-}
-
-sub proc_stdin2file {
-    my ($self, $proc, $in_data, $out_file, $file_in_p) = @_;
-    my $tmp_in = $self->{"comainu-temp"}."/tmp_in";
-    $self->write_to_file($tmp_in, $in_data);
-    $self->proc_file2file($proc, $tmp_in, $out_file, $file_in_p);
-    unlink($tmp_in);
-    undef $in_data;
-    return;
-}
-
-sub proc_file2file {
-    my ($self, $proc, $in_file, $out_file, $file_in_p) = @_;
-    my $out_data = "";
-    my $redirect_in = $file_in_p ? "" : "<";
-    my $proc_com = $proc." ".$redirect_in." \"".$in_file."\" > \"".$out_file."\"";
-    if ( $Config{"osname"} eq "MSWin32" ) {
-        $proc_com =~ s/\//\\/gs;
-    }
-    if ( $self->{"debug"} > 0 ) {
-        print STDERR "PROC_COM=".$proc_com."\n";
-    }
-    system($proc_com);
-    return;
-}
 
 1;
 #################### END OF FILE ####################
