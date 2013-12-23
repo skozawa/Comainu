@@ -7,6 +7,7 @@ use parent 'Comainu::Method';
 use File::Basename qw(basename);
 use Config;
 
+use Comainu::SUWAnalysis;
 use Comainu::Method::Kc2longout;
 use Comainu::Method::Kc2bnstout;
 
@@ -62,12 +63,15 @@ sub analyze {
 
     $self->comainu->{"bnst_process"} = "with_luw";
 
-    $self->comainu->plain2mecab_file($test_file, $mecab_file);
-    $self->comainu->mecab2kc_file($mecab_file, $kc_file);
+    my $suwanalysis = Comainu::SUWAnalysis->new(comainu => $self->comainu);
+    $suwanalysis->plain2kc_file($test_file, $mecab_file, $kc_file);
+
     my $kc2longout = Comainu::Method::Kc2longout->new(comainu => $self->comainu);
     $kc2longout->run($kc_file, $luwmodel, $tmp_dir);
+
     my $kc2bnstout = Comainu::Method::Kc2bnstout->new(comainu => $self->comainu);
     $kc2bnstout->run($kc_file, $bnstmodel, $tmp_dir);
+
     $self->comainu->merge_mecab_with_kc_lout_file($mecab_file, $kc_lout_file, $lbout_file);
     $self->comainu->merge_mecab_with_kc_bout_file($lbout_file, $kc_bout_file, $lbout_file);
 

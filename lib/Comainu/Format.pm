@@ -38,9 +38,9 @@ sub trans_dataformat {
         $in_format{$items[$i]} = $i;
     }
 
-    return $input_data if($formats{$args->{input_type}} eq $formats{$args->{output_type}});
+    return $input_data if $formats{$args->{input_type}} eq $formats{$args->{output_type}};
 
-    my @out_format = split(/,/,$formats{$args->{output_type}});
+    my @out_format = split /,/, $formats{$args->{output_type}};
     my @trans_table = ();
     for my $i ( 0 .. $#out_format ) {
         $trans_table[$i] = $in_format{$out_format[$i]} // '*';
@@ -58,8 +58,8 @@ sub trans_dataformat {
             if ( $trans_table[$i] eq "*" || $trans_table[$i] eq "NULL" ) {
                 $tmp_buff[$i] = "*";
             } else {
-                my $item = $items[$trans_table[$i]];
-                if($item eq "" || $item eq "NULL" || $item eq "\0") {
+                my $item = $items[$trans_table[$i]] // "";
+                if ( $item eq "" || $item eq "NULL" || $item eq "\0" ) {
                     $tmp_buff[$i] = "*";
                 } else {
                     $tmp_buff[$i] = $item;
@@ -68,11 +68,11 @@ sub trans_dataformat {
         }
         my $out;
         if ( $args->{output_type} eq "kc" ) {
-            $out = join(" ",@tmp_buff);
+            $out = join " ", @tmp_buff;
         } elsif ( $args->{output_type} eq "bccwj" ) {
-            $out = join("\t",@tmp_buff);
+            $out = join "\t", @tmp_buff;
         } elsif ( $args->{output_type} eq "kc_mid" ) {
-            $out = join(" ",@tmp_buff);
+            $out = join " ", @tmp_buff;
         }
         push @$res, $out;
     }
