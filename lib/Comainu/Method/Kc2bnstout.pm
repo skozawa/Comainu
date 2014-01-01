@@ -137,7 +137,7 @@ sub chunk_bnst {
     $buff = Comainu::Format->move_future_front($buff);
     write_to_file($output_file, $buff);
 
-    $buff = $self->comainu->merge_kc_with_bout($tmp_test_kc, $output_file);
+    $buff = Comainu::Format->merge_kc_with_bout($tmp_test_kc, $output_file);
     write_to_file($output_file, $buff);
     undef $buff;
 

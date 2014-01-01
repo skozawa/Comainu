@@ -370,6 +370,88 @@ GOLD
 }
 
 
+sub merge_bccwj_with_kc_lout_file : Test(1) {
+    my $lout_buff = "";
+    my $g = guard_write_to_file('Comainu::Format', \$lout_buff);
+
+    Comainu::Format->merge_bccwj_with_kc_lout_file("t/sample/test.bccwj.txt", "t/sample/test.bccwj.KC.lout", "lout_file", "sentence");
+
+    my $gold_lout_buff = read_from_file("t/sample/test.bccwj.lout");
+
+    is $gold_lout_buff, $lout_buff;
+}
+
+# sub merge_iof : Tests {};
+
+sub merge_bccwj_with_kc_bout_file : Test(1) {
+    my $bout_buff = "";
+    my $g = guard_write_to_file('Comainu::Format', \$bout_buff);
+
+    Comainu::Format->merge_bccwj_with_kc_bout_file("t/sample/test.bccwj.txt", "t/sample/test.bccwj.KC.bout", "bout_file");
+
+    my $gold_bout_buff = read_from_file("t/sample/test.bccwj.bout");
+
+    is $gold_bout_buff, $bout_buff;
+}
+
+sub merge_bccwj_with_kc_mout_file : Test(1) {
+    my $mout_buff = "";
+    my $g = guard_write_to_file('Comainu::Format', \$mout_buff);
+
+    Comainu::Format->merge_bccwj_with_kc_mout_file("t/sample/test.bccwj.long.txt", "t/sample/test.bccwj.long.KC.mout", "mout_file");
+
+    my $gold_mout_buff = read_from_file("t/sample/test.bccwj.long.mout");
+
+    is $gold_mout_buff, $mout_buff;
+}
+
+sub merge_mecab_with_kc_lout_file : Test(1) {
+    my $lout_buff = "";
+    my $g = guard_write_to_file('Comainu::Format', \$lout_buff);
+
+    Comainu::Format->merge_mecab_with_kc_lout_file("t/sample/test.plain.mecab", "t/sample/test.plain.KC.lout", "lout_file");
+
+    my $gold_lout_buff = read_from_file("t/sample/test.plain.lout");
+
+    is $gold_lout_buff, $lout_buff;
+}
+
+sub merge_mecab_with_kc_bout_file : Test(1) {
+    my $bout_buff = "";
+    my $g = guard_write_to_file('Comainu::Format', \$bout_buff);
+
+    Comainu::Format->merge_mecab_with_kc_bout_file("t/sample/test.plain.mecab", "t/sample/test.plain.KC.bout", "bout_file");
+
+    my $gold_bout_buff = read_from_file("t/sample/test.plain.bout");
+
+    is $gold_bout_buff, $bout_buff;
+};
+
+sub merge_mecab_with_kc_mout_file : Test(1) {
+    my $mout_buff = "";
+    my $g = guard_write_to_file('Comainu::Format', \$mout_buff);
+
+    Comainu::Format->merge_mecab_with_kc_mout_file("t/sample/test.plain.mecab", "t/sample/test.plain.KC.mout", "mout_file");
+
+    my $gold_mout_buff = read_from_file("t/sample/test.plain.mout");
+
+    is $gold_mout_buff, $mout_buff;
+}
+
+sub merge_kc_with_svmout : Test(1) {
+    my $buff = Comainu::Format->merge_kc_with_svmout("t/sample/test.plain.KC", "t/sample/test.plain.svmout", "with");
+    my $gold_buff = read_from_file("t/sample/test.plain.KC.svmout.lout");
+
+    is $gold_buff, $buff;
+}
+
+sub merge_kc_with_bout : Test(1) {
+    my $buff = Comainu::Format->merge_kc_with_bout("t/sample/test.KC", "t/sample/test.svmdata.bout");
+    my $gold_buff = read_from_file("t/sample/test.bout");
+
+    is $gold_buff, $buff;
+};
+
 
 
 __PACKAGE__->runtests;

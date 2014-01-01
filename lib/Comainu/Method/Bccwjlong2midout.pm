@@ -66,7 +66,7 @@ sub analyze {
     Comainu::Format->bccwjlong2kc_file($tmp_test_bccwj, $kc_file, $self->comainu->{boundary});
     my $kclong2midout = Comainu::Method::Kclong2midout->new(comainu => $self->comainu);
     $kclong2midout->run($kc_file, $muwmodel, $tmp_dir);
-    $self->comainu->merge_bccwj_with_kc_mout_file($tmp_test_bccwj, $kc_mout_file, $bccwj_mout_file);
+    Comainu::Format->merge_bccwj_with_kc_mout_file($tmp_test_bccwj, $kc_mout_file, $bccwj_mout_file);
 
     unless ( $self->comainu->{debug} ) {
         do { unlink $_ if -f $_; } for ($kc_mout_file, $tmp_test_bccwj);

@@ -62,7 +62,7 @@ sub analyze {
     my $kc2longout = Comainu::Method::Kc2longout->new(comainu => $self->comainu);
     $kc2longout->run($kc_file, $luwmodel, $tmp_dir);
 
-    $self->comainu->merge_mecab_with_kc_lout_file($mecab_file, $kc_lout_file, $mecab_lout_file);
+    Comainu::Format->merge_mecab_with_kc_lout_file($mecab_file, $kc_lout_file, $mecab_lout_file);
 
     unless ( $self->comainu->{debug} ) {
         do { unlink $_ if -f $_; } for ($mecab_file, $kc_lout_file);

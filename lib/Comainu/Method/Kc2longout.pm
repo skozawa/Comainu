@@ -179,7 +179,7 @@ sub merge_chunk_result {
 
     check_file($svmout_file);
 
-    my $buff = $self->comainu->merge_kc_with_svmout($tmp_test_kc, $svmout_file);
+    my $buff = Comainu::Format->merge_kc_with_svmout($tmp_test_kc, $svmout_file, $self->Comainu->{luwmrph});
     write_to_file($lout_file, $buff);
     undef $buff;
 

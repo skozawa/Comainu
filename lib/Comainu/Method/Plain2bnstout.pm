@@ -61,7 +61,7 @@ sub analyze {
     my $kc2bnstout = Comainu::Method::Kc2bnstout->new(comainu => $self->comainu);
     $kc2bnstout->run($kc_file, $bnstmodel, $tmp_dir);
 
-    $self->comainu->merge_mecab_with_kc_bout_file($mecab_file, $kc_bout_file, $bout_file);
+    Comainu::Format->merge_mecab_with_kc_bout_file($mecab_file, $kc_bout_file, $bout_file);
 
     unless ( $self->comainu->{debug} ) {
         do { unlink $_ if -f $_; } for ($mecab_file, $kc_bout_file);

@@ -656,4 +656,290 @@ sub lout2kc4mid_file {
     undef $kc_buff;
 }
 
+
+
+############################################################
+# ファイルのマージ
+############################################################
+sub merge_bccwj_with_kc_lout_file {
+    my ($class, $bccwj_file, $kc_lout_file, $lout_file, $boundary) = @_;
+    my $bccwj_data = read_from_file($bccwj_file);
+    my $kc_lout_data = read_from_file($kc_lout_file);
+    my $lout_data = $class->merge_iof($bccwj_data, $kc_lout_data, $boundary);
+    undef $bccwj_data;
+    undef $kc_lout_data;
+
+    write_to_file($lout_file, $lout_data);
+    undef $lout_data;
+}
+
+# bccwj形式のファイルに長単位解析結果をマージ
+sub merge_iof {
+    my ($class, $bccwj_data, $lout_data, $boundary) = @_;
+    my $res = "";
+    my $cn1 = 16;
+    # my $cn1 = 26;
+    if ( $boundary eq "word" ) {
+        # $cn1 = 23;
+        $cn1 = 27;
+        # $cn1 = 34;
+    }
+    my $cn2 = 19;
+    $lout_data =~ s/^EOS.*?\n//mg;
+    my @m = split(/\r?\n/, $lout_data);
+    undef $lout_data;
+
+    my $long_pos = "";
+    foreach ( split(/\r?\n/, $bccwj_data) ) {
+        my @morph = split(/\t/);
+        if ($#morph+1 < $cn1) {
+            print STDERR "Some columns are missing in bccwj_data!\n";
+            print STDERR "  morph(".($#morph+1).") < sn1(".$cn1.")\n";
+        }
+        my $lw = shift(@m);
+        $lw = shift(@m) if($lw =~ /^EOS|^\*B/);
+        my @ml = split(/[ \t]/, $lw);
+        if ($#ml+1 < $cn2) {
+            print STDERR "Some columns are missing in bccwj_data!\n";
+            print STDERR "  ml(".($#ml+1).") < cn2(".$cn2.")\n";
+            print STDERR "$ml[1]\n";
+        }
+        if ($morph[4] ne $ml[1]) {
+            print STDERR "Two files cannot be marged!: '$morph[4]' ; '$ml[1]'\n";
+        }
+        if ($ml[0] =~ /^B/) {
+            $long_pos = $ml[14];
+        }
+        if ( $boundary eq "word" ) {
+            @morph[28..33] = @ml[19,17..18,14..16];
+        } else {
+            @morph[27..33] = @ml[0,19,17..18,14..16];
+        }
+        if ( $morph[8] eq "名詞-普通名詞-形状詞可能" ||
+                 $morph[8] eq "名詞-普通名詞-サ変形状詞可能" ) {
+            if ( $long_pos eq "形状詞-一般" ) {
+                $morph[11] = "形状詞";
+            } else {
+                $morph[11] = "名詞";
+            }
+        } elsif ( $morph[8] eq "名詞-普通名詞-副詞可能" ) {
+            if ( $long_pos eq "副詞" ) {
+                $morph[11] = "副詞";
+            } else {
+                $morph[11] = "名詞";
+            }
+        }
+        my $nm = join("\t", @morph);
+        $res .= "$nm\n";
+    }
+
+    undef $bccwj_data;
+
+    if ( $#m > -1 ) {
+        print STDERR "Two files do not correspond to each other!\n";
+    }
+    return $res;
+}
+
+sub merge_bccwj_with_kc_bout_file {
+    my ($class, $bccwj_file, $kc_bout_file, $bout_file) = @_;
+    my $bccwj_data   = read_from_file($bccwj_file);
+    my $kc_bout_data = read_from_file($kc_bout_file);
+    my @m = split(/\r?\n/, $kc_bout_data);
+    undef $kc_bout_data;
+
+    my $bout_data = "";
+    foreach ( split(/\r?\n/, $bccwj_data) ) {
+        my $item_list = [split(/\t/)];
+        my $lw = shift(@m);
+        $lw = shift(@m) if $lw =~ /^EOS|^\*B/;
+        my @ml = split(/[ \t]/, $lw);
+        $$item_list[26] = $ml[0];
+        $bout_data .= join("\t",@$item_list)."\n";
+    }
+    undef $bccwj_data;
+
+    write_to_file($bout_file, $bout_data);
+    undef $bout_data;
+}
+
+sub merge_bccwj_with_kc_mout_file {
+    my ($class, $bccwj_file, $kc_mout_file, $mout_file) = @_;
+    my $bccwj_data   = read_from_file($bccwj_file);
+    my $kc_mout_data = read_from_file($kc_mout_file);
+    my @m = split(/\r?\n/, $kc_mout_data);
+    undef $kc_mout_data;
+
+    my $mout_data = "";
+    foreach ( split(/\r?\n/, $bccwj_data) ) {
+        my $item_list = [split(/\t/)];
+        my $lw = shift(@m);
+        $lw = shift(@m) if $lw =~ /^EOS|^\*B/;
+        my @ml = split(/[ \t]/, $lw);
+        @$item_list[34..36] = @ml[19..21];
+        $mout_data .= join("\t",@$item_list)."\n";
+    }
+    undef $bccwj_data;
+
+    write_to_file($mout_file, $mout_data);
+    undef $mout_data;
+}
+
+sub merge_mecab_with_kc_lout_file {
+    my ($class, $mecab_file, $kc_lout_file, $lout_file) = @_;
+    my $mecab_data   = read_from_file($mecab_file);
+    my $kc_lout_data = read_from_file($kc_lout_file);
+    my $kc_lout_data_list = [ split(/\r?\n/, $kc_lout_data) ];
+    undef $kc_lout_data;
+
+    my $lout_data = "";
+    foreach my $mecab_line ( split(/\r?\n/, $mecab_data) ) {
+        if ( $mecab_line =~ /^EOS|^\*B/ ) {
+            $lout_data .= $mecab_line."\n";
+            next;
+        }
+        my $mecab_item_list = [ split(/\t/, $mecab_line, -1) ];
+        my $kc_lout_line = shift(@$kc_lout_data_list);
+        $kc_lout_line = shift(@$kc_lout_data_list) if $kc_lout_line =~ /^EOS/;
+        my $kc_lout_item_list = [ split(/[ \t]/, $kc_lout_line) ];
+        push(@$mecab_item_list, splice(@$kc_lout_item_list, 14, 6));
+        $lout_data .= sprintf("%s\n", join("\t", @$mecab_item_list));
+    }
+    undef $mecab_data;
+    undef $kc_lout_data_list;
+
+    write_to_file($lout_file, $lout_data);
+    undef $lout_data;
+}
+
+sub merge_mecab_with_kc_bout_file {
+    my ($class, $mecab_file, $kc_bout_file, $bout_file) = @_;
+    my $mecab_data   = read_from_file($mecab_file);
+    my $kc_bout_data = read_from_file($kc_bout_file);
+    my $kc_bout_data_list = [split(/\r?\n/, $kc_bout_data)];
+    undef $kc_bout_data;
+
+    my $bout_data = "";
+    foreach my $mecab_line ( split(/\r?\n/, $mecab_data) ) {
+        my $kc_bout_line = shift @$kc_bout_data_list;
+        $bout_data .= "*B\n" if $kc_bout_line =~ /B/;
+        $bout_data .= $mecab_line."\n" if $mecab_line !~ /^\*B/;
+    }
+    undef $mecab_data;
+    undef $kc_bout_data_list;
+
+    write_to_file($bout_file, $bout_data);
+    undef $bout_data;
+}
+
+sub merge_mecab_with_kc_mout_file {
+    my ($class, $mecab_file, $kc_mout_file, $mout_file) = @_;
+    my $mecab_data   = read_from_file($mecab_file);
+    my $kc_mout_data = read_from_file($kc_mout_file);
+    my $kc_mout_data_list = [split(/\r?\n/, $kc_mout_data)];
+    undef $kc_mout_data;
+
+    my $mout_data = "";
+    foreach my $mecab_line ( split(/\r?\n/, $mecab_data) ) {
+        if ( $mecab_line =~ /^EOS|^\*B/ ) {
+            $mout_data .= $mecab_line."\n";
+            next;
+        }
+        my $mecab_item_list = [ split(/\t/, $mecab_line, -1) ];
+        my $kc_mout_line = shift @$kc_mout_data_list;
+        $kc_mout_line = shift @$kc_mout_data_list if $kc_mout_line =~ /^EOS/;
+        my $kc_mout_item_list = [ split(/[ \t]/, $kc_mout_line) ];
+        push(@$mecab_item_list, splice(@$kc_mout_item_list, 14, 9));
+        $mout_data .= sprintf("%s\n", join("\t", @$mecab_item_list));
+    }
+    undef $mecab_data;
+    undef $kc_mout_data_list;
+
+    write_to_file($mout_file, $mout_data);
+    undef $mout_data;
+}
+
+
+sub merge_kc_with_svmout {
+    my ($class, $kc_file, $svmout_file, $luwmrph) = @_;
+
+    my $res = "";
+    my @long;
+    my $kc_data     = read_from_file($kc_file);
+    my $svmout_data = read_from_file($svmout_file);
+    my $svmout_data_list = [split(/\r?\n/, $svmout_data)];
+    undef $svmout_data;
+
+    foreach my $kc_data_line ( split(/\r?\n/, $kc_data) ) {
+    	if ( $kc_data_line =~ /^EOS/ && $luwmrph eq "without" ) {
+    	    $res .= "EOS\n";
+    	    next;
+    	}
+    	next if $kc_data_line =~ /^\*B|^EOS/;
+    	my @kc_item_list = split(/[ \t]/, $kc_data_line);
+
+    	my $svmout_line = shift(@$svmout_data_list);
+    	my $svmout_item_list = [split(/[ \t]/, $svmout_line)];
+    	@$svmout_item_list[10..15] = ("*","*","*","*","*","*");
+
+        if ( $$svmout_item_list[0] eq "B" || $$svmout_item_list[0] eq "Ba") {
+            map { $res .= join(" ",@$_)."\n" } @long;
+
+            @long = ();
+            if ( $luwmrph ne "without" ) {
+                @$svmout_item_list[10..15] = @$svmout_item_list[4..6,2,3,1];
+            } else {
+                @$svmout_item_list[13..15] = @$svmout_item_list[2,3,1];
+            }
+        } else {
+            my $first = $long[0];
+            $$first[17] .= $$svmout_item_list[2];
+            $$first[18] .= $$svmout_item_list[3];
+            $$first[19] .= $$svmout_item_list[1];
+            if ( $$svmout_item_list[0] eq "Ia" && $luwmrph ne "without") {
+                @$first[14..16] = @$svmout_item_list[4..6];
+            }
+        }
+        push @long, [@$svmout_item_list[0],@kc_item_list[0..12],@$svmout_item_list[10..15]];
+    }
+
+    map { $res .= join(" ",@$_)."\n" } @long;
+
+    undef $kc_data;
+    undef $svmout_data_list;
+    undef @long;
+
+    return $res;
+}
+
+sub merge_kc_with_bout {
+    my ($class, $kc_file, $bout_file) = @_;
+
+    my $res = "";
+    my $kc_data   = read_from_file($kc_file);
+    my $bout_data = read_from_file($bout_file);
+    my $bout_data_list = [split(/\r?\n/, $bout_data)];
+    undef $bout_data;
+
+    foreach my $kc_data_line (split(/\r?\n/, $kc_data)) {
+    	next if $kc_data_line =~ /^\*B/;
+
+        if ( $kc_data_line =~ /^EOS/ ) {
+    	    $res .= "EOS\n";
+    	    next;
+    	}
+    	my @kc_item_list = split(/[ \t]/, $kc_data_line);
+    	my $bout_line = shift(@$bout_data_list);
+    	my $bout_item_list = [split(/[ \t]/, $bout_line)];
+    	$res .= $$bout_item_list[0]." ".join(" ",@kc_item_list[0..12])."\n";
+    }
+
+    undef $kc_data;
+    undef $bout_data_list;
+
+    return $res;
+}
+
+
+
 1;

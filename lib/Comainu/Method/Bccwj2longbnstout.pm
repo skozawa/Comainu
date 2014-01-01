@@ -75,8 +75,8 @@ sub analyze {
     $kc2longout->run($kc_file, $luwmodel, $tmp_dir);
     my $kc2bnstout = Comainu::Method::Kc2bnstout->new(comainu => $self->comainu);
     $kc2bnstout->run($kc_file, $bnstmodel, $tmp_dir);
-    $self->comainu->merge_bccwj_with_kc_lout_file($tmp_test_bccwj, $kc_lout_file, $bccwj_lbout_file);
-    $self->comainu->merge_bccwj_with_kc_bout_file($bccwj_lbout_file, $kc_bout_file, $bccwj_lbout_file);
+    Comainu::Format->merge_bccwj_with_kc_lout_file($tmp_test_bccwj, $kc_lout_file, $bccwj_lbout_file, $self->comainu->{boundary});
+    Comainu::Format->merge_bccwj_with_kc_bout_file($bccwj_lbout_file, $kc_bout_file, $bccwj_lbout_file);
 
     unless ( $self->comainu->{debug} ) {
         do { unlink $_ if -f $_; } for ($kc_lout_file, $kc_bout_file, $tmp_test_bccwj);

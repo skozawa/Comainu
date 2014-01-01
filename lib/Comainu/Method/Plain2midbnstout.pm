@@ -79,8 +79,8 @@ sub analyze {
     my $kclong2midout = Comainu::Method::Kclong2midout->new(comainu => $self->comainu);
     $kclong2midout->run($kc_file, $muwmodel, $tmp_dir);
 
-    $self->comainu->merge_mecab_with_kc_mout_file($mecab_file, $kc_mout_file, $mbout_file);
-    $self->comainu->merge_mecab_with_kc_bout_file($mbout_file, $kc_bout_file, $mbout_file);
+    Comainu::Format->merge_mecab_with_kc_mout_file($mecab_file, $kc_mout_file, $mbout_file);
+    Comainu::Format->merge_mecab_with_kc_bout_file($mbout_file, $kc_bout_file, $mbout_file);
 
     unless ( $self->comainu->{debug} ) {
         do { unlink $_ if -f $_; }
