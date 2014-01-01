@@ -124,7 +124,7 @@ sub extract_BI_data_train : Test(3) {
     my ($pos_dat, $ctype_dat, $cform_dat);
     my $g = mock_guard("Comainu::BIProcessor" => {
         write_to_file => sub {
-            my ($self, $file, $data) = @_;
+            my ($file, $data) = @_;
             $pos_dat = $data   if $file =~ /BI_pos/;
             $ctype_dat = $data if $file =~ /BI_cType/;
             $cform_dat = $data if $file =~ /BI_cForm/;
@@ -191,7 +191,7 @@ sub extract_BI_data_test : Test(3) {
     my ($pos_dat, $ctype_dat, $cform_dat);
     my $g = mock_guard("Comainu::BIProcessor" => {
         write_to_file => sub {
-            my ($self, $file, $data) = @_;
+            my ($file, $data) = @_;
             $pos_dat = $data   if $file =~ /BI_pos/;
             $ctype_dat = $data if $file =~ /BI_cType/;
             $cform_dat = $data if $file =~ /BI_cForm/;
@@ -338,7 +338,7 @@ DATA
     my $dat_buff = "";
     my $g = mock_guard("Comainu::BIProcessor" => {
         write_to_file => sub {
-            my ($self, $file, $buff) = @_;
+            my ($file, $buff) = @_;
             $dat_buff = $buff;
         },
     });
@@ -378,7 +378,7 @@ DATA
     my $dat_buff = "";
     my $g = mock_guard("Comainu::BIProcessor" => {
         write_to_file => sub {
-            my ($self, $file, $buff) = @_;
+            my ($file, $buff) = @_;
             $dat_buff = $buff;
         },
     });

@@ -1,11 +1,13 @@
 # -*- mode: perl; coding: utf-8; -*-
-
 # BIのみから成る長単位を処理する
-
 package Comainu::BIProcessor;
 
 use strict;
+use warnings;
 use utf8;
+use Encode;
+
+use Comainu::Util qw(write_to_file);
 
 use constant MODEL_TYPE_SVM  => 0;
 use constant MODEL_TYPE_CRF  => 1;
@@ -35,16 +37,16 @@ sub extract_from_train {
     my %line;
 
     my $svmin = <$fh_svmin>;
-    $svmin = Encode::decode("utf-8", $svmin);
+    $svmin = decode_utf8 $svmin;
     $svmin =~ s/\r?\n//mg;
 
     while ( my $ref = <$fh_ref> ) {
-        $ref = Encode::decode("utf-8", $ref);
+        $ref = decode_utf8 $ref;
         $ref =~ s/\r?\n//mg;
         if ( $ref =~ /^\*B|^EOS/ ) {
             if ( $svmin eq "" ) {
                 $svmin = <$fh_svmin>;
-                $svmin = Encode::decode("utf-8", $svmin);
+                $svmin = decode_utf8 $svmin;
                 $svmin =~ s/\r?\n//mg;
                 push @long_units, [("* * * * * * * * * * * * * * * * * * * *")];
             }
@@ -60,25 +62,25 @@ sub extract_from_train {
             $BI = $svmin;
         } else {
             $svmin = <$fh_svmin>;
-            $svmin = Encode::decode("utf-8", $svmin);
+            $svmin = decode_utf8 $svmin;
             $svmin =~ s/\r?\n//mg;
             next;
         }
 
         $svmin = <$fh_svmin>;
-        $svmin = Encode::decode("utf-8", $svmin);
+        $svmin = decode_utf8 $svmin;
         $svmin =~ s/\r?\n//mg;
 
         while ( $svmin =~ / I/ ) {
             $ref = <$fh_ref>;
-            $ref = Encode::decode("utf-8", $ref);
+            $ref = decode_utf8 $ref;
             $ref =~ s/\r?\n//mg;
             last if $ref =~ /^\*B|^EOS/;
 
             $short .= "\n".$ref;
             $BI .= "\t".$svmin;
             $svmin = <$fh_svmin>;
-            $svmin = Encode::decode("utf-8", $svmin);
+            $svmin = decode_utf8 $svmin;
             $svmin =~ s/\r?\n//mg;
         }
         next if $short eq "";
@@ -91,7 +93,7 @@ sub extract_from_train {
         }
         if ( $svmin eq "" ) {
             $svmin = <$fh_svmin>;
-            $svmin = Encode::decode("utf-8", $svmin);
+            $svmin = decode_utf8 $svmin;
             $svmin =~ s/\r?\n//mg;
             push @long_units, [("* * * * * * * * * * * * * * * * * * * *")];
         }
@@ -150,7 +152,7 @@ sub make_long_unit {
     my $BI_units = [];
 
     my $kc2 = <$fh_kc2>;
-    $kc2 = Encode::decode("utf-8", $kc2);
+    $kc2 = decode_utf8 $kc2;
     $kc2 =~ s/\r?\n//mg;
     my @lout = split(/\r?\n/, $lout_data);
     undef $lout_data;
@@ -174,11 +176,11 @@ sub make_long_unit {
         push @$BI_units, $#{$long_units} if $short !~ /a/m;
 
         $kc2 = <$fh_kc2>;
-        $kc2 = Encode::decode("utf-8", $kc2);
+        $kc2 = decode_utf8 $kc2;
         $kc2 =~ s/\r?\n//mg;
         if ( $kc2 =~ /^EOS/ || $kc2 eq "" ) {
             $kc2 = <$fh_kc2>;
-            $kc2 = Encode::decode("utf-8", $kc2);
+            $kc2 = decode_utf8 $kc2;
             $kc2 =~ s/\r?\n//mg;
             push @$long_units, [("* * * * * * * * * * * * * * * * * * * *")];
         }
@@ -263,22 +265,23 @@ sub extract_BI_data {
     my $basename = $args->{basename};
     my $outputFileName1 = $dir . "/pos/" . $basename . ".BI_pos.dat";
     mkdir $dir . "/pos" unless -d $dir . "/pos";
-    $self->write_to_file($outputFileName1, $pos_feature."\n");
+    write_to_file($outputFileName1, $pos_feature."\n");
     undef $pos_feature;
 
     my $outputFileName2 = $dir . "/cType/" . $basename . ".BI_cType.dat";
     mkdir $dir . "/cType" unless -d $dir . "/cType";
-    $self->write_to_file($outputFileName2, $cType_feature."\n");
+    write_to_file($outputFileName2, $cType_feature."\n");
     undef $cType_feature;
 
     my $outputFileName3 = $dir . "/cForm/" . $basename . ".BI_cForm.dat";
     mkdir $dir . "/cForm" unless -d $dir . "/cForm";
-    $self->write_to_file($outputFileName3, $cForm_feature."\n");
+    write_to_file($outputFileName3, $cForm_feature."\n");
     undef $cForm_feature;
 }
 
 sub long2feature {
     my ($self, $long_unit, $is_test) = @_;
+    $is_test //= 0;
 
     my $feature = "";
     if ( $#{$long_unit} >= 1 ) {
@@ -297,6 +300,7 @@ sub long2feature {
 
 sub short2feature {
     my ($self, $short_unit, $is_test) = @_;
+    $is_test //= 0;
 
     my $feature = "";
     my @short = split(/ /, $short_unit);
@@ -426,7 +430,7 @@ sub create_cType_dat {
     open(my $fh, $out) or die "Cannot open '$out'";
     binmode($fh);
     while ( my $line = <$fh> ) {
-        $line = Encode::decode("utf-8", $line);
+        $line = decode_utf8 $line;
         $line =~ s/\r?\n//g;
         $line =~ s/^EOS//g if $self->{model_type} == 2;
 
@@ -450,7 +454,7 @@ sub create_cType_dat {
         $buff =~ s/\n/\n\n/mg;
     }
     $buff .= "\n";
-    $self->write_to_file($file, $buff);
+    write_to_file($file, $buff);
     undef $buff;
 }
 
@@ -465,7 +469,7 @@ sub create_cForm_dat {
     open(my $fh, $out) or die "Cannot open '$file'";
     binmode($fh);
     while ( my $line = <$fh> ) {
-        $line = Encode::decode("utf-8", $line);
+        $line = decode_utf8 $line;
         $line =~ s/\r?\n//g;
         $line =~ s/^EOS//g if $self->{model_type} == 2;
 
@@ -481,7 +485,7 @@ sub create_cForm_dat {
         $buff =~ s/\n/\n\n/mg;
     }
     $buff .= "\n";
-    $self->write_to_file($file, $buff);
+    write_to_file($file, $buff);
     undef $buff;
 }
 
@@ -491,14 +495,13 @@ sub read_from_out {
     open(my $fh, $file) or die "Cannot open '$file'";
     binmode($fh);
     while ( my $line = <$fh> ) {
-        $line = Encode::decode("utf-8", $line);
+        $line = decode_utf8 $line;
         $line =~ s/\r?\n//g;
         next if $line eq "" || $line eq "EOS";
         my @items = split(/\t/, $line);
         $data .= $items[$#items]." ";
     }
     close($fh);
-    #$data = Encode::decode("utf-8", $data);
     return $data;
 }
 
@@ -509,7 +512,7 @@ sub load_comp_file {
     open(my $fh, $file) or die "Cannot open '$file'";;
     binmode($fh);
     while ( my $line = <$fh> ) {
-        $line = Encode::decode("utf-8", $line);
+        $line = decode_utf8 $line;
         $line =~ s/\r?\n//g;
 
         my @items = split(/\t/, $line);
@@ -773,31 +776,6 @@ sub create_label {
         "ク語法" => "K2100",
         "*" => "K2999",
     };
-}
-
-sub read_from_file {
-    my $self = shift;
-    my ($file) = @_;
-    my $data = "";
-    open(my $fh, $file) or die "Cannot open '$file'";
-    binmode($fh);
-    while ( my $line = <$fh> ) {
-        $data .= $line;
-    }
-    close($fh);
-    $data = Encode::decode("utf-8", $data);
-    return $data;
-}
-
-sub write_to_file {
-    my $self = shift;
-    my ($file, $data) = @_;
-    $data = Encode::encode("utf-8", $data);
-    open(my $fh, ">", $file) or die "Cannot open '$file'";
-    binmode($fh);
-    print $fh $data;
-    close($fh);
-    undef $data;
 }
 
 1;
