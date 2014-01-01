@@ -25,33 +25,29 @@ sub create_features : Test(3) {
     my $g = guard_write_to_file('Comainu::Method::Kc2longout', \$kc2_data);
 
     subtest "sentence boundary" => sub {
-        my $comainu = Comainu->new(boundary => "sentence");
-        my $kc2longout = Comainu::Method::Kc2longout->new(comainu => $comainu);
+        my $kc2longout = Comainu::Method::Kc2longout->new(boundary => "sentence");
         $kc2longout->create_features("t/sample/test.KC", "t/sample/test.model");
         is $kc2_data, read_from_file('t/sample/test.KC2');
     };
 
     subtest "word boundary" => sub {
-        my $comainu = Comainu->new(boundary => "word");
-        my $kc2longout = Comainu::Method::Kc2longout->new(comainu => $comainu);
+        my $kc2longout = Comainu::Method::Kc2longout->new(boundary => "word");
         $kc2longout->create_features("t/sample/test.KC", "t/sample/test.model");
         is $kc2_data, read_from_file('t/sample/test.KC2.word');
     };
 
     subtest "none boundary" => sub {
-        my $comainu = Comainu->new(boundary => "none");
-        my $kc2longout = Comainu::Method::Kc2longout->new(comainu => $comainu);
+        my $kc2longout = Comainu::Method::Kc2longout->new(boundary => "none");
         $kc2longout->create_features("t/sample/test.KC", "t/sample/test.model");
         is $kc2_data, read_from_file('t/sample/test.KC2.none');
     };
 };
 
 sub chunk_luw : Test(1) {
-    my $comainu = Comainu->new(
+    my $kc2longout = Comainu::Method::Kc2longout->new(
         boundary => "sentence",
         "comainu-temp" => "t/sample",
     );
-    my $kc2longout = Comainu::Method::Kc2longout->new(comainu => $comainu);
 
     my $svmout_data = "";
     my $g1 = guard_write_to_file('Comainu::Method::Kc2longout', \$svmout_data);
@@ -68,8 +64,7 @@ sub chunk_luw : Test(1) {
 # sub post_process : Tests {};
 
 sub create_long_lemma : Test(4) {
-    my $comainu = Comainu->new;
-    my $kc2longout = Comainu::Method::Kc2longout->new(comainu => $comainu);
+    my $kc2longout = Comainu::Method::Kc2longout->new;
     my $comp_file = "t/sample/Comp.txt";
 
     subtest "create_long_lemma" => sub {
@@ -216,8 +211,7 @@ GOLD
 };
 
 sub generate_long_lemma : Test(1) {
-    my $comainu = Comainu->new;
-    my $kc2longout = Comainu::Method::Kc2longout->new(comainu => $comainu);
+    my $kc2longout = Comainu::Method::Kc2longout->new;
 
     my $create_luw = sub {
         my $data = shift;

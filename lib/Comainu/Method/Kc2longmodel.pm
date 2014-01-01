@@ -17,11 +17,7 @@ use BIProcessor;
 
 sub new {
     my ($class, %args) = @_;
-    bless {
-        args_num => 3,
-        comainu  => delete $args{comainu},
-        %args
-    }, $class;
+    $class->SUPER::new( %args, args_num => 3 );
 }
 
 # 訓練対象KCファイルからモデルを訓練する。
@@ -44,24 +40,24 @@ sub run {
     $model_dir = dirname($train_kc) if $train_kc && !$model_dir;
     $self->before_analyze({ dir => $model_dir, args_num => scalar @_ });
 
-    my $tmp_train_kc = $self->comainu->{"comainu-temp"} . "/" . basename($train_kc);
+    my $tmp_train_kc = $self->{"comainu-temp"} . "/" . basename($train_kc);
     Comainu::Format->format_inputdata({
         input_file       => $train_kc,
         input_type       => 'input-kc',
         output_file      => $tmp_train_kc,
         output_type      => 'kc',
-        data_format_file => $self->comainu->{data_format},
+        data_format_file => $self->{data_format},
     });
 
     $self->make_luw_traindata($tmp_train_kc, $model_dir);
     $self->add_luw_label($tmp_train_kc, $model_dir);
 
-    if ( $self->comainu->{"luwmodel"} eq "SVM" ) {
+    if ( $self->{"luwmodel"} eq "SVM" ) {
         $self->train_luwmodel_svm($tmp_train_kc, $model_dir);
-    } elsif ( $self->comainu->{"luwmodel"} eq "CRF" ) {
+    } elsif ( $self->{"luwmodel"} eq "CRF" ) {
         $self->train_luwmodel_crf($tmp_train_kc, $model_dir);
     }
-    if ( $self->comainu->{"luwmrph"} eq "with" ) {
+    if ( $self->{"luwmrph"} eq "with" ) {
         $self->train_bi_model($tmp_train_kc, $model_dir);
     }
     unlink($tmp_train_kc);
@@ -143,11 +139,10 @@ sub train_luwmodel_svm {
     my $svmin = $model_dir . "/" . $basename . ".svmin";
 
     my $makefile = Comainu::ExternalTool->create_yamcha_makefile(
-        $self->comainu, $model_dir, $basename
+        $self, $model_dir, $basename
     );
-    my $perl = $self->comainu->{perl};
     my $com = sprintf("make -f \"%s\" PERL=\"%s\" CORPUS=\"%s\" MODEL=\"%s\" train",
-                      $makefile, $perl, $svmin, $model_dir . "/" . $basename);
+                      $makefile, $self->{perl}, $svmin, $model_dir . "/" . $basename);
     printf(STDERR "# COM: %s\n", $com);
     system($com);
 
@@ -162,7 +157,7 @@ sub train_luwmodel_crf {
 
     $ENV{"LD_LIBRARY_PATH"} = "/usr/lib;/usr/local/lib";
 
-    my $crf_learn = $self->comainu->{"crf-dir"} . "/crf_learn";
+    my $crf_learn = $self->{"crf-dir"} . "/crf_learn";
     my $crf_template = $model_dir . "/" . $basename . ".template";
 
     my $svmin = $model_dir . "/" . $basename . ".svmin";
@@ -190,9 +185,9 @@ sub train_bi_model {
 
     my $basename = basename($train_kc);
     my $makefile = Comainu::ExternalTool->create_yamcha_makefile(
-        $self->comainu, $model_dir, $basename
+        $self, $model_dir, $basename
     );
-    my $perl = $self->comainu->{perl};
+    my $perl = $self->{perl};
 
     my $pos_dat   = $model_dir . "/pos/" . $basename . ".BI_pos.dat";
     my $pos_model = $model_dir . "/pos/" . $basename . ".BI_pos";

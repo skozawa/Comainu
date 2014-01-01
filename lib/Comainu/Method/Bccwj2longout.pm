@@ -12,11 +12,7 @@ use Comainu::Method::Kc2longout;
 
 sub new {
     my ($class, %args) = @_;
-    bless {
-        args_num => 4,
-        comainu  => delete $args{comainu},
-        %args
-    }, $class;
+    $class->SUPER::new( %args, args_num => 4 );
 }
 
 # 長単位解析 BCCWJ
@@ -52,7 +48,7 @@ sub run {
 sub analyze {
     my ($self, $test_bccwj, $luwmodel, $save_dir) = @_;
 
-    my $tmp_dir = $self->comainu->{"comainu-temp"};
+    my $tmp_dir = $self->{"comainu-temp"};
     my $basename = basename($test_bccwj);
     my $tmp_test_bccwj =  $tmp_dir . "/" . $basename;
     Comainu::Format->format_inputdata({
@@ -60,19 +56,19 @@ sub analyze {
         input_type       => 'input-bccwj',
         output_file      => $tmp_test_bccwj,
         output_type      => 'bccwj',
-        data_format_file => $self->comainu->{data_format},
+        data_format_file => $self->{data_format},
     });
 
     my $kc_file         = $tmp_dir  . "/" . $basename . ".KC";
     my $kc_lout_file    = $tmp_dir  . "/" . $basename . ".KC.lout";
     my $bccwj_lout_file = $save_dir . "/" . $basename . ".lout";
 
-    Comainu::Format->bccwj2kc_file($tmp_test_bccwj, $kc_file, $self->comainu->{boundary});
-    my $kc2longout = Comainu::Method::Kc2longout->new(comainu => $self->comainu);
+    Comainu::Format->bccwj2kc_file($tmp_test_bccwj, $kc_file, $self->{boundary});
+    my $kc2longout = Comainu::Method::Kc2longout->new(%$self);
     $kc2longout->run($kc_file, $luwmodel, $tmp_dir);
-    Comainu::Format->merge_bccwj_with_kc_lout_file($tmp_test_bccwj, $kc_lout_file, $bccwj_lout_file, $self->comainu->{boundary});
+    Comainu::Format->merge_bccwj_with_kc_lout_file($tmp_test_bccwj, $kc_lout_file, $bccwj_lout_file, $self->{boundary});
 
-    unless ( $self->comainu->{debug} ) {
+    unless ( $self->{debug} ) {
         do { unlink $_ if -f $_; } for ($kc_lout_file, $tmp_test_bccwj);
     }
 

@@ -19,8 +19,7 @@ sub _use_ok : Test(startup => 1) {
 # sub METHOD_kc2bnstout : Tests {};
 # sub kc2bnstout_internal : Tests {};
 sub format_bnstdata : Test(1) {
-    my $comainu = Comainu->new(boundary => "sentence");
-    my $kc2bnstout = Comainu::Method::Kc2bnstout->new(comainu => $comainu);
+    my $kc2bnstout = Comainu::Method::Kc2bnstout->new(boundary => "sentence");
 
     my $svmdata = "";
     my $g = guard_write_to_file('Comainu::Method::Kc2bnstout', \$svmdata);

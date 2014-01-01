@@ -13,11 +13,7 @@ use Comainu::Method::Kclong2midout;
 
 sub new {
     my ($class, %args) = @_;
-    bless {
-        args_num => 5,
-        comainu  => delete $args{comainu},
-        %args
-    }, $class;
+    $class->SUPER::new( %args, args_num => 5 );
 }
 
 # 平文からの中単位解析
@@ -52,7 +48,7 @@ sub run {
 sub analyze {
     my ($self, $test_file, $luwmodel, $muwmodel, $save_dir) = @_;
 
-    my $tmp_dir = $self->comainu->{"comainu-temp"};
+    my $tmp_dir = $self->{"comainu-temp"};
     my $basename = basename($test_file);
 
     my $mecab_file   = $tmp_dir  . "/" . $basename . ".mecab";
@@ -61,19 +57,19 @@ sub analyze {
     my $kc_mout_file = $tmp_dir  . "/" . $basename . ".KC.mout";
     my $mout_file    = $save_dir . "/" . $basename . ".mout";
 
-    my $suwanalysis = Comainu::SUWAnalysis->new(comainu => $self->comainu);
+    my $suwanalysis = Comainu::SUWAnalysis->new(%$self);
     $suwanalysis->plain2kc_file($test_file, $mecab_file, $kc_file);
 
-    my $kc2longout = Comainu::Method::Kc2longout->new(comainu => $self->comainu);
+    my $kc2longout = Comainu::Method::Kc2longout->new(%$self);
     $kc2longout->run($kc_file, $luwmodel, $tmp_dir);
     Comainu::Format->lout2kc4mid_file($kc_lout_file, $kc_file);
 
-    my $kclong2midout = Comainu::Method::Kclong2midout->new(comainu => $self->comainu);
+    my $kclong2midout = Comainu::Method::Kclong2midout->new(%$self);
     $kclong2midout->run($kc_file, $muwmodel, $tmp_dir);
 
     Comainu::Format->merge_mecab_with_kc_mout_file($mecab_file, $kc_mout_file, $mout_file);
 
-    unless ( $self->comainu->{debug} ) {
+    unless ( $self->{debug} ) {
         do { unlink $_ if -f $_; } for ($mecab_file, $kc_lout_file, $kc_mout_file);
     }
 

@@ -36,7 +36,7 @@ EOS
 GOLD
 
     my $comainu = Comainu->new;
-    my $suwanalysis = Comainu::SUWAnalysis->new(comainu => $comainu);
+    my $suwanalysis = Comainu::SUWAnalysis->new(%$comainu);
     is $suwanalysis->mecab2kc($data), $gold;
 };
 

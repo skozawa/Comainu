@@ -14,11 +14,7 @@ use Comainu::Format;
 
 sub new {
     my ($class, %args) = @_;
-    bless {
-        args_num => 4,
-        comainu  => delete $args{comainu},
-        %args
-    }, $class;
+    $class->SUPER::new( %args, args_num => 4 );
 }
 
 sub usage {
@@ -49,18 +45,18 @@ sub run {
 sub analyze {
     my ($self, $test_kc, $bnstmodel, $save_dir) = @_;
 
-    my $tmp_test_kc = $self->comainu->{"comainu-temp"} . "/" . basename($test_kc);
+    my $tmp_test_kc = $self->{"comainu-temp"} . "/" . basename($test_kc);
     Comainu::Format->format_inputdata({
         input_file       => $test_kc,
         input_type       => 'input-kc',
         output_file      => $tmp_test_kc,
         output_type      => 'kc',
-        data_format_file => $self->comainu->{data_format},
+        data_format_file => $self->{data_format},
     });
     $self->format_bnstdata($tmp_test_kc);
     $self->chunk_bnst($tmp_test_kc, $bnstmodel, $save_dir);
 
-    unlink $tmp_test_kc if !$self->comainu->{debug} && -f $tmp_test_kc;
+    unlink $tmp_test_kc if !$self->{debug} && -f $tmp_test_kc;
 }
 
 
@@ -70,22 +66,22 @@ sub format_bnstdata {
     print STDERR "# FORMAT FOR BNSTDATA\n";
 
     my $basename = basename($tmp_test_kc);
-    my $output_file = $self->comainu->{"comainu-temp"} . "/" . $basename . ".svmdata";
+    my $output_file = $self->{"comainu-temp"} . "/" . $basename . ".svmdata";
     # すでに同じ名前の中間ファイルがあれば削除
     unlink $output_file if -s $output_file;
 
     my $buff = read_from_file($tmp_test_kc);
     $buff = Comainu::Format->kc2bnstsvmdata($buff, 0);
 
-    if ( $self->comainu->{bnst_process} eq "with_luw" ) {
+    if ( $self->{bnst_process} eq "with_luw" ) {
         ## 長単位解析の出力結果
-        my $svmout_file = $self->comainu->{"comainu-temp"} . "/" . $basename . ".svmout";
+        my $svmout_file = $self->{"comainu-temp"} . "/" . $basename . ".svmout";
         $buff = Comainu::Format->pp_partial_bnst_with_luw($buff, $svmout_file);
-        unlink $svmout_file if !$self->comainu->{debug} && -f $svmout_file;
-    } elsif ( $self->comainu->{boundary} ne "none" ) {
+        unlink $svmout_file if !$self->{debug} && -f $svmout_file;
+    } elsif ( $self->{boundary} ne "none" ) {
         $buff = Comainu::Format->pp_partial($buff, {
             is_bnst  => 1,
-            boundary => $self->comainu->{boundary},
+            boundary => $self->{boundary},
         });
     }
 
@@ -103,13 +99,13 @@ sub chunk_bnst {
     my ($self, $tmp_test_kc, $bnstmodel, $save_dir) = @_;
     print STDERR "# CHUNK BNST\n";
     my $yamcha_opt = "";
-    if ($self->comainu->{"boundary"} eq "sentence" || $self->comainu->{"boundary"} eq "word") {
+    if ($self->{"boundary"} eq "sentence" || $self->{"boundary"} eq "word") {
         # sentence/word boundary
         $yamcha_opt = "-C";
     }
     my $ret = 0;
 
-    my $YAMCHA = $self->comainu->{"yamcha-dir"}."/yamcha";
+    my $YAMCHA = $self->{"yamcha-dir"}."/yamcha";
     $YAMCHA .= ".exe" if $Config{osname} eq "MSWin32";
     unless ( -x $YAMCHA ) {
         printf(STDERR "WARNING: %s Not Found or executable.\n", $YAMCHA);
@@ -117,7 +113,7 @@ sub chunk_bnst {
     }
 
     my $basename = basename($tmp_test_kc);
-    my $svmdata_file = $self->comainu->{"comainu-temp"} . "/" . $basename . ".svmdata";
+    my $svmdata_file = $self->{"comainu-temp"} . "/" . $basename . ".svmdata";
     my $output_file = $save_dir . "/" . $basename . ".bout";
     # すでに同じ名前の中間ファイルがあれば削除
     unlink $output_file if -s $output_file;
@@ -131,7 +127,7 @@ sub chunk_bnst {
     my $yamcha_com = "\"".$YAMCHA."\" ".$yamcha_opt." -m \"".$bnstmodel."\"";
     printf(STDERR "# YAMCHA_COM: %s\n", $yamcha_com) if $self->{debug};
 
-    $buff = proc_stdin2stdout($yamcha_com, $buff, $self->comainu->{"comainu-temp"});
+    $buff = proc_stdin2stdout($yamcha_com, $buff, $self->{"comainu-temp"});
     $buff =~ s/\x0d\x0a/\x0a/sg;
     $buff =~ s/^\r?\n//mg;
     $buff = Comainu::Format->move_future_front($buff);
@@ -144,7 +140,7 @@ sub chunk_bnst {
     # 不十分な中間ファイルならば、削除しておく
     unlink $output_file unless -s $output_file;
 
-    unlink $svmdata_file if !$self->comainu->{debug} && -f $svmdata_file;
+    unlink $svmdata_file if !$self->{debug} && -f $svmdata_file;
 
     return $ret;
 }

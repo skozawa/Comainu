@@ -12,11 +12,7 @@ use Comainu::Method::Kc2bnstout;
 
 sub new {
     my ($class, %args) = @_;
-    bless {
-        args_num => 4,
-        comainu  => delete $args{comainu},
-        %args
-    }, $class;
+    $class->SUPER::new( %args, args_num => 4 );
 }
 
 # 文節境界解析 BCCWJ
@@ -48,7 +44,7 @@ sub run {
 sub analyze {
     my ($self, $test_bccwj, $bnstmodel, $save_dir) = @_;
 
-    my $tmp_dir = $self->comainu->{"comainu-temp"};
+    my $tmp_dir = $self->{"comainu-temp"};
     my $basename = basename($test_bccwj);
     my $tmp_test_bccwj = $tmp_dir . "/" . $basename;
     Comainu::Format->format_inputdata({
@@ -56,19 +52,19 @@ sub analyze {
         input_type       => 'input-bccwj',
         output_file      => $tmp_test_bccwj,
         output_type      => 'bccwj',
-        data_format_file => $self->comainu->{data_format},
+        data_format_file => $self->{data_format},
     });
 
     my $kc_file = $tmp_dir . "/" . $basename . ".KC";
     my $kc_bout_file = $tmp_dir . "/" . $basename . ".KC.bout";
     my $bccwj_bout_file = $save_dir . "/" . $basename . ".bout";
 
-    Comainu::Format->bccwj2kc_file($tmp_test_bccwj, $kc_file, $self->comainu->{boundary});
-    my $kc2bnstout = Comainu::Method::Kc2bnstout->new(comainu => $self->comainu);
+    Comainu::Format->bccwj2kc_file($tmp_test_bccwj, $kc_file, $self->{boundary});
+    my $kc2bnstout = Comainu::Method::Kc2bnstout->new(%$self);
     $kc2bnstout->run($kc_file, $bnstmodel, $tmp_dir);
     Comainu::Format->merge_bccwj_with_kc_bout_file($tmp_test_bccwj, $kc_bout_file, $bccwj_bout_file);
 
-    unless ( $self->comainu->{debug} ) {
+    unless ( $self->{debug} ) {
         do { unlink $_ if -f $_; } for ($kc_bout_file, $tmp_test_bccwj);
     }
 

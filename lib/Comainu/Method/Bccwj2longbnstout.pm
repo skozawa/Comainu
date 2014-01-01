@@ -13,11 +13,7 @@ use Comainu::Method::Kc2bnstout;
 
 sub new {
     my ($class, %args) = @_;
-    bless {
-        args_num => 5,
-        comainu  => delete $args{comainu},
-        %args
-    }, $class;
+    $class->SUPER::new( %args, args_num => 5 );
 }
 
 # 文節，長単位の同時出力
@@ -52,7 +48,7 @@ sub run {
 sub analyze {
     my ($self, $test_bccwj, $luwmodel, $bnstmodel, $save_dir) = @_;
 
-    my $tmp_dir = $self->comainu->{"comainu-temp"};
+    my $tmp_dir = $self->{"comainu-temp"};
     my $basename = basename($test_bccwj);
     my $tmp_test_bccwj = $tmp_dir . "/" . $basename;
     Comainu::Format->format_inputdata({
@@ -60,7 +56,7 @@ sub analyze {
         input_type       => 'input-bccwj',
         output_file      => $tmp_test_bccwj,
         output_type      => 'bccwj',
-        data_format_file => $self->comainu->{data_format},
+        data_format_file => $self->{data_format},
     });
 
     my $kc_file          = $tmp_dir  . "/" . $basename . ".KC";
@@ -68,17 +64,17 @@ sub analyze {
     my $kc_bout_file     = $tmp_dir  . "/" . $basename . ".KC.bout";
     my $bccwj_lbout_file = $save_dir . "/" . $basename . ".lbout";
 
-    $self->comainu->{"bnst_process"} = "with_luw";
+    $self->{"bnst_process"} = "with_luw";
 
-    Comainu::Format->bccwj2kc_file($tmp_test_bccwj, $kc_file, $self->comainu->{boundary});
-    my $kc2longout = Comainu::Method::Kc2longout->new(comainu => $self->comainu);
+    Comainu::Format->bccwj2kc_file($tmp_test_bccwj, $kc_file, $self->{boundary});
+    my $kc2longout = Comainu::Method::Kc2longout->new(%$self);
     $kc2longout->run($kc_file, $luwmodel, $tmp_dir);
-    my $kc2bnstout = Comainu::Method::Kc2bnstout->new(comainu => $self->comainu);
+    my $kc2bnstout = Comainu::Method::Kc2bnstout->new(%$self);
     $kc2bnstout->run($kc_file, $bnstmodel, $tmp_dir);
-    Comainu::Format->merge_bccwj_with_kc_lout_file($tmp_test_bccwj, $kc_lout_file, $bccwj_lbout_file, $self->comainu->{boundary});
+    Comainu::Format->merge_bccwj_with_kc_lout_file($tmp_test_bccwj, $kc_lout_file, $bccwj_lbout_file, $self->{boundary});
     Comainu::Format->merge_bccwj_with_kc_bout_file($bccwj_lbout_file, $kc_bout_file, $bccwj_lbout_file);
 
-    unless ( $self->comainu->{debug} ) {
+    unless ( $self->{debug} ) {
         do { unlink $_ if -f $_; } for ($kc_lout_file, $kc_bout_file, $tmp_test_bccwj);
     }
 

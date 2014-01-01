@@ -12,11 +12,7 @@ use Comainu::Evaluate;
 
 sub new {
     my ($class, %args) = @_;
-    bless {
-        args_num => 4,
-        comainu  => delete $args{comainu},
-        %args
-    }, $class;
+    $class->SUPER::new( %args, args_num => 4 );
 }
 
 # 中単位解析モデルの評価
@@ -54,7 +50,7 @@ sub compare {
     my $res = "";
 
     # 中間ファイル
-    my $tmp1_file = $self->comainu->{"comainu-temp"} . "/" .
+    my $tmp1_file = $self->{"comainu-temp"} . "/" .
         basename($kc_file, ".KC") . ".mid";
 
     if ( -s $tmp1_file ) {
@@ -75,7 +71,7 @@ sub compare {
         return $res;
     }
 
-    my $tmp2_file = $self->comainu->{"comainu-temp"} . "/" .
+    my $tmp2_file = $self->{"comainu-temp"} . "/" .
         basename($mout_file, ".mout") . ".svmout_create.mid";
     my $buff = read_from_file($mout_file);
     $buff = $self->short2middle($buff);

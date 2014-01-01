@@ -12,11 +12,7 @@ use Comainu::Method::Kc2bnstout;
 
 sub new {
     my ($class, %args) = @_;
-    bless {
-        args_num => 4,
-        comainu  => delete $args{comainu},
-        %args
-    }, $class;
+    $class->SUPER::new( %args, args_num => 4 );
 }
 
 # 平文からの文節境界解析
@@ -48,22 +44,22 @@ sub run {
 sub analyze {
     my ($self, $test_file, $bnstmodel, $save_dir) = @_;
 
-    my $tmp_dir = $self->comainu->{"comainu-temp"};
+    my $tmp_dir = $self->{"comainu-temp"};
     my $basename = basename($test_file);
     my $mecab_file   = $tmp_dir  . "/" . $basename . ".mecab";
     my $kc_file      = $tmp_dir  . "/" . $basename . ".KC";
     my $kc_bout_file = $tmp_dir  . "/" . $basename . ".KC.bout";
     my $bout_file    = $save_dir . "/" . $basename . ".bout";
 
-    my $suwanalysis = Comainu::SUWAnalysis->new(comainu => $self->comainu);
+    my $suwanalysis = Comainu::SUWAnalysis->new(%$self);
     $suwanalysis->plain2kc_file($test_file, $mecab_file, $kc_file);
 
-    my $kc2bnstout = Comainu::Method::Kc2bnstout->new(comainu => $self->comainu);
+    my $kc2bnstout = Comainu::Method::Kc2bnstout->new(%$self);
     $kc2bnstout->run($kc_file, $bnstmodel, $tmp_dir);
 
     Comainu::Format->merge_mecab_with_kc_bout_file($mecab_file, $kc_bout_file, $bout_file);
 
-    unless ( $self->comainu->{debug} ) {
+    unless ( $self->{debug} ) {
         do { unlink $_ if -f $_; } for ($mecab_file, $kc_bout_file);
     }
 

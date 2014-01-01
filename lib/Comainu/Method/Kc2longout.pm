@@ -14,11 +14,7 @@ use BIProcessor;
 
 sub new {
     my ($class, %args) = @_;
-    bless {
-        args_num => 4,
-        comainu  => delete $args{comainu},
-        %args
-    }, $class;
+    $class->SUPER::new( %args, args_num => 4 );
 }
 
 sub usage {
@@ -51,13 +47,13 @@ sub run {
 sub analyze {
     my ($self, $test_kc, $luwmodel, $save_dir) = @_;
 
-    my $tmp_test_kc = $self->comainu->{"comainu-temp"} . "/" . basename($test_kc);
+    my $tmp_test_kc = $self->{"comainu-temp"} . "/" . basename($test_kc);
     Comainu::Format->format_inputdata({
         input_file       => $test_kc,
         input_type       => 'input-kc',
         output_file      => $tmp_test_kc,
         output_type      => 'kc',
-        data_format_file => $self->comainu->{data_format},
+        data_format_file => $self->{data_format},
     });
 
     $self->create_features($tmp_test_kc, $luwmodel);
@@ -66,8 +62,8 @@ sub analyze {
     $self->merge_chunk_result($tmp_test_kc, $save_dir);
     $self->post_process($tmp_test_kc, $luwmodel, $save_dir);
 
-    unlink $tmp_test_kc if !$self->comainu->{debug} &&
-        -f $tmp_test_kc && $self->comainu->{bnst_process} ne 'with_luw';
+    unlink $tmp_test_kc if !$self->{debug} &&
+        -f $tmp_test_kc && $self->{bnst_process} ne 'with_luw';
 }
 
 
@@ -77,23 +73,22 @@ sub create_features {
     print STDERR "# CREATE FEATURE DATA\n";
 
     # 出力ファイル名の生成
-    my $output_file = $self->comainu->{"comainu-temp"} . "/" .
+    my $output_file = $self->{"comainu-temp"} . "/" .
         basename($tmp_test_kc, ".KC") . ".KC2";
     # すでに同じ名前の中間ファイルがあれば削除
     unlink($output_file) if -s $output_file;
 
     my $buff = read_from_file($tmp_test_kc);
-    if ( $self->comainu->{boundary} ne "sentence" &&
-             $self->comainu->{boundary} ne "word" ) {
+    if ( $self->{boundary} ne "sentence" && $self->{boundary} ne "word" ) {
         $buff =~ s/^EOS.*?\n//mg;
     }
     $buff = Comainu::Format->delete_column_long($buff);
-    $buff =~ s/^\*B.*?\n//mg if $self->comainu->{boundary} eq "sentence";
+    $buff =~ s/^\*B.*?\n//mg if $self->{boundary} eq "sentence";
 
     # SVMの場合、partial chunking
     $buff = Comainu::Format->pp_partial($buff, {
-        boundary => $self->comainu->{boundary},
-    }) if $self->comainu->{luwmodel} eq "SVM";
+        boundary => $self->{boundary},
+    }) if $self->{luwmodel} eq "SVM";
 
     # 素性の追加
     my $AF = AddFeature->new;
@@ -117,13 +112,12 @@ sub chunk_luw {
 
     my $tool_cmd;
     my $opt = "";
-    if ( $self->comainu->{luwmodel} eq 'SVM' ) {
+    if ( $self->{luwmodel} eq 'SVM' ) {
         # sentence/word boundary
-        $opt = "-C" if $self->comainu->{boundary} eq "sentence"
-            || $self->comainu->{boundary} eq "word";
-        $tool_cmd = $self->comainu->{"yamcha-dir"} . "/yamcha";
-    } elsif ( $self->comainu->{luwmodel} eq 'CRF' ) {
-        $tool_cmd = $self->comainu->{"crf-dir"} . "/crf_test";
+        $opt = "-C" if $self->{boundary} eq "sentence" || $self->{boundary} eq "word";
+        $tool_cmd = $self->{"yamcha-dir"} . "/yamcha";
+    } elsif ( $self->{luwmodel} eq 'CRF' ) {
+        $tool_cmd = $self->{"crf-dir"} . "/crf_test";
     }
     $tool_cmd .= ".exe" if $Config{osname} eq "MSWin32";
 
@@ -132,29 +126,27 @@ sub chunk_luw {
         exit 0;
     }
 
-    my $input_file = $self->comainu->{"comainu-temp"} . "/" .
-        basename($tmp_test_kc, ".KC") . ".KC2";
-    my $output_file = $self->comainu->{"comainu-temp"} . "/" .
-        basename($tmp_test_kc) . ".svmout";
+    my $input_file  = $self->{"comainu-temp"} . "/" . basename($tmp_test_kc, ".KC") . ".KC2";
+    my $output_file = $self->{"comainu-temp"} . "/" . basename($tmp_test_kc) . ".svmout";
     # すでに同じ名前の中間ファイルがあれば削除
     unlink($output_file) if -s $output_file;
     check_file($input_file);
 
     my $buff = read_from_file($input_file);
-    $buff =~ s/^EOS.*?//mg if $self->comainu->{luwmodel} eq'CRF';
+    $buff =~ s/^EOS.*?//mg if $self->{luwmodel} eq'CRF';
     # yamchaやCRF++のために、明示的に最終行に改行を付与
     $buff .= "\n";
     write_to_file($input_file, $buff);
 
     my $com = "";
-    if ( $self->comainu->{luwmodel} eq "SVM" ) {
+    if ( $self->{luwmodel} eq "SVM" ) {
         $com = "\"" . $tool_cmd . "\" " . $opt . " -m \"" . $luwmodel . "\"";
-    } elsif ( $self->comainu->{luwmodel} eq "CRF" ) {
+    } elsif ( $self->{luwmodel} eq "CRF" ) {
         $com = "\"$tool_cmd\" -m \"$luwmodel\"";
     }
-    printf(STDERR "# COM: %s\n", $com) if $self->comainu->{debug};
+    printf(STDERR "# COM: %s\n", $com) if $self->{debug};
 
-    $buff = proc_stdin2stdout($com, $buff, $self->comainu->{"comainu-temp"});
+    $buff = proc_stdin2stdout($com, $buff, $self->{"comainu-temp"});
     $buff =~ s/\x0d\x0a/\x0a/sg;
     $buff =~ s/^\r?\n//mg;
     $buff = Comainu::Format->move_future_front($buff);
@@ -174,20 +166,20 @@ sub merge_chunk_result {
     print STDERR "# MERGE CHUNK RESULT\n";
 
     my $basename = basename($tmp_test_kc);
-    my $svmout_file = $self->comainu->{"comainu-temp"} . "/" . $basename . ".svmout";
+    my $svmout_file = $self->{"comainu-temp"} . "/" . $basename . ".svmout";
     my $lout_file = $save_dir . "/" . $basename . ".lout";
 
     check_file($svmout_file);
 
-    my $buff = Comainu::Format->merge_kc_with_svmout($tmp_test_kc, $svmout_file, $self->Comainu->{luwmrph});
+    my $buff = Comainu::Format->merge_kc_with_svmout($tmp_test_kc, $svmout_file, $self->{luwmrph});
     write_to_file($lout_file, $buff);
     undef $buff;
 
     # 不十分な中間ファイルならば、削除しておく
     unlink $lout_file unless -s $lout_file;
 
-    unlink $svmout_file if !$self->comainu->{debug} && -f $svmout_file &&
-        $self->comainu->{bnst_process} ne 'with_luw';
+    unlink $svmout_file if !$self->{debug} && -f $svmout_file &&
+        $self->{bnst_process} ne 'with_luw';
 
     return 0;
 }
@@ -198,7 +190,7 @@ sub post_process {
     my $ret = 0;
     print STDERR "# POST PROCESS\n";
 
-    my $cmd = $self->comainu->{"yamcha-dir"}."/yamcha";
+    my $cmd = $self->{"yamcha-dir"}."/yamcha";
     $cmd .= ".exe" if $Config{osname} eq "MSWin32";
     $cmd = sprintf("\"%s\" -C", $cmd);
 
@@ -206,17 +198,17 @@ sub post_process {
     my $test_name = basename($tmp_test_kc);
     my $lout_file = $save_dir . "/" . $test_name . ".lout";
     my $lout_data = read_from_file($lout_file);
-    my $comp_file = $self->comainu->{"comainu-home"} . '/suw2luw/Comp.txt';
+    my $comp_file = $self->{"comainu-home"} . '/suw2luw/Comp.txt';
 
     my $BIP = BIProcessor->new(
-        debug      => $self->comainu->{debug},
+        debug      => $self->{debug},
         model_type => 0,
     );
     my $buff = $BIP->execute_test($cmd, $lout_data, {
         train_name => $train_name,
         test_name  => $test_name,
-        temp_dir   => $self->comainu->{"comainu-temp"},
-        model_dir  => $self->comainu->{"comainu-svm-bip-model"},
+        temp_dir   => $self->{"comainu-temp"},
+        model_dir  => $self->{"comainu-svm-bip-model"},
         comp_file  => $comp_file,
     });
     undef $lout_data;

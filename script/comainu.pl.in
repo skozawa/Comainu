@@ -232,7 +232,6 @@ sub comainu {
     }
 
     $opts->{method} = $ARGV[0];
-    my $comainu = Comainu->new(%$opts);
 
     $ENV{PRCCHARCODE} = "utf8";
 
@@ -248,7 +247,7 @@ sub comainu {
 
     my $comainu_module = "Comainu::Method::" . ucfirst( lc $opts->{method} );
     load $comainu_module;
-    my $module= $comainu_module->new(comainu => $comainu);
+    my $module = $comainu_module->new(%$opts);
 
     if ( $opts->{debug} ) {
         printf(STDERR "# method: %s->run(%s)\n", $comainu_module,

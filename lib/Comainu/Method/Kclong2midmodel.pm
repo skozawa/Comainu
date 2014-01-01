@@ -12,11 +12,7 @@ use Comainu::Format;
 
 sub new {
     my ($class, %args) = @_;
-    bless {
-        args_num => 3,
-        comainu  => delete $args{comainu},
-        %args
-    }, $class;
+    $class->SUPER::new( %args, args_num => 3 );
 }
 
 # 中単位解析モデルの学習
@@ -54,7 +50,7 @@ sub create_mid_traindata {
     Comainu::Format->trans_dataformat($buff, {
         input_type       => 'input-kc',
         output_type      => 'kc_mid',
-        data_format_file => $self->comainu->{data_format},
+        data_format_file => $self->{data_format},
     });
     $buff = Comainu::Format->kc2mstin($buff);
 
@@ -69,8 +65,8 @@ sub train_midmodel {
     my ($self, $train_kc, $model_dir) = @_;
     print STDERR "# TRAIN MUW MODEL\n";
 
-    my $java = $self->comainu->{java};
-    my $mstparser_dir = $self->comainu->{"mstparser-dir"};
+    my $java = $self->{java};
+    my $mstparser_dir = $self->{"mstparser-dir"};
 
     my $basename   = basename($train_kc);
     my $inputFile  = $model_dir . "/" . $basename . ".mstin";

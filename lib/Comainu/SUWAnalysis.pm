@@ -49,15 +49,7 @@ use constant {
 
 sub new {
     my ($class, %args) = @_;
-    bless {
-        comainu => delete $args{comainu},
-        %args
-    }, $class;
-}
-
-sub comainu {
-    my $self = shift;
-    $self->{comainu};
+    bless { %args }, $class;
 }
 
 sub plain2kc_file {
@@ -71,12 +63,12 @@ sub plain2kc_file {
 sub plain2mecab_file {
     my ($self, $test_file, $mecab_file) = @_;
 
-    my $mecab_dic_dir = $self->comainu->{"mecab-dic-dir"};
-    my $mecab_dir = $self->comainu->{"mecab-dir"};
+    my $mecab_dic_dir = $self->{"mecab-dic-dir"};
+    my $mecab_dir = $self->{"mecab-dir"};
     my $mecabdic = $mecab_dic_dir . '/unidic';
     $mecabdic = $mecab_dic_dir . "/unidic-mecab" unless -d $mecabdic;
     my $com = sprintf("\"%s/mecab\" -O%s -d\"%s\" -r\"%s\"",
-                      $mecab_dir, UNIDIC_MECAB_TYPE, $mecabdic, $self->comainu->{mecab_rcfile});
+                      $mecab_dir, UNIDIC_MECAB_TYPE, $mecabdic, $self->{mecab_rcfile});
     $com =~ s/\//\\/g if $Config{osname} eq "MSWin32";
 
     print STDERR "# COM: ".$com."\n";
@@ -85,7 +77,7 @@ sub plain2mecab_file {
     $in_buff =~ s/\r?\n$//s;
     foreach my $line (split(/\r?\n/, $in_buff)) {
         $line .= "\n";
-        my $out = proc_stdin2stdout($com, $line, $self->comainu->{"comainu-temp"});
+        my $out = proc_stdin2stdout($com, $line, $self->{"comainu-temp"});
         $out =~ s/\x0d\x0a/\x0a/sg;
         $out .= "EOS" if $out !~ /EOS\s*$/s;
         push @$out_buffs, $out;
@@ -102,10 +94,10 @@ sub plain2mecab_file {
 sub mecab2kc_file {
     my ($self, $mecab_file, $kc_file) = @_;
     my $mecab_ext_file = $mecab_file."_ext";
-    my $ext_def_file   = $self->comainu->{"comainu-temp"}."/mecab_ext.def";
+    my $ext_def_file   = $self->{"comainu-temp"}."/mecab_ext.def";
 
     my $def_buff = "";
-    $def_buff .= "dbfile:".$self->comainu->{"unidic-db"}."\n";
+    $def_buff .= "dbfile:".$self->{"unidic-db"}."\n";
     $def_buff .= "table:lex\n";
     $def_buff .= "input:sLabel,orth,pron,lForm,lemma,pos,cType?,cForm?\n";
     $def_buff .= "output:sLabel,orth,pron,lForm,lemma,pos,cType?,cForm?,goshu,form,formBase,formOrthBase,formOrth\n";
@@ -114,7 +106,7 @@ sub mecab2kc_file {
     undef $def_buff;
 
     my $com = sprintf("\"%s\" \"%s/script/extcorpus.pl\" -C \"%s\"",
-                      $self->comainu->{perl}, $self->comainu->{"comainu-home"}, $ext_def_file);
+                      $self->{perl}, $self->{"comainu-home"}, $ext_def_file);
     proc_file2file($com, $mecab_file, $mecab_ext_file);
 
     my $buff = read_from_file($mecab_ext_file);

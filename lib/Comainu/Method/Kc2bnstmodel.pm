@@ -13,11 +13,7 @@ use Comainu::ExternalTool;
 
 sub new {
     my ($class, %args) = @_;
-    bless {
-        args_num => 3,
-        comainu  => delete $args{comainu},
-        %args
-    }, $class;
+    $class->SUPER::new( %args, args_num => 3 );
 }
 
 # 文節境界解析モデルの学習
@@ -54,7 +50,7 @@ sub train_bnstmodel {
     Comainu::Format->trans_dataformat($svmin_buff, {
         input_type       => 'input-kc',
         output_type      => 'kc',
-        data_format_file => $self->comainu->{data_format},
+        data_format_file => $self->{data_format},
     });
     $svmin_buff = Comainu::Format->kc2bnstsvmdata($svmin_buff, 1);
     $svmin_buff = $self->add_bnst_label($svmin_buff);
@@ -64,11 +60,10 @@ sub train_bnstmodel {
     undef $svmin_buff;
 
     my $makefile = Comainu::ExternalTool->create_yamcha_makefile(
-        $self->comainu, $model_dir, $basename
+        $self, $model_dir, $basename
     );
-    my $perl = $self->comainu->{perl};
     my $com = sprintf("make -f \"%s\" PERL=\"%s\" CORPUS=\"%s\" MODEL=\"%s\" train",
-                      $makefile, $perl, $svmin, $model_dir . "/" . $basename);
+                      $makefile, $self->{perl}, $svmin, $model_dir . "/" . $basename);
 
     printf(STDERR "# COM: %s\n", $com);
     system($com);

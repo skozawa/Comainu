@@ -12,11 +12,7 @@ use Comainu::Evaluate;
 
 sub new {
     my ($class, %args) = @_;
-    bless {
-        args_num => 4,
-        comainu  => delete $args{comainu},
-        %args
-    }, $class;
+    $class->SUPER::new( %args, args_num => 4 );
 }
 
 # 文節境界モデルの評価
@@ -54,8 +50,7 @@ sub compare {
     my $res = "";
 
     # 中間ファイル
-    my $tmp1_file = $self->comainu->{"comainu-temp"} . "/" .
-        basename($kc_file, ".KC") . ".bnst";
+    my $tmp1_file = $self->{"comainu-temp"} . "/" . basename($kc_file, ".KC") . ".bnst";
 
     if ( -s $tmp1_file ) {
         print STDERR "Use Cache \'$tmp1_file\'.\n";
@@ -76,8 +71,7 @@ sub compare {
     }
 
     # 中間ファイル
-    my $tmp2_file = $self->comainu->{"comainu-temp"} . "/" .
-        basename($bout_file, ".bout") . ".svmout_create.bnst";
+    my $tmp2_file = $self->{"comainu-temp"} . "/" . basename($bout_file, ".bout") . ".svmout_create.bnst";
     my $buff = read_from_file($bout_file);
     $buff = $self->short2bnst($buff);
     write_to_file($tmp2_file, $buff);

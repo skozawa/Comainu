@@ -2,8 +2,39 @@ package Comainu::Method;
 
 use strict;
 use warnings;
+use utf8;
+use FindBin qw($Bin);
 
 use Comainu::Util qw(get_dir_files check_file);
+
+my $DEFAULT_VALUES = {
+    "debug"                 => 0,
+    "comainu-home"          => $Bin . "/..",
+    "comainu-temp"          => $Bin . "/../tmp/temp",
+    "comainu-svm-bip-model" => $Bin . "/../train/BI_process_model",
+    "model-name"            => "train",
+    "data_format"           => $Bin . "/../etc/data_format.conf",
+    "mecab_rcfile"          => $Bin . "/../etc/dicrc",
+    "perl"                  => "/usr/bin/perl",
+    "java"                  => "/usr/bin/java",
+    "yamcha-dir"            => "/usr/local/bin",
+    "mecab-dir"             => "/usr/local/bin",
+    "mecab-dic-dir"         => "/usr/local/lib/mecab/dic",
+    "unidic-db"             => "/usr/local/unidic2/share/unidic.db",
+    "svm-tool-dir"          => "/usr/local/bin",
+    "crf-dir"               => "/usr/local/bin",
+    "mstparser-dir"         => "mstparser",
+    "boundary"              => "sentence",
+    "luwmrph"               => "with",
+    "suwmodel"              => "mecab",
+    "luwmodel"              => "CRF",
+    "bnst_process"          => "none",
+};
+
+sub new {
+    my ($class, %args) = @_;
+    bless { %$DEFAULT_VALUES, %args }, $class;
+}
 
 sub args_num {
     my $self = shift;
@@ -36,11 +67,11 @@ sub before_analyze {
 sub check_luwmodel {
    my ($self, $luwmodel) = @_;
 
-   if ( $self->comainu->{luwmodel} eq "SVM" || $self->comainu->{luwmodel} eq "CRF" ) {
+   if ( $self->{luwmodel} eq "SVM" || $self->{luwmodel} eq "CRF" ) {
        check_file($luwmodel);
    } else {
        printf(STDERR "ERROR: '%s' not found model name.\n",
-              $self->comainu->{luwmodel});
+              $self->{luwmodel});
        die;
    }
 }
