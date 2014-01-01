@@ -10,7 +10,7 @@ use Config;
 use Comainu::Util qw(read_from_file write_to_file check_file proc_stdin2stdout);
 use Comainu::Format;
 use AddFeature;
-use BIProcessor;
+use Comainu::BIProcessor;
 
 sub new {
     my ($class, %args) = @_;
@@ -200,11 +200,11 @@ sub post_process {
     my $lout_data = read_from_file($lout_file);
     my $comp_file = $self->{"comainu-home"} . '/suw2luw/Comp.txt';
 
-    my $BIP = BIProcessor->new(
+    my $bip_processor = Comainu::BIProcessor->new(
         debug      => $self->{debug},
         model_type => 0,
     );
-    my $buff = $BIP->execute_test($cmd, $lout_data, {
+    my $buff = $bip_processor->execute_test($cmd, $lout_data, {
         train_name => $train_name,
         test_name  => $test_name,
         temp_dir   => $self->{"comainu-temp"},

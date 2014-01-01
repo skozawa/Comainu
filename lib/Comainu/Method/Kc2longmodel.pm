@@ -13,7 +13,7 @@ use Comainu::Format;
 use Comainu::Dictionary;
 use Comainu::ExternalTool;
 use AddFeature;
-use BIProcessor;
+use Comainu::BIProcessor;
 
 sub new {
     my ($class, %args) = @_;
@@ -120,8 +120,8 @@ sub add_luw_label {
     {
         open(my $fh_ref, "<", $tmp_train_kc)  or die "Cannot open '$tmp_train_kc'";
         open(my $fh_svmin, "<", $output_file) or die "Cannot open'$output_file'";
-        my $BIP = BIProcessor->new;
-        $BIP->extract_from_train($fh_ref, $fh_svmin, $model_dir, $basename);
+        my $bip_processor = Comainu::BIProcessor->new;
+        $bip_processor->extract_from_train($fh_ref, $fh_svmin, $model_dir, $basename);
         close($fh_ref);
         close($fh_svmin);
     }

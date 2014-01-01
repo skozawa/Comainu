@@ -1,4 +1,4 @@
-package t::BIProcessor;
+package t::Comainu::BIProcessor;
 use strict;
 use warnings;
 use utf8;
@@ -10,16 +10,14 @@ use Test::Mock::Guard;
 use Encode;
 use File::Temp;
 
-use BIProcessor;
-
 sub _use_ok (startup => 1) {
-    use_ok 'BIProcessor';
+    use_ok 'Comainu::BIProcessor';
 };
 
 # sub extract_from_train : Tests {};
 
 sub execute_test : Test(1) {
-    my $g = mock_guard('BIProcessor' => {
+    my $g = mock_guard('Comainu::BIProcessor' => {
         make_long_unit => sub {
             my $units = [
                 ['Ba 駒 コマ 駒 名詞-普通名詞-一般 * * コマ コマ 駒 駒 * * 和 名詞-普通名詞-一般 * * コマ 駒 駒'],
@@ -59,7 +57,7 @@ EOS
 
 LOUT
 
-    my $bip = BIProcessor->new;
+    my $bip = Comainu::BIProcessor->new;
 
     is $bip->execute_test('', '', {
         temp_dir  => '',
@@ -102,7 +100,7 @@ DATA
     print $fh encode_utf8 $data;
     close $fh;
 
-    my $bip = BIProcessor->new;
+    my $bip = Comainu::BIProcessor->new;
     my ($lout_units, $BI_units) = $bip->make_long_unit($lout_data, $filename);
 
     is_deeply $BI_units, [5];
@@ -124,7 +122,7 @@ DATA
 
 sub extract_BI_data_train : Test(3) {
     my ($pos_dat, $ctype_dat, $cform_dat);
-    my $g = mock_guard("BIProcessor" => {
+    my $g = mock_guard("Comainu::BIProcessor" => {
         write_to_file => sub {
             my ($self, $file, $data) = @_;
             $pos_dat = $data   if $file =~ /BI_pos/;
@@ -149,7 +147,7 @@ sub extract_BI_data_train : Test(3) {
     ];
     my $BI_units = [5];
 
-    my $bip = BIProcessor->new;
+    my $bip = Comainu::BIProcessor->new;
     $bip->extract_BI_data($long_units, $BI_units, {
         dir => "tmp", basenmae => "",
     });
@@ -191,7 +189,7 @@ sub extract_BI_data_train : Test(3) {
 
 sub extract_BI_data_test : Test(3) {
     my ($pos_dat, $ctype_dat, $cform_dat);
-    my $g = mock_guard("BIProcessor" => {
+    my $g = mock_guard("Comainu::BIProcessor" => {
         write_to_file => sub {
             my ($self, $file, $data) = @_;
             $pos_dat = $data   if $file =~ /BI_pos/;
@@ -231,7 +229,7 @@ sub extract_BI_data_test : Test(3) {
     ];
     my $BI_units = [5];
 
-    my $bip = BIProcessor->new;
+    my $bip = Comainu::BIProcessor->new;
     $bip->extract_BI_data($long_units, $BI_units, {
         dir => "tmp", basenmae => "", is_test => 1,
     });
@@ -253,7 +251,7 @@ sub extract_BI_data_test : Test(3) {
 };
 
 sub long2feature : Test(4) {
-    my $bip = BIProcessor->new;
+    my $bip = Comainu::BIProcessor->new;
     is $bip->long2feature([
         "き クル 来る 動詞-非自立可能 カ行変格 連用形-一般"
     ]), " き クル 来る 動詞-非自立可能 動詞 非自立可能 * * カ行変格 カ行変格 * * 連用形-一般 連用形 一般 *" .
@@ -285,7 +283,7 @@ sub long2feature : Test(4) {
 };
 
 sub short2feature : Test(4) {
-    my $bip = BIProcessor->new;
+    my $bip = Comainu::BIProcessor->new;
     is $bip->short2feature("き クル 来る 動詞-非自立可能 カ行変格 連用形-一般"),
         " き クル 来る 動詞-非自立可能 動詞 非自立可能 * * カ行変格 カ行変格 * * 連用形-一般 連用形 一般 *";
 
@@ -302,7 +300,7 @@ sub short2feature : Test(4) {
 # sub exec_test : Tests {};
 
 sub merge_data : Test(2) {
-    my $g = mock_guard('BIProcessor' => {
+    my $g = mock_guard('Comainu::BIProcessor' => {
         read_from_out => sub {
             my ($self, $file) = @_;
             return "H080 H000"    if $file =~ /BI_pos/;
@@ -318,7 +316,7 @@ sub merge_data : Test(2) {
     ];
     my $BI_units = [ 0, 1 ];
 
-    my $bip = BIProcessor->new;
+    my $bip = Comainu::BIProcessor->new;
     $bip->{h_label} = { "動詞-一般" => "H080", "名詞-普通名詞-一般" => "H000" };
     $bip->{k1_label} = {};
     $bip->{k2_label} = {};
@@ -338,7 +336,7 @@ sub create_cType_dat : Test(4) {
 DATA
 
     my $dat_buff = "";
-    my $g = mock_guard("BIProcessor" => {
+    my $g = mock_guard("Comainu::BIProcessor" => {
         write_to_file => sub {
             my ($self, $file, $buff) = @_;
             $dat_buff = $buff;
@@ -350,7 +348,7 @@ DATA
     print $fh encode_utf8 $out;
     close $fh;
 
-    my $bip = BIProcessor->new;
+    my $bip = Comainu::BIProcessor->new;
     $bip->{k1_label} = {
         "五段-ナ行" => "K1006",
         "五段-バ行" => "K1007",
@@ -378,7 +376,7 @@ sub create_cForm_dat : Test(3) {
 DATA
 
     my $dat_buff = "";
-    my $g = mock_guard("BIProcessor" => {
+    my $g = mock_guard("Comainu::BIProcessor" => {
         write_to_file => sub {
             my ($self, $file, $buff) = @_;
             $dat_buff = $buff;
@@ -390,7 +388,7 @@ DATA
     print $fh encode_utf8 $out;
     close $fh;
 
-    my $bip = BIProcessor->new;
+    my $bip = Comainu::BIProcessor->new;
     $bip->{k2_label} = {
         "語幹-一般" => "K2000",
         "未然形-一般" => "K2010",
@@ -421,7 +419,7 @@ DATA
     print $fh encode_utf8 $data;
     close $fh;
 
-    my $bip = BIProcessor->new;
+    my $bip = Comainu::BIProcessor->new;
     my $outdata = $bip->read_from_out($filename);
 
     is $outdata, "H030 H000 H080 H100 ";
@@ -442,7 +440,7 @@ DATA
     print $fh encode_utf8 $data;
     close $fh;
 
-    my $bip = BIProcessor->new;
+    my $bip = Comainu::BIProcessor->new;
     my $comp = $bip->load_comp_file($filename);
 
     is_deeply $comp, {

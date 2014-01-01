@@ -2,7 +2,7 @@
 
 # BIのみから成る長単位を処理する
 
-package BIProcessor;
+package Comainu::BIProcessor;
 
 use strict;
 use utf8;
