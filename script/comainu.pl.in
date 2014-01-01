@@ -25,8 +25,6 @@ use Config;
 use Getopt::Long;
 use Module::Load;
 
-use Comainu;
-
 my $DEFAULT_VALUES = {
     "debug"                 => "0",
     "perl"                  => "@PERL@",

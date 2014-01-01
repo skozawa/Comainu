@@ -10,7 +10,7 @@ use parent 'Test::Class';
 use Test::More;
 use Test::Mock::Guard;
 
-use Comainu;
+use Comainu::Method;
 
 sub _use_ok : Test(startup => 1) {
     use_ok 'Comainu::SUWAnalysis';
@@ -35,7 +35,7 @@ MECAB_EXT
 EOS
 GOLD
 
-    my $comainu = Comainu->new;
+    my $comainu = Comainu::Method->new;
     my $suwanalysis = Comainu::SUWAnalysis->new(%$comainu);
     is $suwanalysis->mecab2kc($data), $gold;
 };

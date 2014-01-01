@@ -10,7 +10,7 @@ use parent 'Test::Class';
 use Test::More;
 use Test::Mock::Guard;
 
-use Comainu;
+use Comainu::Method;
 use Comainu::Util qw(
     proc_stdin2stdout
     proc_stdin2file
@@ -26,7 +26,7 @@ sub _use_ok : Test(startup => 1) {
 # sub _write_to_file : Tests {};
 
 sub _proc_stdin2stdout : Test(1) {
-    my $comainu = Comainu->new;
+    my $comainu = Comainu::Method->new;
     is proc_stdin2stdout('cat', 'test', $comainu->{"comainu-temp"}), 'test';
 };
 
@@ -49,7 +49,6 @@ sub _proc_file2file : Test(1) {
     my $infile  = create_tmp_file("test");
     my $outfile = create_tmp_file("");
 
-    my $comainu = Comainu->new;
     proc_file2file('cat', $infile, $outfile);
 
     open(IN, $outfile);

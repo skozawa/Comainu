@@ -10,15 +10,12 @@ use parent 'Test::Class';
 use Test::More;
 use Test::Mock::Guard;
 
-use Comainu;
-
 sub _use_ok : Test(startup => 1) {
     use_ok 'Comainu::Format';
 }
 
 # sub format_inputdata : Tests {};
 sub trans_dataformat : Test(3) {
-    my $comainu = Comainu->new;
     my $format_data = "";
     my $g = mock_guard('Comainu::Format', {
         read_from_file => sub { $format_data },
