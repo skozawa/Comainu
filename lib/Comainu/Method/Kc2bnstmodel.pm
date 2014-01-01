@@ -56,7 +56,7 @@ sub train_bnstmodel {
         output_type      => 'kc',
         data_format_file => $self->comainu->{data_format},
     });
-    $svmin_buff = $self->comainu->kc2bnstsvmdata($svmin_buff, 1);
+    $svmin_buff = Comainu::Format->kc2bnstsvmdata($svmin_buff, 1);
     $svmin_buff = $self->add_bnst_label($svmin_buff);
     $svmin_buff =~ s/^EOS.*?\n//mg;
     $svmin_buff .= "\n";

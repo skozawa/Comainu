@@ -66,7 +66,7 @@ sub analyze {
 
     my $kc2longout = Comainu::Method::Kc2longout->new(comainu => $self->comainu);
     $kc2longout->run($kc_file, $luwmodel, $tmp_dir);
-    $self->comainu->lout2kc4mid_file($kc_lout_file, $kc_file);
+    Comainu::Format->lout2kc4mid_file($kc_lout_file, $kc_file);
 
     my $kclong2midout = Comainu::Method::Kclong2midout->new(comainu => $self->comainu);
     $kclong2midout->run($kc_file, $muwmodel, $tmp_dir);

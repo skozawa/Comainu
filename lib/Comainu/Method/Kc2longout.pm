@@ -87,11 +87,13 @@ sub create_features {
              $self->comainu->{boundary} ne "word" ) {
         $buff =~ s/^EOS.*?\n//mg;
     }
-    $buff = $self->comainu->delete_column_long($buff);
+    $buff = Comainu::Format->delete_column_long($buff);
     $buff =~ s/^\*B.*?\n//mg if $self->comainu->{boundary} eq "sentence";
 
     # SVMの場合、partial chunking
-    $buff = $self->comainu->pp_partial($buff) if $self->comainu->{luwmodel} eq "SVM";
+    $buff = Comainu::Format->pp_partial($buff, {
+        boundary => $self->comainu->{boundary},
+    }) if $self->comainu->{luwmodel} eq "SVM";
 
     # 素性の追加
     my $AF = AddFeature->new;
@@ -155,8 +157,8 @@ sub chunk_luw {
     $buff = proc_stdin2stdout($com, $buff, $self->comainu->{"comainu-temp"});
     $buff =~ s/\x0d\x0a/\x0a/sg;
     $buff =~ s/^\r?\n//mg;
-    $buff = $self->comainu->move_future_front($buff);
-    $buff = $self->comainu->truncate_last_column($buff);
+    $buff = Comainu::Format->move_future_front($buff);
+    $buff = Comainu::Format->truncate_last_column($buff);
     write_to_file($output_file, $buff);
     undef $buff;
 

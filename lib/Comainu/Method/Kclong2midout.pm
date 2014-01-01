@@ -74,7 +74,7 @@ sub create_mstin {
         basename($test_kc, ".KC") . ".mstin";
 
     my $buff = read_from_file($test_kc);
-    $buff = $self->comainu->kc2mstin($buff);
+    $buff = Comainu::Format->kc2mstin($buff);
 
     write_to_file($output_file, $buff);
     undef $buff;
@@ -128,7 +128,7 @@ sub merge_mst_result {
         basename($test_kc, ".KC") . ".mstout";
     my $output_file = $save_dir . "/" . basename($test_kc) . ".mout";
 
-    my $buff = $self->comainu->merge_kc_with_mstout($test_kc, $mstout_file);
+    my $buff = Comainu::Format->merge_kc_with_mstout($test_kc, $mstout_file);
     write_to_file($output_file, $buff); undef $buff;
 
     unlink $mstout_file if !$self->comainu->{debug} && -f $mstout_file;

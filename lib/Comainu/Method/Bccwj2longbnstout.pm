@@ -70,7 +70,7 @@ sub analyze {
 
     $self->comainu->{"bnst_process"} = "with_luw";
 
-    $self->comainu->bccwj2kc_file($tmp_test_bccwj, $kc_file);
+    Comainu::Format->bccwj2kc_file($tmp_test_bccwj, $kc_file, $self->comainu->{boundary});
     my $kc2longout = Comainu::Method::Kc2longout->new(comainu => $self->comainu);
     $kc2longout->run($kc_file, $luwmodel, $tmp_dir);
     my $kc2bnstout = Comainu::Method::Kc2bnstout->new(comainu => $self->comainu);

@@ -56,7 +56,7 @@ sub create_mid_traindata {
         output_type      => 'kc_mid',
         data_format_file => $self->comainu->{data_format},
     });
-    $buff = $self->comainu->kc2mstin($buff);
+    $buff = Comainu::Format->kc2mstin($buff);
 
     write_to_file($model_dir . "/" . $basename . ".mstin", $buff);
     undef $buff;

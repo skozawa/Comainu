@@ -63,7 +63,7 @@ sub analyze {
     my $kc_mout_file    = $tmp_dir  . "/" . $basename . ".KC.mout";
     my $bccwj_mout_file = $save_dir . "/" . $basename . ".mout";
 
-    $self->comainu->bccwjlong2kc_file($tmp_test_bccwj, $kc_file);
+    Comainu::Format->bccwjlong2kc_file($tmp_test_bccwj, $kc_file, $self->comainu->{boundary});
     my $kclong2midout = Comainu::Method::Kclong2midout->new(comainu => $self->comainu);
     $kclong2midout->run($kc_file, $muwmodel, $tmp_dir);
     $self->comainu->merge_bccwj_with_kc_mout_file($tmp_test_bccwj, $kc_mout_file, $bccwj_mout_file);

@@ -75,15 +75,18 @@ sub format_bnstdata {
     unlink $output_file if -s $output_file;
 
     my $buff = read_from_file($tmp_test_kc);
-    $buff = $self->comainu->kc2bnstsvmdata($buff, 0);
+    $buff = Comainu::Format->kc2bnstsvmdata($buff, 0);
 
     if ( $self->comainu->{bnst_process} eq "with_luw" ) {
         ## 長単位解析の出力結果
         my $svmout_file = $self->comainu->{"comainu-temp"} . "/" . $basename . ".svmout";
-        $buff = $self->comainu->pp_partial_bnst_with_luw($buff, $svmout_file);
+        $buff = Comainu::Format->pp_partial_bnst_with_luw($buff, $svmout_file);
         unlink $svmout_file if !$self->comainu->{debug} && -f $svmout_file;
     } elsif ( $self->comainu->{boundary} ne "none" ) {
-        $buff = $self->comainu->pp_partial($buff, {is_bnst => 1});
+        $buff = Comainu::Format->pp_partial($buff, {
+            is_bnst  => 1,
+            boundary => $self->comainu->{boundary},
+        });
     }
 
     write_to_file($output_file, $buff);
@@ -131,7 +134,7 @@ sub chunk_bnst {
     $buff = proc_stdin2stdout($yamcha_com, $buff, $self->comainu->{"comainu-temp"});
     $buff =~ s/\x0d\x0a/\x0a/sg;
     $buff =~ s/^\r?\n//mg;
-    $buff = $self->comainu->move_future_front($buff);
+    $buff = Comainu::Format->move_future_front($buff);
     write_to_file($output_file, $buff);
 
     $buff = $self->comainu->merge_kc_with_bout($tmp_test_kc, $output_file);

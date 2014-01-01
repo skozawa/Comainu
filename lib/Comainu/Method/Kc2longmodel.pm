@@ -78,7 +78,7 @@ sub make_luw_traindata {
     my $basename = basename($tmp_train_kc);
     my $buff = read_from_file($tmp_train_kc);
     $buff =~ s/^EOS.*?\n|^\*B.*?\n//mg;
-    $buff = $self->comainu->delete_column_long($buff);
+    $buff = Comainu::Format->delete_column_long($buff);
     # $buff = $self->add_column($buff);
 
     ## 辞書の作成
@@ -115,7 +115,7 @@ sub add_luw_label {
     open(my $fh_in, "<", $kc2_file)      or die "Cannot open '$kc2_file'";
     open(my $fh_out, ">", $output_file)  or die "Cannot open '$output_file'";
     binmode($fh_out);
-    $self->comainu->add_pivot_to_kc2($fh_ref, $fh_in, $fh_out);
+    Comainu::Format->add_pivot_to_kc2($fh_ref, $fh_in, $fh_out);
     close($fh_out);
     close($fh_in);
     close($fh_ref);

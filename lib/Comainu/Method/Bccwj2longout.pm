@@ -67,7 +67,7 @@ sub analyze {
     my $kc_lout_file    = $tmp_dir  . "/" . $basename . ".KC.lout";
     my $bccwj_lout_file = $save_dir . "/" . $basename . ".lout";
 
-    $self->comainu->bccwj2kc_file($tmp_test_bccwj, $kc_file);
+    Comainu::Format->bccwj2kc_file($tmp_test_bccwj, $kc_file, $self->comainu->{boundary});
     my $kc2longout = Comainu::Method::Kc2longout->new(comainu => $self->comainu);
     $kc2longout->run($kc_file, $luwmodel, $tmp_dir);
     $self->comainu->merge_bccwj_with_kc_lout_file($tmp_test_bccwj, $kc_lout_file, $bccwj_lout_file);
