@@ -20,12 +20,6 @@ sub dummy : Test(1) {
     ok 1;
 }
 
-# sub add_column : Tests {};
-# sub poscreate : Tests {};
-# sub pp_ctype : Tests {};
-# sub check_args : Tests {};
-
-
 sub create_tmp_file {
     my $data = shift;
 
