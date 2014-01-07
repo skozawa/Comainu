@@ -1,6 +1,17 @@
 #!@PERL@
 # -*- mode: perl; coding: utf-8 -*-
 
+BEGIN {
+    $ENV{PERL_DL_NONLAZY} = 1;
+    if ( exists $ENV{PAR_PROGNAME} ) {
+        use File::Spec::Functions;
+        use Config ();
+        $ENV{PERL_TCL_DL_PATH} = catfile(
+            $ENV{PAR_TEMP}, 'tkkit.' . $Config::Config{dlext},
+        );
+    }
+}
+
 use strict;
 use utf8;
 use Encode;
@@ -10,7 +21,7 @@ use lib "$Bin/lib";
 use Getopt::Long;
 use File::Basename;
 
-use Tk;
+use Tkx;
 use WinComainu;
 
 my $APP_NAME = "WinComainu";
@@ -75,9 +86,10 @@ sub main {
             $opts->{"conf-file"} = $conf_file;
         }
     }
-    my $mw = MainWindow->new();
-    my $wc = $mw->WinComainu("opts"=>$opts);
-    MainLoop();
+
+    my $mw = WinComainu->new('.');
+    $mw->initialize($opts);
+    Tkx::MainLoop();
 }
 
 main();

@@ -1,36 +1,20 @@
 # -*- mode: perl; coding: utf-8 -*-
-
-use strict;
-
 package AppBase;
-use vars qw($VERSION $DoDebug);
-$VERSION = '1.000';
-$DoDebug = 0;
-
-use Config;
-use Tk qw (Ev);
-# use AutoLoader;
-
-use Tk::Frame ();
-use base qw(Tk::Frame);
-
-Construct Tk::Widget 'AppBase';
-
+use strict;
+use warnings;
 use utf8;
+use base qw(Tkx::widget);
+
+use Tkx;
+use Tkx::Scrolled;
 use FindBin qw($Bin);
 use File::Spec;
-use File::Basename;
+use Encode;
 use Config;
-use Tk;
-use Tk::BrowseEntry;
-use Tk::DropSite;
 
 use AppConf;
-use TabFrame;
-use Text_patch;
 
-my $DEFAULT_VALUES =
-{
+my $DEFAULT_VALUES = {
     "debug" => 0,
     "app-name" => "",
     "app-version" => "",
@@ -45,61 +29,40 @@ my $DEFAULT_VALUES =
     "help-file" => "$Bin/../Readme.txt",
 };
 
-sub ClassInit
-{
-    my ($class,$mw) = @_;
-
-    return $class->SUPER::ClassInit($mw);
-}
-
-sub InitObject
-{
+sub initialize {
     my ($self, $args) = @_;
-    my $parent = $self->parent();
-    my $toplevel = $self->toplevel();
-    if ($parent == $toplevel) {
-        $toplevel->withdraw();
+
+    unless ( $self->_parent ) {
+        $self->g_wm_withdraw;
     }
-    $self->update();
-    my $args_opts = {};
-    if (exists($args->{"opts"})) {
-        $args_opts = $args->{"opts"};
-        delete $args->{"opts"};
-    }
-    if (!exists($self->{"opts"})) {
-        $self->{"opts"} = {};
-    }
-    my $opts = {%$DEFAULT_VALUES, %{$self->{"opts"}}, %$args_opts};
-    $self->{"args"} = $args;
-    $self->{"opts"} = $opts;
+    my $opts = {%$DEFAULT_VALUES, %{$args // {}}};
     my $app_conf = AppConf->new(
-        "debug" => $opts->{"debug"},
-        "conf-file" => $opts->{"conf-file"},
+        debug           => $opts->{debug},
+        "conf-file"     => $opts->{"conf-file"},
         "conf-org-file" => $opts->{"conf-org-file"},
     );
-    $self->{"app-conf"} = $app_conf;
-    $self->{"app-conf-init"} = $app_conf->clone();
-    $self->pack(-fill=>"both", -expand=>1);
-    # $self->{"opts"} = $opts;
-    while (my ($key, $value) = each(%$opts)) {
-        $self->{$key} = $value;
+    $self->_data->{"app-conf"} = $app_conf;
+    $self->_data->{"app-conf-init"} = $app_conf->clone;
+    # XXX
+    # $self->g_pack( -fill => "both", -expand => 1 );
+
+    while ( my ($key, $val) = each %$opts ) {
+        $self->_data->{$key} = $val;
     }
 
-    if ($app_conf->get("msg-file")) {
-        $self->{"msg-file"} = $app_conf->get("msg-file");
-    }
+    $self->_data->{"msg-file"} = $app_conf->get("msg-file") if $app_conf->get("msg-file");
 
-    # message catalogue
-    if (exists($self->{"msg-file"})) {
+    # message catelogue
+    if ( $self->_data->{"msg-file"} ) {
         my $MSG = {};
-        my $msg_file = $self->{"msg-file"};
+        my $msg_file = $self->_data->{"msg-file"};
         eval {
             open(my $fh, $msg_file) or die "Cannot open '$msg_file'";
             my $msg_str = join("", (<$fh>));
             close($fh);
             $msg_str = Encode::decode("utf-8", $msg_str);
             eval "$msg_str";
-            $self->{"msg"} = $MSG;
+            $self->_data->{msg} = $MSG;
         };
         if ($@) {
             print STDERR "Error: loading '$msg_file'\n";
@@ -108,320 +71,165 @@ sub InitObject
     }
 
     # title
-    eval {
-        my $title = $self->{"title"};
-        $title =~ s/\[APP_NAME\]/$opts->{"app-name"}/g;
-        $title =~ s/\[APP_VERSION\]/$opts->{"app-version"}/g;
-        if ($parent == $toplevel) {
-            $self->toplevel()->title($title);
-        }
-    };
+    my $title = $self->_data->{title} // '';
+    $title =~ s/\[APP_NAME\]/$opts->{"app-name"}/g;
+    $title =~ s/\[APP_VERSION\]/$opts->{"app-version"}/g;
+    $self->g_wm_title($title) unless $self->_parent;
 
     # icon
-    if (exists($self->{"gif-file"}) and -f $self->{"gif-file"}) {
-        $self->{"img"} = $self->Photo(-format=>"gif", -file=>$self->{"gif-file"});
-        if ($parent == $toplevel) {
-            $toplevel->iconimage($self->{"img"});
-        }
+    if ( $self->_data->{"gif-file"} && -f $self->_data->{"gif-file"}) {
+        # $self->_data->{img} = $self->Photo( -format => "gif", -file => $self->_data->{"gif-file"});
+        $self->_data->{img} = Tkx::image(
+            "create", "photo",
+            -format => "gif",
+            -file => $self->_data->{"gif-file"}
+        );
+        $self->g_wm_iconphoto($self->_data->{img}) unless $self->_parent;
     }
 
     # status bar
-    my $st_fr = $self->Frame(-bd=>2, -height=>10, -relief=>"groove");
-    $st_fr->pack(-side=>"bottom", -fill=>"x");
-    $st_fr->{"lbl"} = $st_fr->Label(-text=>"status:");
-    $st_fr->{"st"} = $st_fr->Entry(-bg=>"#cfcfcf", -relief=>"sunken");
-    $st_fr->{"lbl"}->pack(-side=>"left");
-    $st_fr->{"st"}->pack(-side=>"left", -fill=>"x", -expand=>"yes");
-    $self->{"status"} = $st_fr->{"st"};
-    $self->{"status"}->configure(-state=>"readonly");
+    my $status_frame = $self->new_frame(
+        -bd => 2, -height => 10, -relief => "groove",
+    );
+    $status_frame->g_pack( -side => "bottom", -fill => "x" );
+    $status_frame->_data->{lbl} = $status_frame->new_label(-text => "status:");
+    $status_frame->_data->{st}  = $status_frame->new_entry(-bg => "#cfcfcf", -relief => "sunken");
+    $status_frame->_data->{lbl}->g_pack(-side => "left");
+    $status_frame->_data->{st}->g_pack(
+        -side => "left", -fill => "x", -expand => "yes",
+    );
+    $self->_data->{status} = $status_frame->_data->{st};
+    $self->_data->{status}->configure(-state => "readonly");
 
     # menubar
-    my $ws = $self->windowingsystem();
+    my $ws = Tkx::tk_windowingsystem();
     if ($ws eq "win32") {
         # patch for Windows
-        $self->bind("all",'<Alt-KeyPress>',['TraverseToMenu', Tk::Ev('K')]);
-        $self->bind("all",'<F10>','FirstMenu');
+        $self->g_bind('<Alt-KeyPress>', ['TraverseToMenu', Tkx::Ev('K')]);
+        $self->g_bind('<F10>', 'FirstMenu');
     }
-    my $mb_fr = $self->Frame(-bd=>2, -height=>10, -relief=>"groove");
-    $mb_fr->{"oc"} = $mb_fr->Frame(-width=>10, -height=>8, -bg=>"#aacccc");
-    $mb_fr->{"oc"}->bind("<Button-1>", sub { $self->toggle_menubar(); });
-    $mb_fr->{"bts"} = $mb_fr->Frame(-relief=>"groove");
-    $mb_fr->pack(-side=>"top", -fill=>"x");
-    $mb_fr->{"oc"}->pack(-side=>"left", -fill=>"y");
-    $self->{"menubar"} = $mb_fr;
-    $self->{"menubar"}{"flag"} = 0;
-    $self->toggle_menubar(undef);
+    my $menubar_frame = $self->new_frame(
+        -bd => 2, -height => 10, -relief => "groove"
+    );
+    $menubar_frame->_data->{oc} = $menubar_frame->new_frame(
+        -width => 10, -height => 8, -bg => "#aacccc"
+    );
+    $menubar_frame->_data->{oc}->g_bind(
+        "<Button-1>", sub { $self->toggle_menubar; }
+    );
+    $menubar_frame->_data->{bts} = $menubar_frame->new_frame(-relief => "groove");
+    $menubar_frame->g_pack(-side => "top", -fill => "x");
+    $menubar_frame->_data->{oc}->g_pack(-side => "left", -fill => "y");
+    $self->_data->{menubar} = $menubar_frame;
+    $self->_data->{menubar}->_data->{flag} = 0;
+    $self->toggle_menubar;
 
     # toolbar
-    my $tb_fr = $self->Frame(-bd=>2, -height=>10, -relief=>"groove");
-    $tb_fr->{"oc"} = $tb_fr->Frame(-width=>40, -height=>8, -bg=>"#ccaacc");
-    $tb_fr->{"oc"}->bind("<Button-1>", sub { $self->toggle_toolbar(); });
-    $tb_fr->{"bts"} = $tb_fr->Frame(-relief=>"groove");
-    $tb_fr->pack(-side=>"top", -fill=>"x");
-    $tb_fr->{"oc"}->pack(-side=>"left", -fill=>"y");
-    $self->{"toolbar"} = $tb_fr;
-    $self->{"toolbar"}{"flag"} = 0;
-    $self->toggle_toolbar(undef);
+    my $toolbar_frame = $self->new_frame(
+        -bd => 2, -height => 10, -relief => "groove"
+    );
+    $toolbar_frame->_data->{oc} = $toolbar_frame->new_frame(
+        -width => 40, -height => 8, -bg => "#ccaacc"
+    );
+    $toolbar_frame->_data->{oc}->g_bind(
+        "<Button-1>", sub { $self->toggle_toolbar; }
+    );
+    $toolbar_frame->_data->{bts} = $toolbar_frame->new_frame(-relief => "groove");
+    $toolbar_frame->g_pack(-side => "top", -fill => "x");
+    $toolbar_frame->_data->{oc}->g_pack(-side => "left", -fill => "y");
+    $self->_data->{toolbar} = $toolbar_frame;
+    $self->_data->{toolbar}->_data->{flag} = 0;
+    $self->toggle_toolbar;
 
     # mainframe
-    my $mf_fr = $self->Frame(-bd=>2, -height=>10, -relief=>"groove");
-    $mf_fr->pack(-side=>"top", -fill=>"both", -expand=>"yes");
-    $self->{"mainframe"} = $mf_fr;
+    my $mainframe = $self->new_frame(
+        -bd => 2, -height => 10, -relief => "groove"
+    );
+    $mainframe->g_pack(
+        -side => "top", -fill => "both", -expand => "yes"
+    );
+    $self->_data->{mainframe} = $mainframe;
 
     # Protocol
-    if ($parent == $toplevel) {
-        $toplevel->protocol("WM_DELETE_WINDOW", sub { $self->cmd_close(); });
+    $self->g_wm_protocol(
+        "WM_DELETE_WINDOW", sub { $self->cmd_close; }
+    ) unless $self->_parent;
+
+    unless ( $self->_parent ) {
+        Tkx::update();
+        $self->g_wm_deiconify;
     }
 
-    $self->init();
-
-    if ($parent == $toplevel) {
-        $toplevel->update();
-        $toplevel->deiconify();
-    }
     return $self;
 }
 
-sub get_top_pathname {
-    my $self = shift;
-    my $top_pathname = "$Bin/..";
-    $top_pathname =~ s/[^\/]+\/\.\.//g;
-    $top_pathname =~ s/\/$//;
-    return $top_pathname;
-}
-
-sub init {
-    my $self = shift;
-    print "Not implemented\n";
-}
-
 sub toggle_menubar {
-    my $self = shift;
-    my ($event) = @_;
-    my $mb = $self->{"menubar"};
-    if ($mb->{"flag"} == 1) {
-        $mb->parent()->configure(-height=>10);
-        $mb->{"oc"}->configure(-width=>40, -height=>8);
-        $mb->{"bts"}->packForget();
-        $mb->{"flag"} = 0;
+    my ($self, $event) = @_;
+
+    my $manubar = $self->_data->{menubar};
+    if ($manubar->_data->{flag} == 1) {
+        $manubar->_parent->configure(-height => 10);
+        $manubar->_data->{oc}->configure(-width => 40, -height => 8);
+        $manubar->_data->{bts}->g_packForget;
+        $manubar->_data->{flag} = 0;
     } else {
-        $mb->{"oc"}->configure(-width=>8, -height=>40);
-        $mb->{"bts"}->pack(-side=>"left", -padx=>5, -pady=>5, -fill=>"x", -expand=>"yes");
-        $mb->{"flag"} = 1;
+        $manubar->_data->{oc}->configure(-width => 8, -height => 40);
+        # XXX
+        $manubar->_data->{bts}->g_pack(
+            -side => "left", -padx => 5, -pady => 5, -fill => "x", -expand => "yes"
+        );
+        $manubar->_data->{flag} = 1;
     }
-    return
 }
 
 sub toggle_toolbar {
-    my $self = shift;
-    my ($event) = @_;
-    my $tb = $self->{"toolbar"};
-    if ($tb->{"flag"} == 1) {
-        $tb->parent()->configure(-height=>10);
-        $tb->{"oc"}->configure(-width=>40, -height=>8);
-        $tb->{"bts"}->packForget();
-        $tb->{"flag"} = 0;
+    my ($self, $event) = @_;
+
+    my $toolbar = $self->_data->{toolbar};
+    if ($toolbar->_data->{flag} == 1) {
+        $toolbar->_parent->configure(-height=>10);
+        $toolbar->_data->{oc}->configure(-width => 40, -height => 8);
+        $toolbar->_data->{bts}->g_packForget;
+        $toolbar->_data->{flag} = 0;
     } else {
-        $tb->{"oc"}->configure(-width=>8, -height=>40);
-        $tb->{"bts"}->pack(-side=>"left", -padx=>5, -pady=>5, -fill=>"x", -expand=>"yes");
-        $tb->{"flag"} = 1;
+        $toolbar->_data->{oc}->configure(-width => 8, -height => 40);
+        # XXX
+        $toolbar->_data->{bts}->g_pack(
+            -side => "left", -padx => 5, -pady => 5, -fill => "x", -expand => "yes");
+        $toolbar->_data->{flag} = 1;
     }
-    return
 }
 
+
 sub fullpath {
-    my $self = shift;
-    my ($pathname) = @_;
+    my ($self, $pathname) = @_;
     $pathname = File::Spec->rel2abs($pathname);
     $pathname =~ s/\\/\//gs;
-    while ($pathname =~ s/[^\/]+\.\.\///gs) { ; }
+    $pathname =~ s/[^\/]+\.\.\///gs;
     return $pathname;
 }
 
-sub get_app_conf {
-    my $self = shift;
-    return $self->{"app-conf"};
-}
-
-sub cmd_exit {
-    my $self = shift;
-    my $cancel = 0;
-    eval {
-        my $app_conf = $self->get_app_conf();
-        my $app_conf_init = $self->{"app-conf-init"};
-        if (!$app_conf->equal($app_conf_init)) {
-            my $app_conf_file = $self->fullpath($app_conf->get_filename());
-            my $message = sprintf($self->{"msg"}{"MSG_STR_CONFIRM_TO_SAVE_APP_CONF"}, $app_conf_file);
-            my $res = $self->messageBox(-message=>$message,
-                                        -icon=>"question",
-                                        -type=>"yesnocancel", -default=>"yes");
-            if ($res =~ /yes/i) {
-                $app_conf->save();
-            } elsif ($res =~ /cancel/i) {
-                $cancel = 1;
-            }
-        }
-    };
-    if ($cancel == 0) {
-        $self->exit();
-    }
-    return $cancel;
-}
-
-sub cmd_close {
-    my $self = shift;
-    if (ref($self->toplevel()) =~ /MainWindow/) {
-        $self->cmd_exit();
-    } else {
-        $self->toplevel()->destroy();
-    }
-}
-
-sub cmd_new {
-    my $self = shift;
-    my $top = $self->Toplevel();
-    my $new_app = ref($self)->new($top, "opts"=>$self->{"opts"});
-    $new_app->raise();
-    return Tk::break();
-}
-
-sub cmd_show_help {
-    my $self = shift;
-    if ($self->{"_help_window"} and Tk::Exists($self->{"_help_window"})) {
-        $self->{"_help_window"}->{"text"}->focus();
-        $self->{"_help_window"}->deiconify();
-        return;
-    }
-    my $data = "";
-    my $file = $self->{"help-file"};
-    if ($file) {
-        open(my $fh, $file) or die "Cannot open '$file'.";
-        $data = join("", (<$fh>));
-        close($fh);
-        $data = Encode::decode("utf-8", $data);
-        $data =~ s/\r\n/\n/sg;
-    }
-    my $title = $self->{"msg"}{"STR_HELP"};
-    my $top = $self->Toplevel(-title=>$title);
-    $top->withdraw();
-    $top->update();
-    if (exists($self->{"img"})) {
-        $top->iconimage($self->{"img"});
-    }
-    my $text_f = $top->Frame()->pack(-side=>"top", -fill=>"both", -expand=>"yes");
-    my $text = $text_f->Scrolled("Text_patch", -scrollbars=>"se", -bg=>"#ffffff");
-    $text->pack(-side=>"top", -fill=>"both", -expand=>"yes");
-    $top->{"text"} = $text;
-    my $bt_f = $top->Frame()->pack(-side=>"bottom");
-    my $bt = $bt_f->Button(-text=>$self->{"msg"}{"BT_STR_CLOSE"},
-                           -command=>sub { $top->withdraw(); });
-    $bt->pack(-side=>"left");
-    $top->{"bt"} = $bt;
-    $text->insert("1.0", $data);
-    $text->SetCursor("1.0");
-    $text->configure(-state=>"disabled");
-    $text->bind("<Control-Key-f>", sub { $text->FindPopUp(); });
-    # $text->bind("<Control-Key-h>", sub { $text->FindAndReplacePopUp(); });
-    $text->bind("<Button>", sub { $text->focus(); });
-    $top->bind("<Control-Key-w>", sub { $top->{"bt"}->invoke(); });
-    $top->bind("<Key-Escape>", sub { $top->{"bt"}->invoke(); });
-    $top->update();
-    $top->deiconify();
-    $self->{"_help_window"} = $top;
-    $self->{"_help_window"}->{"text"}->focus();
-    return;
-}
-
-sub cmd_show_about {
-    my $self = shift;
-    if ($self->{"_about_window"} and Tk::Exists($self->{"_about_window"})) {
-        $self->{"_about_window"}->{"bt"}->focus();
-        $self->{"_about_window"}->deiconify();
-        return;
-    }
-    my ($sx, $sy, $ox, $oy) =
-        ($self->toplevel()->geometry() =~ /(\d+)x(\d+)\+(\d+)\+(\d+)/);
-    my $cx = int($sx / 2.0 + $ox - 100);
-    my $cy = int($sy / 2.0 + $oy - 100);
-    my $title = $self->{"msg"}{"STR_ABOUT"};
-    my $top = $self->Toplevel(-title=>$title);
-    $top->withdraw();
-    $top->update();
-    $top->geometry(sprintf("+%s+%s", $cx, $cy));
-    my $f = $top->Frame();
-    $f->pack(-side=>"top", -ipadx=>10, -ipady=>10, -padx=>10, -pady=>10);
-    if (exists($self->{"img"})) {
-        $top->iconimage($self->{"img"});
-        my $lbl = $f->Label(-image=>$self->{"img"});
-        $lbl->pack(-side=>"top");
-    }
-    my $str_about = $self->{"msg"}{"FMT_ABOUT"};
-    foreach my $name ("app-name", "app-version", "copyright") {
-        my ($key, $value);
-        if (exists($self->{$name})) {
-            $key = quotemeta("[".$name."]");
-            $value = $self->{$name};
-        }
-        if ($key ne "") {
-            $str_about =~ s/$key/$value/gs;
-        }
-    }
-    foreach my $config_name (keys %Config) {
-        my ($key, $value);
-        my $name = "perl-".$config_name;
-        if (exists($Config{$config_name})) {
-            $key = quotemeta("[".$name."]");
-            $value = $Config{$config_name};
-        }
-        if ($key ne "") {
-            $str_about =~ s/$key/$value/gs;
-        }
-    }
-    my $lbl = $f->Label(-text=>$str_about);
-    $lbl->pack(-side=>"top");
-    my $bt = $f->Button(-text=>$self->{"msg"}{"BT_STR_OK"},
-                        -command=>sub { $top->destroy(); });
-    $bt->pack(-side=>"bottom");
-    $top->{"bt"} = $bt;
-    $top->{"bt"}->focus();
-    $self->{"_about_window"} = $top;
-    $top->bind("<Key-Escape>", sub { $top->{"bt"}->invoke(); });
-    $top->resizable(0, 0);
-    $top->update();
-    $top->deiconify();
-    $top->grab();
-    return;
-}
-
-sub cmd_configuration {
-    my $self = shift;
-    my $configuration_window = $self->popup_configuration_dialogue();
-    return Tk::break();
-}
-
 sub decode_pathname {
-    my $self = shift;
-    my ($pathname) = @_;
-    my $enc = $self->get_pathname_encoding();
+    my ($self, $pathname) = @_;
+    my $enc = $self->get_pathname_encoding;
     $pathname = Encode::decode($enc, $pathname);
     return $pathname;
 }
 
 sub encode_pathname {
-    my $self = shift;
-    my ($pathname) = @_;
-    my $enc = $self->get_pathname_encoding();
+    my ($self, $pathname) = @_;
+    my $enc = $self->get_pathname_encoding;
     $pathname = Encode::encode($enc, $pathname);
     return $pathname;
 }
 
 sub get_pathname_encoding {
     my $self = shift;
-    my $enc = $self->get_app_conf()->get("pathname-encoding");
+    my $enc = $self->_data->{"app-conf"}->get("pathname-encoding");
     if ($enc =~ /^\s*$/ or $enc =~ /auto/) {
         if ($Config{"archname"} =~ /MSWin32/) {
-            $enc = "cp932";             # for Japanese windows
-            $enc = "shift_jis";         # for Japanese windows
+            $enc = "cp932";      # for Japanese windows
+            $enc = "shift_jis";  # for Japanese windows
         } else {
             $enc = "utf-8";
         }
@@ -429,238 +237,404 @@ sub get_pathname_encoding {
     return $enc;
 }
 
-sub set_configuration_view {
-    my $self = shift;
-    my ($configuration_view) = @_;
-    $self->{"configuration_view"} = $configuration_view;
-}
 
-sub get_droptypes {
+sub cmd_close {
     my $self = shift;
-    # return $Config{"osname"} eq "MSWin32" ? "Win32" : ["KDE", "XDND", "Sun"];
-    return $Config{"osname"} eq "MSWin32" ? "Win32" : ["XDND", "Sun"];
-}
-
-sub get_selection {
-    my $self = shift;
-    my ($w, $selection) = @_;
-    my $result = undef;
-    if ($Config{"osname"} eq "MSWin32") {
-        $result = $w->SelectionGet(-selection=>$selection, "STRING");
+    unless ( $self->_parent ) {
+        $self->cmd_exit;
     } else {
-        $result = $w->SelectionGet(-selection=>$selection, "FILE_NAME");
+        $self->g_destroy;
     }
-    return $result;
 }
+
+sub cmd_exit {
+    my $self = shift;
+    my $cancel = 0;
+    eval {
+        my $app_conf = $self->_data->{"app-conf"};
+        my $app_conf_init = $self->_data->{"app-conf-init"};
+        if (!$app_conf->equal($app_conf_init)) {
+            my $app_conf_file = $self->fullpath($app_conf->get_filename);
+            my $message = sprintf($self->_data->{msg}{MSG_STR_CONFIRM_TO_SAVE_APP_CONF}, $app_conf_file);
+            my $res = Tkx::tk___messageBox(
+                -message => $message,
+                -icon    => "question",
+                -type    => "yesnocancel",
+                -default => "yes"
+            );
+            if ($res =~ /yes/i) {
+                $app_conf->save;
+            } elsif ($res =~ /cancel/i) {
+                $cancel = 1;
+            }
+        }
+    };
+    if ($cancel == 0) {
+        $self->g_destroy;
+    }
+    return $cancel;
+}
+
+sub cmd_new {
+    my $self = shift;
+    my $top = $self->new_toplevel;
+    my $new_app = ref($self)->new($top);
+    $new_app->initialize($self->_data);
+    $new_app->g_raise;
+    # return Tkx::Tk__break();
+}
+
+sub cmd_show_help {
+    my $self = shift;
+
+    # if ($self->_data->{_help_window} && Tkx::tk__Exists($self->{"_help_window"})) {
+    if ($self->_data->{_help_window}) {
+        # $self->_data->{_help_window}->{text}->focus();
+        $self->_data->{_help_window}->g_wm_deiconify;
+        return;
+    }
+
+    my $data = "";
+    if (my $file = $self->_data->{"help-file"}) {
+        open(my $fh, $file) or die "Cannot open '$file'.";
+        $data = join("", (<$fh>));
+        close($fh);
+        $data = Encode::decode("utf-8", $data);
+        $data =~ s/\r\n/\n/sg;
+    }
+
+    my $top = $self->new_toplevel;
+    $top->g_wm_title($self->_data->{msg}{STR_HELP});
+    $top->g_wm_withdraw;
+    Tkx::update();
+    $self->g_wm_iconphoto($self->_data->{img}) if exists $self->_data->{img};
+
+    my $text_frame = $top->new_frame;
+    $text_frame->g_pack(
+        -side => "top", -fill => "both", -expand => "yes"
+    );
+    my $text = $text_frame->new_tkx_Scrolled(
+        "text", -scrollbars => "se", -bg => "#ffffff"
+    );
+    $text->g_pack(-side => "top", -fill => "both", -expand => "yes");
+    $top->_data->{text} = $text;
+
+    my $bt_frame = $top->new_frame;
+    $bt_frame->g_pack(-side => "bottom");
+    my $bt = $bt_frame->new_button(
+        -text    => $self->_data->{msg}{BT_STR_CLOSE},
+        -command => sub { $top->g_wm_withdraw; }
+    );
+    $bt->g_pack(-side => "left");
+    $top->_data->{bt} = $bt;
+
+    $text->insert("1.0", $data);
+    # $text->SetCursor("1.0");
+    $text->configure(-state=>"disabled");
+    $text->g_bind("<Control-Key-f>", sub { $text->FindPopUp; });
+    $text->g_bind("<Button>", sub { $text->g_focus; });
+    $top->g_bind("<Control-Key-w>", sub { $top->_data->{bt}->invoke; });
+    $top->g_bind("<Key-Escape>", sub { $top->_data->{bt}->invoke; });
+    Tkx::update();
+    $top->g_wm_deiconify;
+    $self->_data->{_help_window} = $top;
+    # $self->_data->{_help_window}->_data->{text}->focus();
+}
+
+sub cmd_show_about {
+    my $self = shift;
+
+    # if ($self->_data->{_about_window} && Tkx::tk__Exists($self->_data->{_about_window})) {
+    # if ($self->_data->{_about_window}) {
+    #     # $self->_data->{_about_window}->_data->{"bt"}->g_wm_focus;
+    #     $self->_data->{_about_window}->g_wm_deiconify;
+    #     return;
+    # }
+
+    my ($sx, $sy, $ox, $oy) =
+        ($self->g_wm_geometry() =~ /(\d+)x(\d+)\+(\d+)\+(\d+)/);
+    my $cx = int($sx / 2.0 + $ox - 100);
+    my $cy = int($sy / 2.0 + $oy - 100);
+    my $title = $self->_data->{msg}{STR_ABOUT};
+    my $top = $self->new_toplevel;
+    $top->g_wm_title($title);
+    $top->g_wm_withdraw;
+    Tkx::update();
+    $top->g_wm_geometry(sprintf("+%s+%s", $cx, $cy));
+
+    my $frame = $top->new_frame;
+    $frame->g_pack(
+        -side => "top", -ipadx => 10, -ipady => 10, -padx => 10, -pady => 10
+    );
+    if (exists $self->_data->{img}) {
+        $top->g_wm_iconphoto($self->_data->{img});
+        my $lbl = $frame->new_label(-image => $self->_data->{img});
+        $lbl->g_pack(-side => "top");
+    }
+
+    my $str_about = $self->_data->{msg}{FMT_ABOUT};
+    foreach my $name ("app-name", "app-version", "copyright") {
+        my ($key, $value);
+        if (exists $self->_data->{$name}) {
+            $key = quotemeta("[".$name."]");
+            $value = $self->_data->{$name};
+        }
+        $str_about =~ s/$key/$value/gs if $key ne "";
+    }
+    foreach my $config_name (keys %Config) {
+        my ($key, $value);
+        my $name = "perl-".$config_name;
+        if (exists $Config{$config_name}) {
+            $key = quotemeta("[".$name."]");
+            $value = $Config{$config_name};
+        }
+        $str_about =~ s/$key/$value/gs if $key ne "";
+    }
+
+    my $lbl = $frame->new_label(-text => $str_about);
+    $lbl->g_pack(-side => "top");
+    my $bt = $frame->new_button(
+        -text    => $self->_data->{msg}{BT_STR_OK},
+        -command => sub { $top->g_destroy }
+    );
+    $bt->g_pack(-side => "bottom");
+
+    $top->_data->{bt} = $bt;
+    # $top->_data->{bt}->focus;
+    $self->_data->{_about_window} = $top;
+    $top->g_bind("<Key-Escape>", sub { $top->_data->{bt}->invoke; });
+    $top->g_wm_resizable(0, 0);
+    Tkx::update();
+    $top->g_wm_deiconify;
+    $top->g_grab;
+}
+
+sub cmd_configuration {
+    my $self = shift;
+    my $configuration_window = $self->popup_configuration_dialogue;
+    # return Tk::break();
+}
+
+sub popup_configuration_dialogue {
+    my ($self, $configuration_view) = @_;
+    $configuration_view ||= $self->_data->{"configuration-view"};
+
+    my $app_conf = $self->_data->{"app-conf"};
+    my $app_conf_clone = $app_conf->clone();
+
+    my $top = $self->new_toplevel;
+    $top->g_wm_title($self->_data->{msg}{STR_CONFIGURATION});
+    $top->g_wm_withdraw;
+    Tkx::update();
+    $top->g_wm_iconphoto($self->_data->{img}) if $self->_data->{img};
+    $top->g_wm_geometry($self->_data->{"conf_geometry"});
+
+    my $tab_f = $top->new_ttk__notebook;
+    $tab_f->g_pack(-side => "top", -fill => "both", -expand => "yes");
+    my $bt_f = $top->new_frame;
+    $bt_f->g_pack(-side => "top");
+
+    my $tab_item = {};
+    foreach my $tab_view (@$configuration_view) {
+        my $tab_name = $tab_view->{name};
+        my $lbl_str = $self->_data->{msg}{$tab_name} || $tab_name;
+        my $ft = $tab_f->new_frame;
+        $tab_f->add($ft, -text => $lbl_str);
+
+        my $row = 0;
+        foreach my $configuration_item (@{$tab_view->{options}}) {
+            my ($conf_name, $conf_type, $conf_opts) = @$configuration_item;
+            my $conf_value_ref = $app_conf_clone->get_ref($conf_name);
+            my $lbl_str = $self->_data->{msg}{$conf_name} || $conf_name;
+            my $l = $ft->new_label(-text => $lbl_str);
+            $l->g_grid(-row => $row, -column => 0, -sticky => "w");
+            my $f = $ft->new_frame;
+            $f->g_grid(-row => $row, -column => 1, -sticky => "ew");
+
+            my $e = do {
+                if ($conf_type =~ /pathname/i || $conf_type =~ /dirname/i ||
+                        $conf_type =~ /filename/i) {
+                    my $filetypes = $conf_opts->{filetypes};
+                    my $dirnamevariable = do {
+                        if ($conf_type =~ /filename/) {
+                            my $tmp_conf_name = $conf_opts->{"dirnamevariable"};
+                            if ($app_conf_clone->exists_item($tmp_conf_name)) {
+                                $app_conf_clone->get_ref($tmp_conf_name);
+                            }
+                        }
+                    };
+                    $self->make_pathname_entry(
+                        $f,
+                        -pathnametype    => $conf_type,
+                        -textvariable    => $conf_value_ref,
+                        -dirnamevariable => $dirnamevariable,
+                        -filetypes       => $filetypes,
+                    );
+                } elsif ($conf_opts) {
+                    $self->make_list_entry(
+                        $f,
+                        -textvariable => $conf_value_ref,
+                        %$conf_opts
+                    );
+                } else {
+                    my $e = $ft->new_entry(-textvariable => $conf_value_ref, -width => 80);
+                    $e->g_grid(-row => $row, -column => 1, -sticky => "ew");
+                    $e;
+                }
+            };
+            ++$row;
+        }
+    }
+
+    # button frame
+    my $b_ok = $bt_f->new_button(
+        -text    => $self->_data->{msg}{BT_STR_OK},
+        -command => sub {
+            foreach my $name (keys %{$app_conf_clone->{"conf-map"}}) {
+                $app_conf->{"conf-map"}{$name} = $app_conf_clone->{"conf-map"}{$name};
+            }
+            $top->_parent->g_focus;
+            $top->g_destroy;
+        }
+    );
+    $b_ok->g_pack(-side => "left");
+    $top->_data->{ok} = $b_ok;
+    my $b_cancel = $bt_f->new_button(
+        -text    => $self->_data->{msg}{BT_STR_CANCEL},
+        -command => sub {
+            $top->_parent->g_focus;
+            $top->g_destroy;
+        }
+    );
+    $b_cancel->g_pack(-side => "left");
+    $top->_data->{cancel} = $b_cancel;
+
+    $top->g_bind("<Key-Escape>", sub { $top->_data->{cancel}->invoke; });
+
+    $top->g_wm_resizable(1, 1);
+    Tkx::update();
+    $top->g_wm_deiconify;
+    Tkx::update();
+    # $top->_data->{ok}->focus();
+    $top->g_grab;
+}
+
 
 sub make_pathname_entry {
-    my $self = shift;
-    my ($f, %args) = @_;
+    my ($self, $f, %args) = @_;
     my $local_opts = {
-        -foreground=>"#000000",
-        -background=>"#ffffff",
+        -foreground => "#000000",
+        -background => "#ffffff",
     };
     my $added_opts = {
-        -pathnametype => "pathname",
-        -filetypes => [],
-        -invalidforeground=>"#000000",
-        -invalidbackground=>"#ffff77",
-        -dirnamevariable=>undef,
-        -filetypes=>undef,
-        -textvariable=>undef,           # for initialization
+        -pathnametype      =>  "pathname",
+        -filetypes         =>  [],
+        -invalidforeground => "#000000",
+        -invalidbackground => "#ffff77",
+        -dirnamevariable   => undef,
+        -filetypes         => undef,
+        -textvariable      => undef,  # for initialization
     };
     my $opts = {%$added_opts, %$local_opts, %args};
-    my $pathnametype = $opts->{"-pathnametype"};
-    my $textvariable = $opts->{"-textvariable"};
+    my $pathnametype    = $opts->{"-pathnametype"};
+    my $textvariable    = $opts->{"-textvariable"};
     my $dirnamevariable = $opts->{"-dirnamevariable"};
-    my $filetypes = $opts->{"-filetypes"};
-    my $entry_opts = {%$opts};
-    foreach my $key (keys %$added_opts) {
-        delete $entry_opts->{$key};
-    }
+    my $filetypes       = $opts->{"-filetypes"};
+    my $entry_opts      = {%$opts};
+    delete $entry_opts->{$_} for keys %$added_opts;
+
     my $func_get_reference = sub {
         my ($self, $e, $pathnametype) = @_;
-        my $e = $e->Subwidget("entry");
-        my $pathname = $e->get();
+        my $pathname = $e->get;
         my $new_pathname = undef;
         if ($pathnametype =~ /dirname/) {
-            my $dirname = $pathname;
-            if ($dirname eq "") {
-                $dirname = $self->{"default-dirname"};
-            }
-            my $dirname_enc = $self->encode_pathname($dirname);
-            $dirname_enc = $e->chooseDirectory(-initialdir=>$dirname_enc);
-            $dirname = $self->decode_pathname($dirname_enc);
-            if (defined($dirname)) {
-                $self->{"default-dirname"} = $dirname;
+            my $dirname_enc = $self->encode_pathname(
+                $pathname eq "" ? $self->_data->{"default-dirname"} : $pathname
+            );
+            $dirname_enc = Tkx::tk___chooseDirectory(-initialdir => $dirname_enc);
+            my $dirname = $self->decode_pathname($dirname_enc);
+            if (defined $dirname) {
+                $self->_data->{"default-dirname"} = $dirname;
                 $new_pathname = $dirname;
             }
         } elsif ($pathnametype =~ /filename/) {
-            my $dirname = $self->{"defautl-dirname"};
-            if (defined($dirnamevariable)) {
-                $dirname = $$dirnamevariable;
-            }
+            my $dirname = $self->_data->{"defautl-dirname"};
+            $dirname = $$dirnamevariable if defined $dirnamevariable;
             my $filename = $pathname;
             $pathname = $e->getOpenFile(
-                -filetypes=>$filetypes,
-                -initialdir=>$dirname,
-                -initialfile=>$filename,
+                -filetypes   => $filetypes,
+                -initialdir  => $dirname,
+                -initialfile => $filename,
             );
             if ($pathname) {
-                $dirname = File::Basename::dirname($pathname);
+                $dirname  = File::Basename::dirname($pathname);
                 $filename = File::Basename::basename($pathname);
-                if (defined($dirnamevariable)) {
-                    $$dirnamevariable = $dirname;
-                }
-                $self->{"default-dirname"} = $dirname;
+                $$dirnamevariable = $dirname if defined $dirnamevariable;
+                $self->_data->{"default-dirname"} = $dirname;
                 $new_pathname = $filename;
             }
         } elsif ($pathnametype =~ /pathname/) {
-            my $dirname = $pathname;
+            my $dirname  = $pathname;
             my $filename = "";
             if ($pathname ne "" and $pathname !~ /\/$/) {
-                $dirname = File::Basename::dirname($pathname);
+                $dirname  = File::Basename::dirname($pathname);
                 $filename = File::Basename::basename($pathname);
             }
             $new_pathname = $e->getOpenFile(
-                -filetypes=>$filetypes,
-                -initialdir=>$dirname,
-                -initialfile=>$filename,
+                -filetypes   => $filetypes,
+                -initialdir  => $dirname,
+                -initialfile => $filename,
             );
         }
-        if (defined($new_pathname)) {
+        if (defined $new_pathname) {
             $e->delete("0", "end");
             $e->insert("end", $new_pathname);
             $e->icursor("end");
         }
     };
+
     my $e;
-    $e = $f->BrowseEntry(
+    $e = $f->new_entry(
+        -textvariable => $textvariable,
+        -width => 70,
         %$entry_opts,
-        -autolimitheight => "yes",
-        -listcmd => sub {
-            my ($e) = @_;
-            my $ee = $e->Subwidget("entry");
-            my $pathname = $ee->get();
-            my $dirname = $pathname;
-            if (-f $pathname) {
-                $dirname = File::Basename::dirname($pathname);
-            }
-            if ($pathnametype =~ /filename/) {
-                $dirname = $self->{"default-dirname"};
-                if (defined($dirnamevariable)) {
-                    $dirname = $$dirnamevariable;
-                }
-            }
-            eval {
-                $e->delete(0, "end");
-                if ($dirname eq "") {
-                    $dirname = ".";
-                }
-                $dirname =~ s/^[a-zA-Z]\:$/$&\//;
-                my $dirname_enc = $self->encode_pathname($dirname);
-                opendir(my $dh, $dirname_enc) or print STDERR "Cannot open '$dirname_enc'\n";
-                foreach my $filename_enc (sort {$a cmp $b} readdir($dh)) {
-                    if ($filename_enc eq ".") {
-                        next;
-                    }
-                    my $new_pathname_enc = $dirname_enc;
-                    if ($new_pathname_enc !~ /\/$/) {
-                        $new_pathname_enc .= "/";
-                    }
-                    $new_pathname_enc .= $filename_enc;
-                    if (($pathnametype =~ /dirname/ and
-                             -d $new_pathname_enc) or
-                                 $pathnametype =~ /pathname/) {
-                        if ($new_pathname_enc !~ /^[a-zA-Z]\:/ and
-                                $new_pathname_enc !~ /^\//) {
-                            $new_pathname_enc = "./".$new_pathname_enc;
-                        }
-                        while ($new_pathname_enc =~ s/\/[^\/]+\/\.\.//) {
-                            ;
-                        }
-                        while ($new_pathname_enc =~ s/^\.\///) {
-                            ;
-                        }
-                    } elsif ($pathnametype =~ /filename/) {
-                        $new_pathname_enc = $filename_enc;
-                    } else {
-                        next;
-                    }
-                    my $new_pathname = $self->decode_pathname($new_pathname_enc);
-                    $e->insert("end", $new_pathname);
-                }
-                closedir($dh);
-                $e->update();
-            };
-        },
-        -browsecmd => sub {
-            my ($e) = @_;
-            my $ee = $e->Subwidget("entry");
-            $ee->icursor("end");
-        },
         -validate => "all",
         -validatecommand => sub {
-            my ($new_value, $mod_chars, $cur_value, $mod_index, $action_type) = @_;
+            my $new_value = defined $e ? $e->get : '';
             my $new_value_enc = $self->encode_pathname($new_value);
             my $new_value2 = $new_value;
-            if (defined($dirnamevariable)) {
-                $new_value2 = $$dirnamevariable."/".$new_value;
-            }
+            $new_value2 = $$dirnamevariable."/".$new_value
+                if defined $dirnamevariable && ref $dirnamevariable;
             my $new_value2_enc = $self->encode_pathname($new_value2);
-            if (defined($e)) {
-                my $foreground = $opts->{"-foreground"};
-                my $background = $opts->{"-background"};
-                if (($pathnametype =~ /dirname/ and
-                         !-d $new_value_enc) or
-                             ($pathnametype =~ /pathname/ and
-                                  !-f $new_value_enc) or
-                                      ($pathnametype =~ /filename/ and
-                                           !-f $new_value2_enc)) {
-                    $foreground = $opts->{"-invalidforeground"};
-                    $background = $opts->{"-invalidbackground"};
-                }
-                $e->configure(-foreground=>$foreground);
-                $e->configure(-background=>$background);
-            }
+
+            return 1 unless defined $e;
+
+            my $is_invalid = ($pathnametype =~ /dirname/ && !-d $new_value_enc) ||
+                ($pathnametype =~ /pathname/ && !-f $new_value_enc) ||
+                ($pathnametype =~ /filename/ && !-f $new_value2_enc);
+            my $foreground = $is_invalid ? $opts->{-invalidforeground} : $opts->{-foreground};
+            $e->configure(-foreground => $foreground);
+            my $background = $is_invalid ? $opts->{-invalidbackground} : $opts->{-background};
+            $e->configure(-background => $background);
+
             # always return true because of just checking
             return 1;
-        });
-    if (defined($textvariable)) {
-        $e->configure(-textvariable=>$textvariable);
-    }
-    $e->pack(-side=>"left", -fill=>"x", -expand=>"yes");
-    $e->bind("<Key-Return>", sub { $func_get_reference->($self, $e, $pathnametype); });
-    $b = $f->Button(
-        -text=>$self->{"msg"}{"BT_STR_REFERENCE"},
-        -command=>sub { $func_get_reference->($self, $e, $pathnametype); }
+        },
     );
-    $b->pack(-side=>"left");
-    $f->DropSite(
-        -droptypes => $self->get_droptypes(),
-        -dropcommand => sub {
-            my ($selection) = @_;
-            my $w = $f;
-            my $pathname = $self->get_selection($w, $selection);
-            if ($pathname) {
-                $pathname =~ s/\\/\//g;
-                $pathname = $self->decode_pathname($pathname);
-                my $pathname_enc = $self->encode_pathname($pathname);
-                if ($pathnametype =~ /dirname/i and
-                        -f $pathname_enc) {
-                    $pathname = File::Basename::dirname($pathname);
-                }
-                $e->delete("0", "end");
-                $e->insert("end", $pathname);
-            }
-        }
+    $e->validate;
+    $e->g_bind("<Key-Return>", sub { $func_get_reference->($self, $e, $pathnametype); });
+    $e->g_pack(-side => "left", -fill => "x", -expand => "yes");
+    my $b = $f->new_button(
+        -text    => $self->_data->{msg}{BT_STR_REFERENCE},
+        -command => sub { $func_get_reference->($self, $e, $pathnametype); }
     );
+    $b->g_pack(-side => "left");
+
     return $e;
 }
 
 sub make_list_entry {
-    my $self = shift;
-    my ($f, %args) = @_;
+    my ($self, $f, %args) = @_;
     my $local_opts = {
         -foreground => "#000000",
         -background => "#ffffff",
@@ -668,181 +642,26 @@ sub make_list_entry {
     my $added_opts = {
         -invalidforeground => "#000000",
         -invalidbackground => "#ffff77",
-        -textvariable => undef,         # for initialization
-        -list => undef,                 # for initialization
+        -textvariable      => undef,     # for initialization
+        -list              => undef,     # for initialization
     };
     my $opts = {%$added_opts, %$local_opts, %args};
-    my $item_list = $opts->{"-list"};
+    my $item_list    = $opts->{"-list"};
     my $textvariable = $opts->{"-textvariable"};
-    my $entry_opts = {%$opts};
-    foreach my $key (keys %$added_opts) {
-        delete $entry_opts->{$key};
-    }
+    my $entry_opts   = {%$opts};
+    delete $entry_opts->{$_} for keys %$added_opts;
+
     my $init_list_flag = 0;
     my $e;
-    $e = $f->BrowseEntry(
+    $e = $f->new_ttk__combobox(
+        -textvariable => $textvariable,
+        -values       => $item_list,
         %$entry_opts,
-        -autolimitheight => "yes",
-        -listcmd => sub {
-            my ($e) = @_;
-            my $ee = $e->Subwidget("entry");
-            if ($init_list_flag == 0) {
-                $e->delete("0", "end");
-                foreach my $item (@$item_list) {
-                    $e->insert("end", $item);
-                }
-                $init_list_flag = 1;
-            }
-        },
-        -browsecmd => sub {
-            my ($e) = @_;
-            my $ee = $e->Subwidget("entry");
-            $ee->icursor("end");
-        },
-        -validate => "all",
-        -validatecommand => sub {
-            my ($new_value, $mod_chars, $cur_value, $mod_index, $action_type) = @_;
-            my $found_flag = 0;
-            foreach my $item (@$item_list) {
-                if ($new_value eq $item) {
-                    $found_flag = 1;
-                    last;
-                }
-            }
-            my $foreground = $opts->{"-foreground"};
-            my $background = $opts->{"-background"};
-            if ($found_flag == 0) {
-                $foreground = $opts->{"-invalidforeground"};
-                $background = $opts->{"-invalidbackground"};
-            }
-            $e->configure(-foreground=>$foreground);
-            $e->configure(-background=>$background);
-            # always return true because of just checking
-            return 1;
-        }
     );
-    if(defined($textvariable)) {
-        $e->configure(-textvariable=>$textvariable);
-    }
-    $e->pack(-side=>"left", -fill=>"x", -expand=>"yes");
+    $e->g_pack(-side => "left", -fill => "x", -expand => "yes");
     return $e;
 }
 
-sub popup_configuration_dialogue {
-    my $self = shift;
-    my ($configuration_view) = @_;
-    unless($configuration_view) {
-        $configuration_view = $self->{"configuration-view"};
-    }
-    my $app_conf = $self->get_app_conf();
-    my $app_conf_clone = $app_conf->clone();
-    my $title = $self->{"msg"}{"STR_CONFIGURATION"};
-    my $top = $self->Toplevel(-title=>$title);
-    $top->withdraw();
-    $top->update();
-    if (exists($self->{"img"})) {
-        $top->iconimage($self->{"img"});
-    }
-    my $conf_geometry = $self->{"conf-geometry"};
-    $top->geometry($conf_geometry);
-
-    my $tab_f = $top->TabFrame();
-    $tab_f->pack(-side=>"top", -fill=>"both", -expand=>"yes");
-    my $bt_f = $top->Frame();
-    $bt_f->pack(-side=>"top");
-
-    my $tab_item = {};
-    foreach my $tab_view (@$configuration_view) {
-        my $tab_name = $tab_view->{"name"};
-        my $lbl_str = $tab_name;
-        if (exists($self->{"msg"}{$tab_name})) {
-            $lbl_str = $self->{"msg"}{$tab_name};
-        }
-        my $lbl_str = $self->{"msg"}{$tab_name};
-        my $ft = $tab_f->add(-name=>$lbl_str);
-        $ft->gridColumnconfigure(0, -weight=>0);
-        $ft->gridColumnconfigure(1, -weight=>1);
-        my $row = 0;
-        foreach my $configuration_item (@{$tab_view->{"options"}}) {
-            my ($conf_name, $conf_type, $conf_opts) = @$configuration_item;
-            my $conf_value_ref = $app_conf_clone->get_ref($conf_name);
-            my $lbl_str = $conf_name;
-            if (exists($self->{"msg"}{$conf_name})) {
-                $lbl_str = $self->{"msg"}{$conf_name};
-            }
-            my $l = $ft->Label(-text=>$lbl_str);
-            $l->grid(-row=>$row, -column=>0, -sticky=>"w");
-            my $f = $ft->Frame();
-            $f->grid(-row=>$row, -column=>1, -sticky=>"ew");
-            my $e;
-            if ($conf_type =~ /pathname/i or
-                    $conf_type =~ /dirname/i or
-                        $conf_type =~ /filename/i) {
-                my $filetypes = $conf_opts->{"filetypes"};
-                my $dirnamevariable = undef;
-                if ($conf_type =~ /filename/) {
-                    my $tmp_conf_name = $conf_opts->{"dirnamevariable"};
-                    if ($app_conf_clone->exists_item($tmp_conf_name)) {
-                        $dirnamevariable = $app_conf_clone->get_ref($tmp_conf_name);
-                    }
-                }
-                $e = $self->make_pathname_entry(
-                    $f,
-                    -pathnametype=>$conf_type,
-                    -textvariable=>$conf_value_ref,
-                    -dirnamevariable=>$dirnamevariable,
-                    -filetypes=>$filetypes,
-                );
-            } elsif($conf_opts) {
-                $e = $self->make_list_entry(
-                    $f,
-                    -textvariable=>$conf_value_ref,
-                    %$conf_opts
-                );
-            } else {
-                $e = $ft->Entry(-textvariable=>$conf_value_ref, -width=>80);
-                $e->grid(-row=>$row, -column=>1, -sticky=>"ew");
-            }
-            ++$row;
-        }
-    }
-    $tab_f->select_tab(0);
-
-    # button frame
-    my $b;
-    $b = $bt_f->Button(
-        -text => $self->{"msg"}{"BT_STR_OK"},
-        -command => sub {
-            foreach my $name (keys %{$app_conf_clone->{"conf-map"}}) {
-                $app_conf->{"conf-map"}{$name} = $app_conf_clone->{"conf-map"}{$name};
-            }
-            $top->parent()->focus();
-            $top->destroy();
-        }
-    );
-    $b->pack(-side=>"left");
-    $top->{"ok"} = $b;
-    $b = $bt_f->Button(
-        -text=>$self->{"msg"}{"BT_STR_CANCEL"},
-        -command=>sub {
-            $top->parent()->focus();
-            $top->destroy();
-        }
-    );
-    $b->pack(-side=>"left");
-    $top->{"cancel"} = $b;
-
-    $tab_f->bind_keys_toplevel();
-    $top->bind("<Key-Escape>", sub { $top->{"cancel"}->invoke(); });
-
-    $top->resizable(1, 1);
-    $top->update();
-    $top->deiconify();
-    $top->update();
-    $top->{"ok"}->focus();
-    $top->grab();
-}
 
 1;
-
-#################### END OF FILE ####################
+__END__

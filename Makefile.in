@@ -8,6 +8,7 @@ PP=@PP@
 COMPIL32=@COMPIL32@
 # COMPIL32=c:/Program\ Files/Inno\ Setup\ 5/compil32
 WIN32_TYPICAL_PATH=/c/Program\ Files/Inno\ Setup\ 5/:/c/Perl/bin
+TCL_PATH=c:/Perl/lib/auto/Tcl
 
 APP_NAME=@APP_NAME@-@APP_VERSION@
 # PACKAGE_NAME=`basename "@COMAINU_HOME@" | sed -e "s/\./_/g;"`
@@ -31,30 +32,25 @@ PP_OPTS=\
 -M lib \
 -M open \
 -M utf8 \
+-M parent \
 -M encoding \
 -M Encode \
 -M Encode::JP \
 -M Getopt::Long \
--M FileHandle \
 -M File::Basename \
 -M File::Spec \
 -M Module::Load \
+-M File::Spec::Functions \
 -M threads \
 -M Thread::Queue \
 -M Time::HiRes \
 -M DBI \
 -M DBD::SQLite \
--M Tk \
--M Tk::Panedwindow \
--M Tk::Table \
--M Tk::Text \
--M Tk::TextUndo \
--M Tk::Photo \
--M Tk::ProgressBar \
--M Tk::BrowseEntry \
--M Tk::DropSite \
+-M Tkx \
+-M Tkx::Scrolled \
 -M Win32::OLE \
-
+-l $(TCL_PATH)/tkkit.dll \
+-l $(TCL_PATH)/tcl.dll \
 
 all:
 
