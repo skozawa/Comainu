@@ -23,12 +23,6 @@ sub new {
 sub add_feature {
     my ($self, $buff, $NAME, $dir) = @_;
 
-    my $postp = $self->load_dic($dir . '/' . $NAME . ".Postp.dic");
-    my $auxv  = $self->load_dic($dir . '/' . $NAME . ".AuxV.dic");
-
-    my $postp_state = 0;
-    my $auxv_state = 0;
-
     my $res = '';
     my $line_in_list = [ split(/\r?\n/, $buff) ];
     undef $buff;
@@ -55,104 +49,6 @@ sub add_feature {
         my @katuyou2 = split(/\-/,$items[5]);
         for my $j ( 0 .. 2 ) {
             push @out_items, $katuyou2[$j] // '*';
-        }
-
-        ## 補助記号の場合、前後の品詞情報を素性として追加
-        if ( $items[3] =~ /^補助記号/ ) {
-            my $feature1 = "E";
-            if ( $i > 0 ) {
-                my @pre = split(/ /, $line_in_list->[$i-1]);
-                if ( $pre[3] eq '名詞-普通名詞-一般' ) {
-                    $feature1 = "A";
-                } elsif ( $pre[3] eq '名詞-普通名詞-サ変可能' ) {
-                    $feature1 = "B";
-                } elsif ( $pre[3] eq '名詞-普通名詞-副詞可能' ) {
-                    $feature1 = "C";
-                } elsif ( $pre[3] eq '名詞-数詞' ) {
-                    $feature1 = "D";
-                }
-            }
-            my $feature2 = "E";
-            if ( $i < $#{$line_in_list} ) {
-                my @post = split(/ /, $line_in_list->[$i+1]);
-                if ( $post[3] eq '名詞-普通名詞-一般' ) {
-                    $feature2 = "A";
-                } elsif ( $post[3] eq '名詞-普通名詞-サ変可能' ) {
-                    $feature2 = "B";
-                } elsif ( $post[3] eq '名詞-普通名詞-副詞可能' ) {
-                    $feature2 = "C";
-                } elsif ( $post[3] eq '名詞-数詞' ) {
-                    $feature2 = "D";
-                }
-            }
-            push @out_items, $feature1.$feature2;
-        } else {
-            push @out_items, '*';
-        }
-
-        ## 複数の短単位からなる助詞を構成する短単位であるか
-        if ( $postp_state >= 1 ) {
-            $postp_state--;
-            push @out_items, "1";
-        } else {
-            foreach my $length ( sort {$b <=> $a} keys %$postp ) {
-                next if $i+$length > $#{$line_in_list};
-                my $term = "";
-                for my $k ( 0 .. $length-1 ) {
-                    my @items = split(/ /, $line_in_list->[$i + $k]);
-                    $term .= join(" ", @items[0..5])."\n";
-                }
-
-                if ( defined $$postp{$length}->{$term} ) {
-                    my @pre_pos = (split(/ /, $line_in_list->[$i-1]))[3..5];
-                    my $pre_term = (split(/\-/, $pre_pos[0]))[0]." ".(split(/\-/, $pre_pos[1]))[0]." ".(split(/\-/, $pre_pos[2]))[0];
-                    my $post_hinsi = (split(/ /, $line_in_list->[$i+$length]))[3];
-                    my $post_hinsi1 = (split(/\-/, $post_hinsi))[0];
-                    my $fix_pos = $pre_term."|".$post_hinsi1;
-                    if ( defined $$postp{$length}->{$term}->{$fix_pos} ) {
-                        $postp_state = $length;
-                        last;
-                    }
-                }
-            }
-            if ( $postp_state >= 1 ) {
-                 push @out_items, "1";
-                $postp_state--;
-            } else {
-                 push @out_items, "0";
-            }
-        }
-
-        ## 複数の短単位からなる助動詞を構成する短単位であるか
-        if ( $auxv_state >= 1 ) {
-            $auxv_state--;
-             push @out_items, "1";
-        } else {
-            foreach my $length ( sort {$b <=> $a} keys %$auxv ) {
-                next if $i+$length > $#{$line_in_list};
-                my $term = "";
-                for my $k ( 0 .. $length-1 ) {
-                    my @items = split(/ /, $line_in_list->[$i + $k]);
-                    $term .= join(" ", @items[0..5])."\n";
-                }
-                if ( defined $$auxv{$length}->{$term} ) {
-                    my @pre_pos = (split(/ /, $line_in_list->[$i-1]))[3..5];
-                    my $pre_term = (split(/\-/, $pre_pos[0]))[0]." ".(split(/\-/, $pre_pos[1]))[0]." ".(split(/\-/, $pre_pos[2]))[0];
-                    my $post_hinsi = (split(/ /, $line_in_list->[$i+$length]))[3];
-                    my $post_hinsi1 = (split(/\-/, $post_hinsi))[0];
-                    my $fix_pos = $pre_term."|".$post_hinsi1;
-                    if ( defined $$auxv{$length}->{$term}->{$fix_pos} ) {
-                        $auxv_state = $length;
-                        last;
-                    }
-                }
-            }
-            if ( $auxv_state >= 1 ) {
-                push @out_items, "1";
-                $auxv_state--;
-            } else {
-                push @out_items, "0";
-            }
         }
 
         if ( $#items > 8 ) {

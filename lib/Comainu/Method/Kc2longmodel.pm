@@ -10,7 +10,6 @@ use Config;
 
 use Comainu::Util qw(read_from_file write_to_file);
 use Comainu::Format;
-use Comainu::Dictionary;
 use Comainu::ExternalTool;
 use AddFeature;
 use Comainu::BIProcessor;
@@ -77,9 +76,6 @@ sub make_luw_traindata {
     $buff = Comainu::Format->delete_column_long($buff);
     # $buff = $self->add_column($buff);
 
-    ## 辞書の作成
-    my $comainu_dic = Comainu::Dictionary->new;
-    $comainu_dic->create($tmp_train_kc, $model_dir, $basename);
     ## 素性の追加
     my $AF = AddFeature->new;
     $buff = $AF->add_feature($buff, $basename, $model_dir);
