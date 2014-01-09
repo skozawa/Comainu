@@ -142,12 +142,6 @@ GOLD
     is read_from_file($out_file), $gold;
 }
 
-sub delete_column_long : Test(1) {
-    is Comainu::Format->delete_column_long(
-        "詰め ツメル 詰める 動詞-一般 下一段-マ行 連用形-一般 ツメ ツメル 詰める 詰め * * 和 名詞-普通名詞-一般 * * ツメショウギ 詰め将棋 詰め将棋"
-    ), "詰め ツメル 詰める 動詞-一般 下一段-マ行 連用形-一般 * * 和\n";
-}
-
 sub move_future_front : Test(2) {
     is Comainu::Format->move_future_front(
         "詰め ツメル 詰める 動詞-一般 下一段-マ行 連用形-一般 * * 和 動詞 一般 * * 下一段 マ行 * 連用形 一般 * * 0 0 B"

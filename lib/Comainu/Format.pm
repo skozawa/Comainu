@@ -367,28 +367,6 @@ sub add_pivot_to_kc2 {
 }
 
 
-### kc2longmodel, kc2longout
-# 動作：ホワイトスペースで区切られた１１カラム以上からなる行を一行ずつ読み、
-# 　　　２カラム目の内容を取り除いて１から１１カラムまでの内容（１０個の要素がスペース
-# 　　　一つで区切られている）の行にして出力する。
-# 　　　元のレコードが１１カラムに満たない場合は、該当箇所のデータをブランクとして扱う。
-sub delete_column_long {
-    my ($class, $data) = @_;
-    my $res = "";
-    my $num_of_column = 11;
-    foreach my $line ( split(/\r?\n/, $data) ) {
-        my $items = [ split(/[ \t]/, $line) ];
-        if ( scalar(@$items) > 2 ) {
-            $items = [ @$items[0 .. 5, 10 .. 12] ];
-        }
-        $res .= join(" ", @$items)."\n";
-    }
-    undef $data;
-
-    return $res;
-}
-
-
 ### kc2longout, kc2bnstout
 # 動作：ホワイトスペースで区切られた１２カラム以上からなる行を１行ずつ読み、
 # 　　　次の順に並べなおして出力する。（数字は元のカラム位置。","は説明のために使用。
