@@ -15,10 +15,6 @@ sub _use_ok : Test(startup => 1) {
 }
 
 sub create_features : Test(3) {
-    my $g = mock_guard("AddFeature", {
-        load_dic => sub { {}; },
-    });
-
     my $kc2_data = "";
     my $g = guard_write_to_file('Comainu::Method::Kc2longout', \$kc2_data);
 

@@ -9,7 +9,7 @@ use Config;
 
 use Comainu::Util qw(read_from_file write_to_file check_file proc_stdin2stdout);
 use Comainu::Format;
-use AddFeature;
+use Comainu::Feature;
 use Comainu::BIProcessor;
 
 sub new {
@@ -78,23 +78,9 @@ sub create_features {
     # すでに同じ名前の中間ファイルがあれば削除
     unlink($output_file) if -s $output_file;
 
-    my $buff = read_from_file($tmp_test_kc);
-    if ( $self->{boundary} ne "sentence" && $self->{boundary} ne "word" ) {
-        $buff =~ s/^EOS.*?\n//mg;
-    }
-    $buff = Comainu::Format->delete_column_long($buff);
-    $buff =~ s/^\*B.*?\n//mg if $self->{boundary} eq "sentence";
-
-    # SVMの場合、partial chunking
-    $buff = Comainu::Format->pp_partial($buff, {
-        boundary => $self->{boundary},
-    }) if $self->{luwmodel} eq "SVM";
-
-    # 素性の追加
-    my $AF = AddFeature->new;
-    my $basename = basename($luwmodel, ".model");
-    my ($filename, $path) = fileparse($luwmodel);
-    $buff = $AF->add_feature($buff, $basename, $path);
+    my $buff = Comainu::Feature->create_long_feature($tmp_test_kc, $self->{boundary});
+    $buff = Comainu::Feature->pp_partial($buff, { boundary => $self->{boundary} })
+        if $self->{luwmodel} eq 'SVM';
 
     write_to_file($output_file, $buff);
     undef $buff;

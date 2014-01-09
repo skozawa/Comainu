@@ -35,11 +35,8 @@ sub _make_luw_traindata : Tests {
 DATA
 
     my $g = mock_guard(
-        'Comainu::Method::Kc2longmodel' => {
+        'Comainu::Feature' => {
             read_from_file => sub { $buff },
-        },
-        'AddFeature' => {
-            load_dic => sub { {} },
         },
     );
     my $kc2_data = '';

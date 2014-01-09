@@ -10,8 +10,8 @@ use Config;
 
 use Comainu::Util qw(read_from_file write_to_file);
 use Comainu::Format;
+use Comainu::Feature;
 use Comainu::ExternalTool;
-use AddFeature;
 use Comainu::BIProcessor;
 
 sub new {
@@ -71,14 +71,7 @@ sub make_luw_traindata {
     print STDERR "# MAKE TRAIN DATA\n";
 
     my $basename = basename($tmp_train_kc);
-    my $buff = read_from_file($tmp_train_kc);
-    $buff =~ s/^EOS.*?\n|^\*B.*?\n//mg;
-    $buff = Comainu::Format->delete_column_long($buff);
-    # $buff = $self->add_column($buff);
-
-    ## 素性の追加
-    my $AF = AddFeature->new;
-    $buff = $AF->add_feature($buff, $basename, $model_dir);
+    my $buff = Comainu::Feature->create_long_feature($tmp_train_kc);
 
     write_to_file($model_dir . "/" . $basename . ".KC2", $buff);
     undef $buff;
