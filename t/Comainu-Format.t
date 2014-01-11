@@ -152,20 +152,6 @@ sub move_future_front : Test(2) {
     ), "B 詰め ツメル 詰める 動詞-一般 下一段-マ行 連用形-一般 * * 和 動詞 一般 * * 下一段 マ行 * 連用形 一般 * * 0 0\n";
 }
 
-sub truncate_last_column : Test(3) {
-    is Comainu::Format->truncate_last_column(
-        "B 詰め ツメル 詰める 動詞-一般 下一段-マ行 連用形-一般 * * 和 動詞 一般 * * 下一段 マ行 * 連用形 一般 * * 0 0"
-    ), "B 詰め ツメル 詰める 動詞-一般 下一段-マ行 連用形-一般 * * 和 動詞 一般 * * 下一段 マ行 * 連用形 一般 * * 0 0\n";
-
-    is Comainu::Format->truncate_last_column(
-        "B\t詰め\tツメル\t詰める\t動詞-一般\t下一段-マ行\t連用形-一般\t*\t*\t和\t動詞\t一般\t*\t*\t下一段\tマ行\t*\t連用形\t一般\t*\t*\t0\t0"
-    ), "B 詰め ツメル 詰める 動詞-一般 下一段-マ行 連用形-一般 * * 和 動詞 一般 * * 下一段 マ行 * 連用形 一般 * * 0 0\n";
-
-    is Comainu::Format->truncate_last_column(
-        "B 詰め ツメル 詰める 動詞-一般 下一段-マ行 連用形-一般"
-    ), "B 詰め ツメル 詰める 動詞-一般 下一段-マ行 連用形-一般     \n";
-}
-
 sub pp_partial : Test(2) {
     subtest "long" => sub {
         my $data = <<DATA;

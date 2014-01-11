@@ -14,6 +14,7 @@ use Comainu::Method;
 use Comainu::Util qw(
     proc_stdin2stdout
     proc_stdin2file
+    proc_file2stdout
     proc_file2file
 );
 
@@ -44,6 +45,14 @@ sub _proc_stdin2file : Test(1) {
 
     is $out_data, "test\n";
 };
+
+sub _proc_file2stdout : Test(1) {
+    my $infile = create_tmp_file("test");
+
+    my $buff = proc_file2stdout('cat', $infile);
+
+    is $buff, 'test';
+}
 
 sub _proc_file2file : Test(1) {
     my $infile  = create_tmp_file("test");

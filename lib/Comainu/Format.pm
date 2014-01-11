@@ -390,24 +390,6 @@ sub move_future_front {
     return $res;
 }
 
-### kc2longout
-# 動作：ホワイトスペースで区切られた１２カラム以上からなる行を１行ずつ読み、
-# 　　　１カラム目から１２カラム目までの内容をスペース一つで区切って出力する。
-sub truncate_last_column {
-    my ($class, $data) = @_;
-    my $res = "";
-    my $num_of_column = 12;
-    foreach my $line ( split(/\r?\n/, $data) ) {
-        my $items = [ split(/[ \t]/, $line) ];
-        while ( scalar(@$items) < $num_of_column ) {
-            push(@$items, "");
-        }
-        $res .= join(" ", @$items)."\n";
-    }
-    undef $data;
-    return $res;
-}
-
 
 ### kc2longout, kc2bnstout
 ############################################################

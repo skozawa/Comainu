@@ -7,7 +7,7 @@ use parent 'Comainu::Method';
 use File::Basename qw(basename fileparse);
 use Config;
 
-use Comainu::Util qw(read_from_file write_to_file check_file proc_stdin2stdout);
+use Comainu::Util qw(read_from_file write_to_file check_file proc_file2stdout);
 use Comainu::Format;
 use Comainu::Feature;
 use Comainu::BIProcessor;
@@ -56,10 +56,14 @@ sub analyze {
         data_format_file => $self->{data_format},
     });
 
-    $self->create_features($tmp_test_kc, $luwmodel);
+    my $basename = basename($tmp_test_kc);
+    my $kc2_file    = $self->{"comainu-temp"} . "/" . basename($tmp_test_kc, ".KC") . ".KC2";
+    my $svmout_file = $self->{"comainu-temp"} . "/" . $basename . ".svmout";
+    my $lout_file   = $save_dir . "/" . $basename . ".lout";
 
-    $self->chunk_luw($tmp_test_kc, $luwmodel);
-    $self->merge_chunk_result($tmp_test_kc, $save_dir);
+    $self->create_features($tmp_test_kc, $kc2_file);
+    $self->chunk_luw($kc2_file, $svmout_file, $luwmodel);
+    $self->merge_chunk_result($tmp_test_kc, $svmout_file, $lout_file);
     $self->post_process($tmp_test_kc, $luwmodel, $save_dir);
 
     unlink $tmp_test_kc if !$self->{debug} &&
@@ -69,31 +73,32 @@ sub analyze {
 
 # 解析用KC２ファイルへ素性追加
 sub create_features {
-    my ($self, $tmp_test_kc, $luwmodel) = @_;
+    my ($self, $tmp_test_kc, $kc2_file) = @_;
     print STDERR "# CREATE FEATURE DATA\n";
 
-    # 出力ファイル名の生成
-    my $output_file = $self->{"comainu-temp"} . "/" .
-        basename($tmp_test_kc, ".KC") . ".KC2";
     # すでに同じ名前の中間ファイルがあれば削除
-    unlink($output_file) if -s $output_file;
+    unlink($kc2_file) if -s $kc2_file;
 
     my $buff = Comainu::Feature->create_long_feature($tmp_test_kc, $self->{boundary});
+    # SVMの場合はpartial parsing
     $buff = Comainu::Feature->pp_partial($buff, { boundary => $self->{boundary} })
         if $self->{luwmodel} eq 'SVM';
+    $buff =~ s/^EOS.*?//mg if $self->{luwmodel} eq'CRF';
+    # yamchaやCRF++のために、明示的に最終行に改行を付与
+    $buff .= "\n";
 
-    write_to_file($output_file, $buff);
+    write_to_file($kc2_file, $buff);
     undef $buff;
 
     # 不十分な中間ファイルならば、削除しておく
-    unlink $output_file unless -s $output_file;
+    unlink $kc2_file unless -s $kc2_file;
 
     return 0;
 }
 
 # 解析用KC２ファイルをチャンキングモデル(yamcha, crf++)で解析
 sub chunk_luw {
-    my ($self, $tmp_test_kc, $luwmodel) = @_;
+    my ($self, $kc2_file, $svmout_file, $luwmodel) = @_;
     print STDERR "# CHUNK LUW\n";
 
     my $tool_cmd;
@@ -112,18 +117,6 @@ sub chunk_luw {
         exit 0;
     }
 
-    my $input_file  = $self->{"comainu-temp"} . "/" . basename($tmp_test_kc, ".KC") . ".KC2";
-    my $output_file = $self->{"comainu-temp"} . "/" . basename($tmp_test_kc) . ".svmout";
-    # すでに同じ名前の中間ファイルがあれば削除
-    unlink($output_file) if -s $output_file;
-    check_file($input_file);
-
-    my $buff = read_from_file($input_file);
-    $buff =~ s/^EOS.*?//mg if $self->{luwmodel} eq'CRF';
-    # yamchaやCRF++のために、明示的に最終行に改行を付与
-    $buff .= "\n";
-    write_to_file($input_file, $buff);
-
     my $com = "";
     if ( $self->{luwmodel} eq "SVM" ) {
         $com = "\"" . $tool_cmd . "\" " . $opt . " -m \"" . $luwmodel . "\"";
@@ -132,28 +125,27 @@ sub chunk_luw {
     }
     printf(STDERR "# COM: %s\n", $com) if $self->{debug};
 
-    $buff = proc_stdin2stdout($com, $buff, $self->{"comainu-temp"});
+    # すでに同じ名前の中間ファイルがあれば削除
+    unlink($svmout_file) if -s $svmout_file;
+    check_file($kc2_file);
+
+    my $buff = proc_file2stdout($com, $kc2_file, $self->{"comainu-temp"});
     $buff =~ s/\x0d\x0a/\x0a/sg;
     $buff =~ s/^\r?\n//mg;
     $buff = Comainu::Format->move_future_front($buff);
-    $buff = Comainu::Format->truncate_last_column($buff);
-    write_to_file($output_file, $buff);
+    write_to_file($svmout_file, $buff);
     undef $buff;
 
     # 不十分な中間ファイルならば、削除しておく
-    unlink $output_file unless -s $output_file;
+    unlink $svmout_file unless -s $svmout_file;
 
     return 0;
 }
 
 # チャンクの結果をマージして出力ディレクトリへ結果を保存
 sub merge_chunk_result {
-    my ($self, $tmp_test_kc, $save_dir) = @_;
+    my ($self, $tmp_test_kc, $svmout_file, $lout_file) = @_;
     print STDERR "# MERGE CHUNK RESULT\n";
-
-    my $basename = basename($tmp_test_kc);
-    my $svmout_file = $self->{"comainu-temp"} . "/" . $basename . ".svmout";
-    my $lout_file = $save_dir . "/" . $basename . ".lout";
 
     check_file($svmout_file);
 

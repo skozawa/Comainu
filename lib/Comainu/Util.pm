@@ -16,6 +16,7 @@ our @EXPORT_OK = qw(
     get_dir_files
     proc_stdin2stdout
     proc_stdin2file
+    proc_file2stdout
     proc_file2file
 );
 
@@ -66,7 +67,7 @@ sub get_dir_files {
 }
 
 sub proc_stdin2stdout {
-    my ($proc, $in_data, $file_in_p, $tmp_dir) = @_;
+    my ($proc, $in_data, $tmp_dir, $file_in_p) = @_;
     my $out_data = "";
     my ($tmp_in_fh, $tmp_in)   = $tmp_dir ? tempfile(DIR => $tmp_dir) : tempfile;
     my ($tmp_out_fh, $tmp_out) = $tmp_dir ? tempfile(DIR => $tmp_dir) : tempfile;
@@ -82,12 +83,22 @@ sub proc_stdin2stdout {
 }
 
 sub proc_stdin2file {
-    my ($proc, $in_data, $out_file, $file_in_p, $tmp_dir) = @_;
+    my ($proc, $in_data, $out_file, $tmp_dir, $file_in_p) = @_;
     my ($tmp_in_fh, $tmp_in) = $tmp_dir ? tempfile(DIR => $tmp_dir) : tempfile;
     write_to_file($tmp_in, $in_data);
     proc_file2file($proc, $tmp_in, $out_file, $file_in_p);
     unlink($tmp_in);
     undef $in_data;
+}
+
+sub proc_file2stdout {
+    my ($proc, $in_file, $tmp_dir, $file_in_p) = @_;
+    my ($tmp_out_fh, $tmp_out) = $tmp_dir ? tempfile(DIR => $tmp_dir) : tempfile;
+    close($tmp_out_fh);
+    proc_file2file($proc, $in_file, $tmp_out, $file_in_p);
+    my $out_data = read_from_file($tmp_out);
+    unlink($tmp_out);
+    return $out_data;
 }
 
 sub proc_file2file {
@@ -101,7 +112,5 @@ sub proc_file2file {
     system($proc_com);
     return;
 }
-
-
 
 1;

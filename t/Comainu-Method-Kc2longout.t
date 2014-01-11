@@ -14,47 +14,93 @@ sub _use_ok : Test(startup => 1) {
     use_ok 'Comainu::Method::Kc2longout';
 }
 
-sub create_features : Test(3) {
+sub create_features : Test(6) {
     my $kc2_data = "";
     my $g = guard_write_to_file('Comainu::Method::Kc2longout', \$kc2_data);
 
-    subtest "sentence boundary" => sub {
-        my $kc2longout = Comainu::Method::Kc2longout->new(boundary => "sentence");
-        $kc2longout->create_features("t/sample/test.KC", "t/sample/test.model");
-        is $kc2_data, read_from_file('t/sample/test.KC2');
+    subtest "sentence boundary (CRF)" => sub {
+        my $kc2longout = Comainu::Method::Kc2longout->new(
+            boundary => "sentence",
+        );
+        $kc2longout->create_features("t/sample/kc2longout/test.KC", "t/sample/kc2longout/test.Kc2");
+        is $kc2_data, read_from_file('t/sample/kc2longout/test.KC2.crf_boundary');
     };
 
-    subtest "word boundary" => sub {
-        my $kc2longout = Comainu::Method::Kc2longout->new(boundary => "word");
-        $kc2longout->create_features("t/sample/test.KC", "t/sample/test.model");
-        is $kc2_data, read_from_file('t/sample/test.KC2.word');
+    subtest "word boundary (CRF)" => sub {
+        my $kc2longout = Comainu::Method::Kc2longout->new(
+            boundary => "word",
+        );
+        $kc2longout->create_features("t/sample/kc2longout/test.KC", "t/sample/kc2longout/test.KC2");
+        is $kc2_data, read_from_file('t/sample/kc2longout/test.KC2.crf_word');
     };
 
-    subtest "none boundary" => sub {
-        my $kc2longout = Comainu::Method::Kc2longout->new(boundary => "none");
-        $kc2longout->create_features("t/sample/test.KC", "t/sample/test.model");
-        is $kc2_data, read_from_file('t/sample/test.KC2.none');
+    subtest "none boundary (CRF)" => sub {
+        my $kc2longout = Comainu::Method::Kc2longout->new(
+            boundary => "none",
+        );
+        $kc2longout->create_features("t/sample/kc2longout/test.KC", "t/sample/kc2longout/test.KC2");
+        is $kc2_data, read_from_file('t/sample/kc2longout/test.KC2.crf_none');
+    };
+
+    subtest "sentence boundary (SVM)" => sub {
+        my $kc2longout = Comainu::Method::Kc2longout->new(
+            boundary => "sentence",
+            luwmodel => 'SVM',
+        );
+        $kc2longout->create_features("t/sample/kc2longout/test.KC", "t/sample/kc2longout/test.Kc2");
+        is $kc2_data, read_from_file('t/sample/kc2longout/test.KC2.svm_boundary');
+    };
+
+    subtest "word boundary (SVM)" => sub {
+        my $kc2longout = Comainu::Method::Kc2longout->new(
+            boundary => "word",
+            luwmodel => 'SVM',
+        );
+        $kc2longout->create_features("t/sample/kc2longout/test.KC", "t/sample/kc2longout/test.KC2");
+        is $kc2_data, read_from_file('t/sample/kc2longout/test.KC2.svm_word');
+    };
+
+    subtest "none boundary (SVM)" => sub {
+        my $kc2longout = Comainu::Method::Kc2longout->new(
+            boundary => "none",
+            luwmodel => 'SVM',
+        );
+        $kc2longout->create_features("t/sample/kc2longout/test.KC", "t/sample/kc2longout/test.KC2");
+        is $kc2_data, read_from_file('t/sample/kc2longout/test.KC2.svm_none');
     };
 };
 
 sub chunk_luw : Test(1) {
     my $kc2longout = Comainu::Method::Kc2longout->new(
         boundary => "sentence",
-        "comainu-temp" => "t/sample",
+        "comainu-temp" => "t/sample/kc2longout",
     );
 
     my $svmout_data = "";
     my $g1 = guard_write_to_file('Comainu::Method::Kc2longout', \$svmout_data);
     my $g2 = mock_guard('Comainu::Method::Kc2longout', {
-        proc_stdin2stdout => sub { read_from_file('t/sample/test.KC.svm.output') },
+        proc_file2stdout => sub { read_from_file('t/sample/kc2longout/test.KC.svmout.system') },
     });
 
-    $kc2longout->chunk_luw('t/sample/test.KC', 't/sample/test.KC.model');
+    $kc2longout->chunk_luw('t/sample/kc2longout/test.KC', 't/sample/kc2longout/test.KC.svmout', 't/sample/kc2longout/test.KC.model');
 
-    is $svmout_data, read_from_file('t/sample/test.KC.svmout.gold');
+    is $svmout_data, read_from_file('t/sample/kc2longout/test.KC.svmout.gold');
 };
 
-# sub merge_chunk_result : Tests {};
+sub merge_chunk_result : Tests {
+    my $kc2longout = Comainu::Method::Kc2longout->new(
+        boundary => 'sentence',
+        debug    => 1,
+    );
+
+    my $lout_data = "";
+    my $g1 = guard_write_to_file('Comainu::Method::Kc2longout', \$lout_data);
+
+    $kc2longout->merge_chunk_result('t/sample/kc2longout/test.KC', 't/sample/kc2longout/test.KC.svmout.gold', 't/sample/kc2ongout/test.KC.lout');
+
+    is $lout_data, read_from_file('t/sample/kc2longout/test.KC.lout.gold');
+};
+
 # sub post_process : Tests {};
 
 sub create_long_lemma : Test(4) {
