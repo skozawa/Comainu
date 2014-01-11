@@ -79,7 +79,7 @@ sub create_features {
     # すでに同じ名前の中間ファイルがあれば削除
     unlink($kc2_file) if -s $kc2_file;
 
-    my $buff = Comainu::Feature->create_long_feature($tmp_test_kc, $self->{boundary});
+    my $buff = Comainu::Feature->create_longout_feature($tmp_test_kc, $self->{boundary});
     # SVMの場合はpartial parsing
     $buff = Comainu::Feature->pp_partial($buff, { boundary => $self->{boundary} })
         if $self->{luwmodel} eq 'SVM';

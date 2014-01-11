@@ -6,7 +6,7 @@ use utf8;
 
 use Comainu::Util qw(read_from_file);
 
-sub create_long_feature {
+sub create_longout_feature {
     my ($class, $kc_file, $boundary) = @_;
 
     my $kc_data = read_from_file($kc_file);
@@ -17,14 +17,65 @@ sub create_long_feature {
     }
     undef $kc_data;
 
-    # 解析時
     if ( $boundary ) {
         $buff =~ s/^EOS.*?\n//mg if $boundary ne 'sentence' && $boundary ne 'word';
         $buff =~ s/^\*B.*?\n//mg if $boundary eq "sentence";
-    } else {
-        # 学習時
-        $buff =~ s/^EOS.*?\n|^\*B.*?\n//mg;
     }
+
+    return $buff;
+}
+
+# 行頭または行末のカラムとして追加する。
+# pivot
+#    Ba  長単位先頭     品詞一致
+#    B   長単位先頭     品詞不一致
+#    Ia  長単位先頭以外 品詞一致
+#    I   長単位先頭以外 品詞不一致
+sub create_longmodel_feature {
+    my ($class, $kc_file, $flag) = @_;
+
+    my $kc_data = read_from_file($kc_file);
+    my $line_in_list = [ split /\r?\n/, $kc_data ];
+    undef $kc_data;
+
+    my $front = (defined $flag && $flag eq "0");
+    my $curr_long_pos = "";
+
+    my $buff = "";
+    foreach my $i ( 0 .. $#{$line_in_list} ) {
+        my $line = $line_in_list->[$i];
+        next if $line =~ /^\*B/;
+
+        if ( $line =~ /^EOS/ ) {
+            $buff .= "\n";
+            next;
+        }
+
+        my $pivot = "";
+        my $items = [ split / /, $line ];
+        my $short_pos = join " ", @$items[3..5];
+        my $long_pos  = join " ", @$items[13..15];
+
+        if ( $long_pos =~ /^\*/ ) {
+            $pivot = "I";
+        } else {
+            $pivot = "B";
+            $curr_long_pos = $long_pos;
+        }
+
+        if ( $short_pos eq $curr_long_pos ) {
+            if ( $i < $#{$line_in_list} ) {
+                my $next_items = [ split / /, $line_in_list->[$i+1] ];
+                $pivot .= "a" if !$next_items->[13] || $next_items !~ /^\*/;
+            } else {
+                $pivot .= "a";
+            }
+        }
+
+        my $feature = $class->_long_feature_from_line($line);
+        $buff .= $front ? "$pivot $feature\n" : "$feature $pivot\n";
+    }
+    $buff .= "\n";
 
     return $buff;
 }

@@ -48,13 +48,17 @@ sub run {
         data_format_file => $self->{data_format},
     });
 
-    $self->make_luw_traindata($tmp_train_kc, $model_dir);
+    my $basename = basename($tmp_train_kc);
+    my $kc2_file   = $model_dir . "/" . $basename . ".KC2";
+    my $svmin_file = $model_dir . "/" . $basename .".svmin";
+
+    $self->make_luw_traindata($tmp_train_kc, $svmin_file);
     $self->add_luw_label($tmp_train_kc, $model_dir);
 
     if ( $self->{"luwmodel"} eq "SVM" ) {
-        $self->train_luwmodel_svm($tmp_train_kc, $model_dir);
+        $self->train_luwmodel_svm($tmp_train_kc, $svmin_file, $model_dir);
     } elsif ( $self->{"luwmodel"} eq "CRF" ) {
-        $self->train_luwmodel_crf($tmp_train_kc, $model_dir);
+        $self->train_luwmodel_crf($tmp_train_kc, $svmin_file, $model_dir);
     }
     if ( $self->{"luwmrph"} eq "with" ) {
         $self->train_bi_model($tmp_train_kc, $model_dir);
@@ -67,16 +71,14 @@ sub run {
 
 # 長単位解析モデル学習用データを作成
 sub make_luw_traindata {
-    my ($self, $tmp_train_kc, $model_dir) = @_;
+    my ($self, $tmp_train_kc, $svmin_file) = @_;
     print STDERR "# MAKE TRAIN DATA\n";
 
-    my $basename = basename($tmp_train_kc);
-    my $buff = Comainu::Feature->create_long_feature($tmp_train_kc);
-
-    write_to_file($model_dir . "/" . $basename . ".KC2", $buff);
+    my $buff = Comainu::Feature->create_longmodel_feature($tmp_train_kc);
+    write_to_file($svmin_file, $buff);
     undef $buff;
 
-    print STDERR "Make " . $model_dir . "/" . $basename . ".KC2\n";
+    print STDERR "Make $svmin_file\n";
 
     return 0;
 }
@@ -93,17 +95,7 @@ sub add_luw_label {
     }
 
     my $basename = basename($tmp_train_kc);
-    my $kc2_file    = $model_dir . "/" . $basename . ".KC2";
     my $output_file = $model_dir . "/" . $basename .".svmin";
-
-    open(my $fh_ref, "<", $tmp_train_kc) or die "Cannot open '$tmp_train_kc'";
-    open(my $fh_in, "<", $kc2_file)      or die "Cannot open '$kc2_file'";
-    open(my $fh_out, ">", $output_file)  or die "Cannot open '$output_file'";
-    binmode($fh_out);
-    Comainu::Format->add_pivot_to_kc2($fh_ref, $fh_in, $fh_out);
-    close($fh_out);
-    close($fh_in);
-    close($fh_ref);
 
     ## 後処理用学習データの作成
     {
@@ -121,17 +113,15 @@ sub add_luw_label {
 }
 
 sub train_luwmodel_svm {
-    my ($self, $train_kc, $model_dir) = @_;
+    my ($self, $train_kc, $svmin_file, $model_dir) = @_;
     print STDERR "# TRAIN LUWMODEL\n";
 
     my $basename = basename($train_kc);
-    my $svmin = $model_dir . "/" . $basename . ".svmin";
-
     my $makefile = Comainu::ExternalTool->create_yamcha_makefile(
         $self, $model_dir, $basename
     );
     my $com = sprintf("make -f \"%s\" PERL=\"%s\" CORPUS=\"%s\" MODEL=\"%s\" train",
-                      $makefile, $self->{perl}, $svmin, $model_dir . "/" . $basename);
+                      $makefile, $self->{perl}, $svmin_file, $model_dir . "/" . $basename);
     printf(STDERR "# COM: %s\n", $com);
     system($com);
 
@@ -139,19 +129,17 @@ sub train_luwmodel_svm {
 }
 
 sub train_luwmodel_crf {
-    my ($self, $train_kc, $model_dir) = @_;
+    my ($self, $train_kc, $svmin_file, $model_dir) = @_;
     print STDERR "# TRAIN LUWMODEL\n";
-
-    my $basename = basename($train_kc);
 
     $ENV{"LD_LIBRARY_PATH"} = "/usr/lib;/usr/local/lib";
 
+    my $basename = basename($train_kc);
     my $crf_learn = $self->{"crf-dir"} . "/crf_learn";
     my $crf_template = $model_dir . "/" . $basename . ".template";
 
-    my $svmin = $model_dir . "/" . $basename . ".svmin";
     ## 素性数を取得
-    open(my $fh_svmin, $svmin);
+    open(my $fh_svmin, $svmin_file);
     my $line = <$fh_svmin>;
     $line = decode_utf8 $line;
     my $feature_num = scalar(split(/ /,$line))-2;
@@ -160,7 +148,7 @@ sub train_luwmodel_crf {
     Comainu::ExternalTool->create_crf_template($crf_template, $feature_num);
 
     my $crf_model = $model_dir . "/" . $basename .".model";
-    my $com = "\"$crf_learn\" \"$crf_template\" \"$svmin\" \"$crf_model\"";
+    my $com = "\"$crf_learn\" \"$crf_template\" \"$svmin_file\" \"$crf_model\"";
     printf(STDERR "# COM: %s\n", $com);
     system($com);
 

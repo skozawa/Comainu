@@ -300,73 +300,9 @@ sub create_middle {
 }
 
 
-### kc2longmodel
 ############################################################
 # 形式の変換
 ############################################################
-# KC2ファイルに対してpivot(Ba, B, I, Ia)を判定し、
-# 行頭または行末のカラムとして追加する。
-# これは従来のmkep + join_pivot_to_kc2 を置き換える。
-# pivot
-#    Ba  長単位先頭     品詞一致
-#    B   長単位先頭     品詞不一致
-#    Ia  長単位先頭以外 品詞一致
-#    I   長単位先頭以外 品詞不一致
-sub add_pivot_to_kc2 {
-    my ($class, $fh_ref_kc2, $fh_kc2, $fh_out, $flag) = @_;
-    my $front = (defined($flag) && $flag eq "0");
-    my $line_in_list = [<$fh_ref_kc2>];
-    my $curr_long_pos = "";
-
-    foreach my $i ( 0 .. $#{$line_in_list} ) {
-        my $line = decode_utf8 $line_in_list->[$i];
-        $line =~ s/\r?\n$//;
-        next if $line =~ /^\*B/;
-
-        if ( $line =~ /^EOS/ ) {
-            my $res = "\n";
-            $res = decode_utf8 $res;
-            print $fh_out $res;
-            next;
-        }
-
-        my $pivot = "";
-        my $items = [ split(/ /, $line) ];
-        my $short_pos = join(" ", @$items[3 .. 5]);
-        my $long_pos  = join(" ", @$items[13 .. 15]);
-
-        if ( $long_pos =~ /^\*/ ) {
-            $pivot = "I";
-        } else {
-            $pivot = "B";
-            $curr_long_pos = $long_pos;
-        }
-
-        my $line_out = <$fh_kc2>;
-        $line_out = decode_utf8 $line_out;
-        $line_out =~ s/\r?\n$//;
-
-        if ( $short_pos eq $curr_long_pos ) {
-            if ( $i < $#{$line_in_list} ) {
-                my $next_items = [ split(/ /, $$line_in_list[$i+1]) ];
-                my $next_long_pos = join(" ", @$next_items[13 .. 15]);
-                if ( $next_long_pos !~ /^\*/ ) {
-                    $pivot .= "a";
-                }
-            } else {
-                $pivot .= "a";
-            }
-        }
-        my $res = $front ? "$pivot $line_out\n" : "$line_out $pivot\n";
-        $res = encode_utf8 $res;
-        print $fh_out $res;
-    }
-    print $fh_out "\n";
-
-    undef $line_in_list;
-}
-
-
 ### kc2longout, kc2bnstout
 # 動作：ホワイトスペースで区切られた１２カラム以上からなる行を１行ずつ読み、
 # 　　　次の順に並べなおして出力する。（数字は元のカラム位置。","は説明のために使用。

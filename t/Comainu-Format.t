@@ -97,51 +97,6 @@ sub merge_kc_with_mstout : Test(1) {
     is $gold_buff, $buff;
 }
 
-
-sub add_pivot_to_kc2 : Test(1) {
-    my $kc_data = <<KC;
-*B
-詰め ツメル 詰める 動詞-一般 下一段-マ行 連用形-一般 ツメ ツメル 詰める 詰め * * 和 名詞-普通名詞-一般 * * ツメショウギ 詰め将棋 詰め将棋
-将棋 ショウギ 将棋 名詞-普通名詞-一般 * * ショウギ ショウギ 将棋 将棋 * * 漢 * * * * * *
-の ノ の 助詞-格助詞 * * ノ ノ の の * * 和 助詞-格助詞 * * ノ の の
-*B
-本 ホン 本 名詞-普通名詞-一般 * * ホン ホン 本 本 * * 漢 名詞-普通名詞-一般 * * ホン 本 本
-を ヲ を 助詞-格助詞 * * ヲ ヲ を を * * 和 助詞-格助詞 * * ヲ を を
-KC
-    my $kc_file = create_tmp_file($kc_data);
-
-    my $kc2_data = <<KC2;
-詰め ツメル 詰める 動詞-一般 下一段-マ行 連用形-一般 * * 和 動詞 一般 * * 下一段 マ行 * 連用形 一般 * * 0 0
-将棋 ショウギ 将棋 名詞-普通名詞-一般 * * * * 漢 名詞 普通名詞 一般 * * * * * * * * 0 0
-の ノ の 助詞-格助詞 * * * * 和 助詞 格助詞 * * * * * * * * * 0 0
-本 ホン 本 名詞-普通名詞-一般 * * * * 漢 名詞 普通名詞 一般 * * * * * * * * 0 0
-を ヲ を 助詞-格助詞 * * * * 和 助詞 格助詞 * * * * * * * * * 0 0
-KC2
-    my $kc2_file = create_tmp_file($kc2_data);
-
-    my $out_file = create_tmp_file("");
-
-    open(my $fh_ref, "<", $kc_file);
-    open(my $fh_in, "<", $kc2_file);
-    open(my $fh_out, ">", $out_file);
-    binmode($fh_out);
-    Comainu::Format->add_pivot_to_kc2($fh_ref, $fh_in, $fh_out);
-    close($fh_out);
-    close($fh_in);
-    close($fh_ref);
-
-    my $gold = <<GOLD;
-詰め ツメル 詰める 動詞-一般 下一段-マ行 連用形-一般 * * 和 動詞 一般 * * 下一段 マ行 * 連用形 一般 * * 0 0 B
-将棋 ショウギ 将棋 名詞-普通名詞-一般 * * * * 漢 名詞 普通名詞 一般 * * * * * * * * 0 0 Ia
-の ノ の 助詞-格助詞 * * * * 和 助詞 格助詞 * * * * * * * * * 0 0 Ba
-本 ホン 本 名詞-普通名詞-一般 * * * * 漢 名詞 普通名詞 一般 * * * * * * * * 0 0 Ba
-を ヲ を 助詞-格助詞 * * * * 和 助詞 格助詞 * * * * * * * * * 0 0 Ba
-
-GOLD
-
-    is read_from_file($out_file), $gold;
-}
-
 sub move_future_front : Test(2) {
     is Comainu::Format->move_future_front(
         "詰め ツメル 詰める 動詞-一般 下一段-マ行 連用形-一般 * * 和 動詞 一般 * * 下一段 マ行 * 連用形 一般 * * 0 0 B"

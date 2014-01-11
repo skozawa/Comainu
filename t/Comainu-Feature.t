@@ -18,7 +18,7 @@ sub _use_ok (startup => 1) {
     use_ok 'Comainu::Feature';
 };
 
-sub create_long_feature : Test(4) {
+sub create_longout_feature : Test(3) {
     my $buff = <<DATA;
 詰め ツメル 詰める 動詞-一般 下一段-マ行 連用形-一般 ツメ ツメル 詰める 詰め * * 和 名詞-普通名詞-一般 * * ツメショウギ 詰め将棋 詰め将棋
 将棋 ショウギ 将棋 名詞-普通名詞-一般 * * ショウギ ショウギ 将棋 将棋 * * 漢 * * * * * *
@@ -42,26 +42,6 @@ DATA
         },
     );
 
-    subtest 'feature for train' => sub {
-        my $gold = <<GOLD;
-詰め ツメル 詰める 動詞-一般 下一段-マ行 連用形-一般 * * 和 動詞 一般 * * 下一段 マ行 * 連用形 一般 *
-将棋 ショウギ 将棋 名詞-普通名詞-一般 * * * * 漢 名詞 普通名詞 一般 * * * * * * *
-の ノ の 助詞-格助詞 * * * * 和 助詞 格助詞 * * * * * * * *
-本 ホン 本 名詞-普通名詞-一般 * * * * 漢 名詞 普通名詞 一般 * * * * * * *
-を ヲ を 助詞-格助詞 * * * * 和 助詞 格助詞 * * * * * * * *
-買っ カウ 買う 動詞-一般 五段-ワア行-一般 連用形-促音便 * * 和 動詞 一般 * * 五段 ワア行 一般 連用形 促音便 *
-て テ て 助詞-接続助詞 * * * * 和 助詞 接続助詞 * * * * * * * *
-き クル 来る 動詞-非自立可能 カ行変格 連用形-一般 * * 和 動詞 非自立可能 * * カ行変格 * * 連用形 一般 *
-まし マス ます 助動詞 助動詞-マス 連用形-一般 * * 和 助動詞 * * * 助動詞 マス * 連用形 一般 *
-た タ た 助動詞 助動詞-タ 終止形-一般 * * 和 助動詞 * * * 助動詞 タ * 終止形 一般 *
-。 * 。 補助記号-句点 * * * * 記号 補助記号 句点 * * * * * * * *
-GOLD
-
-        my $feature = Comainu::Feature->create_long_feature('test.KC');
-
-        is $feature, $gold;
-    };
-
     subtest 'feature for test (sentence)' => sub {
         my $gold = <<GOLD;
 詰め ツメル 詰める 動詞-一般 下一段-マ行 連用形-一般 * * 和 動詞 一般 * * 下一段 マ行 * 連用形 一般 *
@@ -78,7 +58,7 @@ GOLD
 EOS
 GOLD
 
-        my $feature = Comainu::Feature->create_long_feature('test.KC', 'sentence');
+        my $feature = Comainu::Feature->create_longout_feature('test.KC', 'sentence');
 
         is $feature, $gold;
     };
@@ -102,7 +82,7 @@ GOLD
 EOS
 GOLD
 
-        my $feature = Comainu::Feature->create_long_feature('test.KC', 'word');
+        my $feature = Comainu::Feature->create_longout_feature('test.KC', 'word');
 
         is $feature, $gold;
     };
@@ -125,13 +105,58 @@ GOLD
 。 * 。 補助記号-句点 * * * * 記号 補助記号 句点 * * * * * * * *
 GOLD
 
-        my $feature = Comainu::Feature->create_long_feature('test.KC', 'none');
+        my $feature = Comainu::Feature->create_longout_feature('test.KC', 'none');
 
         is $feature, $gold;
     };
 }
 
-sub _long_feature_from_line : Tests {
+sub create_longmodel_feature : Test(1) {
+    my $buff = <<DATA;
+詰め ツメル 詰める 動詞-一般 下一段-マ行 連用形-一般 ツメ ツメル 詰める 詰め * * 和 名詞-普通名詞-一般 * * ツメショウギ 詰め将棋 詰め将棋
+将棋 ショウギ 将棋 名詞-普通名詞-一般 * * ショウギ ショウギ 将棋 将棋 * * 漢 * * * * * *
+の ノ の 助詞-格助詞 * * ノ ノ の の * * 和 助詞-格助詞 * * ノ の の
+*B
+本 ホン 本 名詞-普通名詞-一般 * * ホン ホン 本 本 * * 漢 名詞-普通名詞-一般 * * ホン 本 本
+を ヲ を 助詞-格助詞 * * ヲ ヲ を を * * 和 助詞-格助詞 * * ヲ を を
+*B
+買っ カウ 買う 動詞-一般 五段-ワア行-一般 連用形-促音便 カッ カウ 買う 買っ * * 和 動詞-一般 五段-ワア行-一般 連用形-促音便 カウ 買う 買っ
+て テ て 助詞-接続助詞 * * テ テ て て * * 和 助詞-接続助詞 * * テ て て
+*B
+き クル 来る 動詞-非自立可能 カ行変格 連用形-一般 キ クル 来る 来 * * 和 動詞-一般 カ行変格 連用形-一般 クル 来る き
+まし マス ます 助動詞 助動詞-マス 連用形-一般 マシ マス ます まし * * 和 助動詞 助動詞-マス 連用形-一般 マス ます まし
+た タ た 助動詞 助動詞-タ 終止形-一般 タ タ た た * * 和 助動詞 助動詞-タ 終止形-一般 タ た た
+。 * 。 補助記号-句点 * * * * 。 。 * * 記号 補助記号-句点 * * * 。 。
+DATA
+
+    my $g = mock_guard(
+        'Comainu::Feature' => {
+            read_from_file => sub { $buff },
+        },
+    );
+
+    my $gold = <<GOLD;
+詰め ツメル 詰める 動詞-一般 下一段-マ行 連用形-一般 * * 和 動詞 一般 * * 下一段 マ行 * 連用形 一般 * B
+将棋 ショウギ 将棋 名詞-普通名詞-一般 * * * * 漢 名詞 普通名詞 一般 * * * * * * * Ia
+の ノ の 助詞-格助詞 * * * * 和 助詞 格助詞 * * * * * * * * Ba
+本 ホン 本 名詞-普通名詞-一般 * * * * 漢 名詞 普通名詞 一般 * * * * * * * Ba
+を ヲ を 助詞-格助詞 * * * * 和 助詞 格助詞 * * * * * * * * Ba
+買っ カウ 買う 動詞-一般 五段-ワア行-一般 連用形-促音便 * * 和 動詞 一般 * * 五段 ワア行 一般 連用形 促音便 * Ba
+て テ て 助詞-接続助詞 * * * * 和 助詞 接続助詞 * * * * * * * * Ba
+き クル 来る 動詞-非自立可能 カ行変格 連用形-一般 * * 和 動詞 非自立可能 * * カ行変格 * * 連用形 一般 * B
+まし マス ます 助動詞 助動詞-マス 連用形-一般 * * 和 助動詞 * * * 助動詞 マス * 連用形 一般 * Ba
+た タ た 助動詞 助動詞-タ 終止形-一般 * * 和 助動詞 * * * 助動詞 タ * 終止形 一般 * Ba
+。 * 。 補助記号-句点 * * * * 記号 補助記号 句点 * * * * * * * * Ba
+
+GOLD
+
+    my $data = Comainu::Feature->create_longmodel_feature("");
+    is $data, $gold;
+};
+
+
+
+sub _long_feature_from_line : Test(2) {
     my $feature1 = Comainu::Feature->_long_feature_from_line(
         '詰め ツメル 詰める 動詞-一般 下一段-マ行 連用形-一般 ツメ ツメル 詰める 詰め * * 和 名詞-普通名詞-一般 * * ツメショウギ 詰め将棋 詰め将棋'
     );
