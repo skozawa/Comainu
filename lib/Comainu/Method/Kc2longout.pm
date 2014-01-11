@@ -39,7 +39,7 @@ sub run {
         dir => $save_dir, luwmodel => $luwmodel, args_num => scalar @_,
     });
 
-    $self->analyze($test_kc, $luwmodel, $save_dir);
+    $self->analyze_files($test_kc, $luwmodel, $save_dir);
 
     return 0;
 }

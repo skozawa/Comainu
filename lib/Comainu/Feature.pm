@@ -17,10 +17,8 @@ sub create_longout_feature {
     }
     undef $kc_data;
 
-    if ( $boundary ) {
-        $buff =~ s/^EOS.*?\n//mg if $boundary ne 'sentence' && $boundary ne 'word';
-        $buff =~ s/^\*B.*?\n//mg if $boundary eq "sentence";
-    }
+    $buff =~ s/^EOS.*?\n//mg if $boundary ne 'sentence' && $boundary ne 'word';
+    $buff =~ s/^\*B.*?\n//mg if $boundary eq "sentence";
 
     return $buff;
 }
@@ -106,6 +104,7 @@ sub _long_feature_from_line {
     return join " ", @features;
 }
 
+# 前処理（partial chunkingの入力フォーマットへの変換）
 sub pp_partial {
     my ($class, $data, $args) = @_;
     my $res = "";
@@ -147,5 +146,101 @@ sub pp_partial {
 }
 
 
+sub create_bnstout_feature {
+    my ($class, $kc_file) = @_;
+
+    my $kc_data = read_from_file($kc_file);
+
+    my $buff = "";
+    my $parenthetic = 0;
+    foreach my $line ( split /\r?\n/, $kc_data ) {
+        next if $line =~ /^\*B/;
+        if ( $line eq "EOS" ) {
+            $buff .= $line . "\n*B\n";
+            $parenthetic = 0;
+            next;
+        }
+        $buff .= $class->_bnst_feature_from_line($line, \$parenthetic) . "\n";
+    }
+    undef $kc_data;
+
+    return $buff;
+}
+
+sub _bnst_feature_from_line {
+    my ($class, $line, $parenthetic) = @_;
+
+    my @items = split /[ \t]/, $line;
+    my @pos   = split /\-/, $items[3] . "-*-*-*";
+    my @cType = split /\-/, $items[4] . "-*-*";
+    my @cForm = split /\-/, $items[5] . "-*-*";
+
+    my $feature = join " ", @items[0..5], @pos[0..3], @cType[0..2], @cForm[0..2];
+
+    if ( $items[3] eq '補助記号-括弧開' ) {
+        $feature .= $$parenthetic ? ' I' : ' B';
+        $$parenthetic++;
+    } elsif ( $items[3] eq '補助記号-括弧閉' ) {
+        $$parenthetic--;
+        $feature .= ' I';
+    } elsif ( $$parenthetic ) {
+        $feature .= ' I';
+    } else {
+        $feature .= ' O';
+    }
+
+    return $feature;
+}
+
+# 前処理（partial chunkingの入力フォーマットへの変換）
+sub pp_partial_bnst_with_luw {
+    my ($class, $data, $svmout_file) = @_;
+    my $res = "";
+    my ($prev, $curr, $next) = (0, 1, 2);
+    my $buff_list = [undef, undef];
+
+    my $svmout_data = read_from_file($svmout_file);
+    my $svmout_item_list = [ split(/\r?\n/, $svmout_data) ];
+    undef $svmout_data;
+
+    foreach my $line ( (split(/\r?\n/, $data), undef, undef) ) {
+        push @$buff_list, $line;
+        if ( defined $buff_list->[$curr] && $buff_list->[$curr] !~ /^EOS|^\*B/ ) {
+            my $mark = "";
+            my $lw = shift @$svmout_item_list;
+            my @svmout = split(/[ \t]/,$lw);
+            if ( $buff_list->[$prev] =~ /^EOS|^\*B/) {
+                $mark = "B";
+            } elsif ( !defined $buff_list->[$prev] ) {
+                $mark = "B";
+            } elsif ( $svmout[0] =~ /I/ ) {
+                $mark = "I";
+            } elsif ( $svmout[4] =~ /^動詞/ ) {
+                $mark = "B";
+            } elsif ( $svmout[4] =~ /^名詞|^形容詞|^副詞|^形状詞/ &&
+                          ($svmout[21] == 1 || $svmout[22] == 1) ) {
+                $mark = "B";
+            } else {
+                $mark = "B I";
+            }
+            $buff_list->[$curr] .= " ".$mark;
+        }
+        my $new_line = shift @$buff_list;
+        if ( defined $new_line && $new_line !~ /^\*B/ ) {
+            $res .= $new_line . "\n";
+        }
+    }
+    while ( my $new_line = shift(@$buff_list) ) {
+        if ( defined $new_line && $new_line !~ /^\*B/ ) {
+            $res .= $new_line."\n";
+        }
+    }
+
+    undef $data;
+    undef $buff_list;
+    undef $svmout_item_list;
+
+    return $res;
+}
 
 1;

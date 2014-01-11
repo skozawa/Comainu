@@ -9,7 +9,8 @@ use parent 'Comainu::Method';
 use File::Basename qw(basename);
 use Config;
 
-use Comainu::Util qw(read_from_file write_to_file check_file proc_stdin2stdout);
+use Comainu::Util qw(read_from_file write_to_file check_file proc_file2stdout);
+use Comainu::Feature;
 use Comainu::Format;
 
 sub new {
@@ -53,8 +54,14 @@ sub analyze {
         output_type      => 'kc',
         data_format_file => $self->{data_format},
     });
-    $self->format_bnstdata($tmp_test_kc);
-    $self->chunk_bnst($tmp_test_kc, $bnstmodel, $save_dir);
+
+    my $basename = basename($tmp_test_kc);
+    my $svmdata_file = $self->{"comainu-temp"} . "/" . $basename . ".svmdata";
+    my $bout_file    = $save_dir . "/" . $basename . ".bout";
+
+    $self->format_bnstdata($tmp_test_kc, $svmdata_file);
+    $self->chunk_bnst($svmdata_file, $bnstmodel, $bout_file);
+    $self->merge_chunk_result($tmp_test_kc, $bout_file);
 
     unlink $tmp_test_kc if !$self->{debug} && -f $tmp_test_kc;
 }
@@ -62,49 +69,45 @@ sub analyze {
 
 # 文節解析用の形式に変換
 sub format_bnstdata {
-    my ($self, $tmp_test_kc) = @_;
+    my ($self, $tmp_test_kc, $svmdata_file) = @_;
     print STDERR "# FORMAT FOR BNSTDATA\n";
 
-    my $basename = basename($tmp_test_kc);
-    my $output_file = $self->{"comainu-temp"} . "/" . $basename . ".svmdata";
     # すでに同じ名前の中間ファイルがあれば削除
-    unlink $output_file if -s $output_file;
+    unlink $svmdata_file if -s $svmdata_file;
 
-    my $buff = read_from_file($tmp_test_kc);
-    $buff = Comainu::Format->kc2bnstsvmdata($buff, 0);
+    my $buff = Comainu::Feature->create_bnstout_feature($tmp_test_kc);
 
     if ( $self->{bnst_process} eq "with_luw" ) {
         ## 長単位解析の出力結果
+        my $basename = basename($tmp_test_kc);
         my $svmout_file = $self->{"comainu-temp"} . "/" . $basename . ".svmout";
-        $buff = Comainu::Format->pp_partial_bnst_with_luw($buff, $svmout_file);
+        $buff = Comainu::Feature->pp_partial_bnst_with_luw($buff, $svmout_file);
         unlink $svmout_file if !$self->{debug} && -f $svmout_file;
     } elsif ( $self->{boundary} ne "none" ) {
-        $buff = Comainu::Format->pp_partial($buff, {
+        $buff = Comainu::Feature->pp_partial($buff, {
             is_bnst  => 1,
             boundary => $self->{boundary},
         });
     }
 
-    write_to_file($output_file, $buff);
+    # YAMCHA用に明示的に最終行に改行を付けさせる
+    $buff .= "\n";
+    write_to_file($svmdata_file, $buff);
     undef $buff;
 
     # 不十分な中間ファイルならば、削除しておく
-    unlink $output_file unless -s $output_file;
-
-    return 0;
+    unlink $svmdata_file unless -s $svmdata_file;
 }
 
 # yamchaを利用して文節境界解析
 sub chunk_bnst {
-    my ($self, $tmp_test_kc, $bnstmodel, $save_dir) = @_;
+    my ($self, $svmdata_file, $bnstmodel, $bout_file) = @_;
     print STDERR "# CHUNK BNST\n";
     my $yamcha_opt = "";
     if ($self->{"boundary"} eq "sentence" || $self->{"boundary"} eq "word") {
         # sentence/word boundary
         $yamcha_opt = "-C";
     }
-    my $ret = 0;
-
     my $YAMCHA = $self->{"yamcha-dir"}."/yamcha";
     $YAMCHA .= ".exe" if $Config{osname} eq "MSWin32";
     unless ( -x $YAMCHA ) {
@@ -112,38 +115,37 @@ sub chunk_bnst {
         exit 0;
     }
 
-    my $basename = basename($tmp_test_kc);
-    my $svmdata_file = $self->{"comainu-temp"} . "/" . $basename . ".svmdata";
-    my $output_file = $save_dir . "/" . $basename . ".bout";
     # すでに同じ名前の中間ファイルがあれば削除
-    unlink $output_file if -s $output_file;
-
+    unlink $bout_file if -s $bout_file;
     check_file($svmdata_file);
-
-    my $buff = read_from_file($svmdata_file);
-    # YAMCHA用に明示的に最終行に改行を付けさせる
-    $buff .= "\n";
 
     my $yamcha_com = "\"".$YAMCHA."\" ".$yamcha_opt." -m \"".$bnstmodel."\"";
     printf(STDERR "# YAMCHA_COM: %s\n", $yamcha_com) if $self->{debug};
 
-    $buff = proc_stdin2stdout($yamcha_com, $buff, $self->{"comainu-temp"});
+    my $buff = proc_file2stdout($yamcha_com, $svmdata_file, $self->{"comainu-temp"});
     $buff =~ s/\x0d\x0a/\x0a/sg;
     $buff =~ s/^\r?\n//mg;
     $buff = Comainu::Format->move_future_front($buff);
-    write_to_file($output_file, $buff);
-
-    $buff = Comainu::Format->merge_kc_with_bout($tmp_test_kc, $output_file);
-    write_to_file($output_file, $buff);
+    write_to_file($bout_file, $buff);
     undef $buff;
 
     # 不十分な中間ファイルならば、削除しておく
-    unlink $output_file unless -s $output_file;
+    unlink $bout_file unless -s $bout_file;
 
     unlink $svmdata_file if !$self->{debug} && -f $svmdata_file;
-
-    return $ret;
 }
 
+sub merge_chunk_result {
+    my ($self, $tmp_test_kc, $bout_file) = @_;
+
+    my $buff = Comainu::Format->merge_kc_with_bout($tmp_test_kc, $bout_file);
+    write_to_file($bout_file, $buff);
+    undef $buff;
+
+    # 不十分な中間ファイルならば、削除しておく
+    unlink $bout_file unless -s $bout_file;
+
+    return 0;
+}
 
 1;

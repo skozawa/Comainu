@@ -303,7 +303,6 @@ sub create_middle {
 ############################################################
 # 形式の変換
 ############################################################
-### kc2longout, kc2bnstout
 # 動作：ホワイトスペースで区切られた１２カラム以上からなる行を１行ずつ読み、
 # 　　　次の順に並べなおして出力する。（数字は元のカラム位置。","は説明のために使用。
 # 　　　実際の区切りはスペース一つ）
@@ -314,10 +313,14 @@ sub move_future_front {
     my ($class, $data) = @_;
     my $res = "";
     my $num_of_column = 12;
-    foreach my $line ( split(/\r?\n/, $data) ) {
-        my $items = [ split(/[ \t]/, $line) ];
-        while ( scalar(@$items) < $num_of_column ) {
-            push(@$items, "");
+    foreach my $line ( split /\r?\n/, $data ) {
+        my $items = [ split /[ \t]/, $line ];
+        if ( scalar @$items == 1 ) {
+            $res .= $line . "\n";
+            next;
+        }
+        while ( scalar @$items < $num_of_column ) {
+            push @$items, "";
         }
         $items = [ @$items[scalar(@$items) - 1, 0 .. scalar(@$items) - 2 ]];
         $res .= join(" ", @$items)."\n";
@@ -325,105 +328,6 @@ sub move_future_front {
     undef $data;
     return $res;
 }
-
-
-### kc2longout, kc2bnstout
-############################################################
-# partial chunking
-############################################################
-# 前処理（partial chunkingの入力フォーマットへの変換）
-sub pp_partial {
-    my ($class, $data, $args) = @_;
-    my $res = "";
-    my ($prev, $curr, $next) = (0, 1, 2);
-    my $buff_list = [undef, undef];
-
-    my $B_label  = $args->{is_bnst} ? "B" : "B Ba";
-    my $BI_label = $args->{is_bnst} ? "B I" :
-        $args->{boundary} ne "word" ? "B Ba I Ia" : "I Ia";
-
-    foreach my $line ((split(/\r?\n/, $data), undef, undef)) {
-        push @$buff_list, $line;
-        if ( defined $buff_list->[$curr] && $buff_list->[$curr] !~ /^EOS|^\*B/ ) {
-            my $mark = "";
-            if ( $buff_list->[$prev] =~ /^EOS|^\*B/) {
-                $mark = $B_label;
-            } elsif ( !defined $buff_list->[$prev] ) {
-                $mark = $B_label;
-            } else {
-                $mark = $BI_label;
-            }
-            $buff_list->[$curr] .= " " . $mark;
-        }
-        my $new_line = shift @$buff_list;
-        if ( defined $new_line && $new_line !~ /^\*B/ ) {
-            $res .= $new_line."\n";
-        }
-    }
-    while ( my $new_line = shift(@$buff_list) ) {
-        if ( defined $new_line && $new_line !~ /^\*B/ ) {
-            $res .= $new_line."\n";
-        }
-    }
-
-    undef $data;
-    undef $buff_list;
-
-    return $res;
-}
-
-
-### kc2bnstout
-sub pp_partial_bnst_with_luw {
-    my ($class, $data, $svmout_file) = @_;
-    my $res = "";
-    my ($prev, $curr, $next) = (0, 1, 2);
-    my $buff_list = [undef, undef];
-
-    my $svmout_data = read_from_file($svmout_file);
-    my $svmout_item_list = [ split(/\r?\n/, $svmout_data) ];
-    undef $svmout_data;
-
-    foreach my $line ( (split(/\r?\n/, $data), undef, undef) ) {
-        push @$buff_list, $line;
-        if ( defined $buff_list->[$curr] && $buff_list->[$curr] !~ /^EOS|^\*B/ ) {
-            my $mark = "";
-            my $lw = shift @$svmout_item_list;
-            my @svmout = split(/[ \t]/,$lw);
-            if ( $buff_list->[$prev] =~ /^EOS|^\*B/) {
-                $mark = "B";
-            } elsif ( !defined $buff_list->[$prev] ) {
-                $mark = "B";
-            } elsif ( $svmout[0] =~ /I/ ) {
-                $mark = "I";
-            } elsif ( $svmout[4] =~ /^動詞/ ) {
-                $mark = "B";
-            } elsif ( $svmout[4] =~ /^名詞|^形容詞|^副詞|^形状詞/ &&
-                          ($svmout[21] == 1 || $svmout[22] == 1) ) {
-                $mark = "B";
-            } else {
-                $mark = "B I";
-            }
-            $buff_list->[$curr] .= " ".$mark;
-        }
-        my $new_line = shift @$buff_list;
-        if ( defined $new_line && $new_line !~ /^\*B/ ) {
-            $res .= $new_line . "\n";
-        }
-    }
-    while ( my $new_line = shift(@$buff_list) ) {
-        if ( defined $new_line && $new_line !~ /^\*B/ ) {
-            $res .= $new_line."\n";
-        }
-    }
-
-    undef $data;
-    undef $buff_list;
-    undef $svmout_item_list;
-
-    return $res;
-}
-
 
 ############################################################
 # フォーマットの変換
