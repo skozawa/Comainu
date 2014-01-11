@@ -87,7 +87,7 @@ sub chunk_luw : Test(1) {
     is $svmout_data, read_from_file('t/sample/kc2longout/test.KC.svmout.gold');
 };
 
-sub merge_chunk_result : Tests {
+sub merge_chunk_result : Test(1) {
     my $kc2longout = Comainu::Method::Kc2longout->new(
         boundary => 'sentence',
         debug    => 1,
