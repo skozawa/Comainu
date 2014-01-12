@@ -167,6 +167,37 @@ sub create_bnstout_feature {
     return $buff;
 }
 
+sub create_bnstmodel_feature {
+    my ($class, $kc_file) = @_;
+
+    my $kc_data = read_from_file($kc_file);
+
+    my $buff = "";
+    my ($prev, $curr, $next) = (0, 1, 2);
+    my $buff_list = [undef, undef];
+    my $parenthetic = 0;
+    foreach my $line ( (split(/\r?\n/, $kc_data), undef, undef) ) {
+        push @$buff_list, $line;
+        if ( ! defined $buff_list->[$curr] || $buff_list->[$curr] =~ /^\*B/ ) {
+            # no operation
+        } elsif ( $buff_list->[$curr] =~ /^EOS/ ) {
+            $buff .= "\n";
+        } else {
+            my $mark = !defined $buff_list->[$prev] ? 'B' :
+                $buff_list->[$prev] =~ /^\*B/ ? "B" : "I";
+            $buff .= $class->_bnst_feature_from_line($buff_list->[$curr], \$parenthetic) . ' ' . $mark . "\n";
+        }
+
+        shift @$buff_list;
+    }
+    undef $kc_data;
+    undef $buff_list;
+
+    $buff .= "\n";
+
+    return $buff;
+}
+
 sub _bnst_feature_from_line {
     my ($class, $line, $parenthetic) = @_;
 

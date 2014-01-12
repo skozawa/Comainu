@@ -14,7 +14,7 @@ use Encode;
 use File::Temp;
 use Comainu::Feature;
 
-sub _use_ok (startup => 1) {
+sub _use_ok : Test(startup => 1) {
     use_ok 'Comainu::Feature';
 };
 
@@ -211,6 +211,97 @@ GOLD
 
         my $out = Comainu::Feature->pp_partial($data, { is_bnst => 1, boundary => 'none' });
         is $out, $gold;
+    };
+}
+
+sub create_bnstout_feature : Test(1) {
+    my $data = <<DATA;
+*B
+「 * 「 補助記号-括弧開 * * * * 「 「 * * 記号 補助記号-括弧開 * * * 「 「
+竜 リュウ 竜 名詞-普通名詞-一般 * * リュウ リュウ 竜 竜 * * 漢 名詞-普通名詞-一般 * * リュウキシ 竜騎士 竜騎士
+騎士 キシ 騎士 名詞-普通名詞-一般 * * キシ キシ 騎士 騎士 * * 漢 * * * * * *
+０ レイ 零 名詞-数詞 * * レイ レイ 零 零 * * 漢 名詞-数詞 * * レイナナ 零七 ０７
+７ ナナ 七 名詞-数詞 * * ナナ ナナ 七 七 * * 和 * * * * * *
+」 * 」 補助記号-括弧閉 * * * * 」 」 * * 記号 補助記号-括弧閉 * * * 」 」
+って ッテ って 助詞-副助詞 * * ッテ ッテ って って * * 和 助詞-副助詞 * * ッテ って って
+DATA
+
+    my $g = mock_guard('Comainu::Feature' => {
+        read_from_file => sub { $data },
+    });
+
+    my $gold = <<GOLD;
+「 * 「 補助記号-括弧開 * * 補助記号 括弧開 * * * * * * * * B
+竜 リュウ 竜 名詞-普通名詞-一般 * * 名詞 普通名詞 一般 * * * * * * * I
+騎士 キシ 騎士 名詞-普通名詞-一般 * * 名詞 普通名詞 一般 * * * * * * * I
+０ レイ 零 名詞-数詞 * * 名詞 数詞 * * * * * * * * I
+７ ナナ 七 名詞-数詞 * * 名詞 数詞 * * * * * * * * I
+」 * 」 補助記号-括弧閉 * * 補助記号 括弧閉 * * * * * * * * I
+って ッテ って 助詞-副助詞 * * 助詞 副助詞 * * * * * * * * O
+GOLD
+
+    my $out = Comainu::Feature->create_bnstout_feature('t/sample/test.KC');
+    is $out, $gold;
+}
+
+sub create_bnstmodel_feature : Test(1) {
+    my $data = <<DATA;
+*B
+詰め ツメル 詰める 動詞-一般 下一段-マ行 連用形-一般 ツメ ツメル 詰める 詰め * * 和 名詞-普通名詞-一般 * * ツメショウギ 詰め将棋 詰め将棋
+将棋 ショウギ 将棋 名詞-普通名詞-一般 * * ショウギ ショウギ 将棋 将棋 * * 漢 * * * * * *
+の ノ の 助詞-格助詞 * * ノ ノ の の * * 和 助詞-格助詞 * * ノ の の
+*B
+本 ホン 本 名詞-普通名詞-一般 * * ホン ホン 本 本 * * 漢 名詞-普通名詞-一般 * * ホン 本 本
+を ヲ を 助詞-格助詞 * * ヲ ヲ を を * * 和 助詞-格助詞 * * ヲ を を
+DATA
+
+    my $gold = <<GOLD;
+詰め ツメル 詰める 動詞-一般 下一段-マ行 連用形-一般 動詞 一般 * * 下一段 マ行 * 連用形 一般 * O B
+将棋 ショウギ 将棋 名詞-普通名詞-一般 * * 名詞 普通名詞 一般 * * * * * * * O I
+の ノ の 助詞-格助詞 * * 助詞 格助詞 * * * * * * * * O I
+本 ホン 本 名詞-普通名詞-一般 * * 名詞 普通名詞 一般 * * * * * * * O B
+を ヲ を 助詞-格助詞 * * 助詞 格助詞 * * * * * * * * O I
+
+GOLD
+
+    my $g = mock_guard('Comainu::Feature' => {
+        read_from_file => sub { $data },
+    });
+
+    my $out = Comainu::Feature->create_bnstmodel_feature('t/sample/test.KC');
+    is $out, $gold;
+}
+
+sub _bnst_feature_from_line : Test(3) {
+    subtest 'bnst feature' => sub {
+        my $parenthetic = 0;
+        my $feature = Comainu::Feature->_bnst_feature_from_line(
+            '詰め ツメル 詰める 動詞-一般 下一段-マ行 連用形-一般 ツメ ツメル 詰める 詰め * * 和 名詞-普通名詞-一般 * * ツメショウギ 詰め将棋 詰め将棋', \$parenthetic
+        );
+
+        is $feature, '詰め ツメル 詰める 動詞-一般 下一段-マ行 連用形-一般 動詞 一般 * * 下一段 マ行 * 連用形 一般 * O';
+    };
+
+    subtest 'open parenthetic' => sub {
+        my $parenthetic = 0;
+        my $feature = Comainu::Feature->_bnst_feature_from_line(
+            '「 * 「 補助記号-括弧開 * * * * 「 「 * * 記号 補助記号-括弧開 * * * 「 「',
+            \$parenthetic
+        );
+
+        is $feature, '「 * 「 補助記号-括弧開 * * 補助記号 括弧開 * * * * * * * * B';
+        is $parenthetic, 1;
+    };
+
+    subtest 'close parenthetic' => sub {
+        my $parenthetic = 1;
+        my $feature = Comainu::Feature->_bnst_feature_from_line(
+            '」 * 」 補助記号-括弧閉 * * * * 」 」 * * 記号 補助記号-括弧閉 * * * 」 」',
+            \$parenthetic
+        );
+
+        is $feature, '」 * 」 補助記号-括弧閉 * * 補助記号 括弧閉 * * * * * * * * I';
+        is $parenthetic, 0;
     };
 }
 

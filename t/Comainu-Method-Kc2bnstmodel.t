@@ -15,11 +15,15 @@ sub _use_ok : Test(startup => 1) {
 }
 
 # sub run : Tests {};
-# sub _train_bnstmodel : Tests {};
-# sub _add_bnst_label : Tests {};
 
-sub dummy : Test(1) {
-    ok 1;
+sub create_svmin : Test(1) {
+    my $svmin_data = "";
+    my $g1 = guard_write_to_file('Comainu::Method::Kc2bnstmodel', \$svmin_data);
+
+    my $kc2bnstmodel = Comainu::Method::Kc2bnstmodel->new;
+    $kc2bnstmodel->create_svmin('t/sample/test.KC', 't/sample/kc2bnstmodel/test.KC.svmin');
+
+    is $svmin_data, read_from_file('t/sample/kc2bnstmodel/test.KC.svmin.gold');
 }
 
 __PACKAGE__->runtests;

@@ -390,52 +390,6 @@ sub bccwj2kc {
     return $res;
 }
 
-
-### kc2bnstmodel, kc2bnstout
-## KCファイルを文節用の学習データに変換
-sub kc2bnstsvmdata {
-    my ($class, $data, $is_train) = @_;
-    my $res = "";
-
-    my $parenthetic = 0;
-    foreach my $line ( split(/\r?\n/,$data) ) {
-        if ( $line eq "EOS" ) {
-            if ( $is_train == 1 ) {
-                $res .= $line . "\n";
-            } else {
-                $res .= $line . "\n*B\n";
-            }
-            $parenthetic = 0;
-        } elsif ( $line =~ /^\*B/ ) {
-            $res .= $line . "\n" if $is_train;
-        } else {
-            my @items = split(/[ \t]/, $line);
-            my @pos   = split(/\-/, $items[3] . "-*-*-*");
-            my @cType = split(/\-/, $items[4] . "-*-*");
-            my @cForm = split(/\-/, $items[5] . "-*-*");
-            $res .= join(" ",@items[0..5]);
-            $res .= " " . join(" ",@pos[0..3]) . " " . join(" ",@cType[0..2]) . " " . join(" ",@cForm[0..2]);
-            if ( $items[3] eq "補助記号-括弧開" ) {
-                $res .= $parenthetic ? " I" : " B";
-                $parenthetic++;
-            } elsif ( $items[3] eq "補助記号-括弧閉" ) {
-                $parenthetic--;
-                $res .= " I";
-            } elsif ( $parenthetic ) {
-                $res .= " I";
-            } else {
-                $res .= " O";
-            }
-            $res .= "\n";
-        }
-    }
-
-    undef $data;
-
-    return $res;
-}
-
-
 ### bccwj2mid*, plain2mid*
 sub lout2kc4mid_file {
     my ($class, $kc_lout_file, $kc_file) = @_;

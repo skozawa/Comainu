@@ -8,6 +8,7 @@ use File::Basename qw(basename dirname);
 use Config;
 
 use Comainu::Util qw(read_from_file write_to_file);
+use Comainu::Feature;
 use Comainu::Format;
 use Comainu::ExternalTool;
 
@@ -35,72 +36,45 @@ sub run {
     $model_dir = dirname($train_kc) if $train_kc && !$model_dir;
     $self->before_analyze({ dir => $model_dir, args_num => scalar @_ });
 
-    $self->train_bnstmodel($train_kc, $model_dir);
+    my $basename = basename($train_kc);
+    my $tmp_train_kc = $self->{"comainu-temp"} . "/" . $basename;
+    Comainu::Format->format_inputdata({
+        input_file       => $train_kc,
+        input_type       => 'input-kc',
+        output_file      => $tmp_train_kc,
+        output_type      => 'kc',
+        data_format_file => $self->{data_format},
+    });
+
+    my $svmin_file = $model_dir . "/" . $basename . ".svmin";
+
+    $self->create_svmin($tmp_train_kc, $svmin_file);
+    $self->train($tmp_train_kc, $svmin_file, $model_dir);
 
     return 0;
 }
 
-sub train_bnstmodel {
-    my ($self, $train_kc, $model_dir) = @_;
+sub create_svmin {
+    my ($self, $tmp_train_kc, $svmin_file) = @_;
+
+    my $buff = Comainu::Feature->create_bnstmodel_feature($tmp_train_kc);
+    write_to_file($svmin_file, $buff);
+    undef $buff;
+}
+
+sub train {
+    my ($self, $tmp_train_kc, $svmin_file, $model_dir) = @_;
     print STDERR "# TRAIN BNST MODEL\n";
 
-    my $basename = basename($train_kc);
-    my $svmin = $model_dir . "/" . $basename . ".svmin";
-    my $svmin_buff = read_from_file($train_kc);
-    Comainu::Format->trans_dataformat($svmin_buff, {
-        input_type       => 'input-kc',
-        output_type      => 'kc',
-        data_format_file => $self->{data_format},
-    });
-    $svmin_buff = Comainu::Format->kc2bnstsvmdata($svmin_buff, 1);
-    $svmin_buff = $self->add_bnst_label($svmin_buff);
-    $svmin_buff =~ s/^EOS.*?\n//mg;
-    $svmin_buff .= "\n";
-    write_to_file($svmin, $svmin_buff);
-    undef $svmin_buff;
-
+    my $basename = basename($tmp_train_kc);
     my $makefile = Comainu::ExternalTool->create_yamcha_makefile(
         $self, $model_dir, $basename
     );
     my $com = sprintf("make -f \"%s\" PERL=\"%s\" CORPUS=\"%s\" MODEL=\"%s\" train",
-                      $makefile, $self->{perl}, $svmin, $model_dir . "/" . $basename);
+                      $makefile, $self->{perl}, $svmin_file, $model_dir . "/" . $basename);
 
     printf(STDERR "# COM: %s\n", $com);
     system($com);
-
-    return 0;
 }
-
-
-# 文節境界ラベルを付与
-sub add_bnst_label {
-    my ($self, $data) = @_;
-    my $res = "";
-    my ($prev, $curr, $next) = (0, 1, 2);
-    my $buff_list = [undef, undef];
-    $data .= "*B\n";
-    foreach my $line ( (split(/\r?\n/, $data), undef, undef) ) {
-        push(@$buff_list, $line);
-        if ( defined $buff_list->[$curr] && $buff_list->[$curr] !~ /^EOS|^\*B/ ) {
-            my $mark = $buff_list->[$prev] =~ /^\*B/ ? "B" : "I";
-            $buff_list->[$curr] .= " ".$mark;
-        }
-        my $new_line = shift @$buff_list;
-        if ( defined $new_line && $new_line !~ /^\*B/ ) {
-            $res .= $new_line . "\n";
-        }
-    }
-    undef $data;
-
-    while ( my $new_line = shift(@$buff_list) ) {
-        if ( defined $new_line && $new_line !~ /^\*B/ ) {
-            $res .= $new_line . "\n";
-        }
-    }
-    undef $buff_list;
-
-    return $res;
-}
-
 
 1;
