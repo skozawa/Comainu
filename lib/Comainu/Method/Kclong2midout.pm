@@ -9,6 +9,7 @@ use Config;
 
 use Comainu::Util qw(read_from_file write_to_file);
 use Comainu::Format;
+use Comainu::Feature;
 
 sub new {
     my ($class, %args) = @_;
@@ -54,25 +55,26 @@ sub analyze {
         output_type      => 'kc',
         data_format_file => $self->{data_format},
     });
-    $self->create_mstin($tmp_test_kc);
-    $self->parse_muw($tmp_test_kc, $muwmodel);
-    $self->merge_mst_result($tmp_test_kc, $save_dir);
+
+    my $basename = basename($tmp_test_kc, ".KC");
+    my $mstin_file  = $self->{"comainu-temp"} . "/" . $basename . ".mstin";
+    my $mstout_file = $self->{"comainu-temp"} . "/" . $basename . ".mstout";
+    my $mout_file   = $save_dir . "/" . basename($test_kc) . ".mout";
+
+    $self->create_mstin($tmp_test_kc, $mstin_file);
+    $self->parse_muw($mstin_file, $muwmodel, $mstout_file);
+    $self->merge_mst_result($tmp_test_kc, $mstout_file, $mout_file);
 
     unlink $tmp_test_kc if !$self->{debug} && -f $tmp_test_kc;
 }
 
 # 中単位解析(MST)用のデータを作成
 sub create_mstin {
-    my ($self, $test_kc) = @_;
+    my ($self, $test_kc, $mstin_file) = @_;
     print STDERR "# CREATE MSTIN\n";
 
-    my $output_file = $self->{"comainu-temp"} . "/" .
-        basename($test_kc, ".KC") . ".mstin";
-
-    my $buff = read_from_file($test_kc);
-    $buff = Comainu::Format->kc2mstin($buff);
-
-    write_to_file($output_file, $buff);
+    my $buff = Comainu::Feature->create_mst_feature($test_kc);
+    write_to_file($mstin_file, $buff);
     undef $buff;
 
     return 0;
@@ -80,52 +82,45 @@ sub create_mstin {
 
 # mstparserを利用して中単位解析
 sub parse_muw {
-    my ($self, $test_kc, $muwmodel) = @_;
+    my ($self, $mstin_file, $muwmodel, $mstout_file) = @_;
     print STDERR "# PARSE MUW\n";
 
     my $java = $self->{"java"};
     my $mstparser_dir = $self->{"mstparser-dir"};
 
-    my $basename = basename($test_kc, ".KC");
-    my $mstin = $self->{"comainu-temp"} . "/" . $basename . ".mstin";
-    my $output_file = $self->{"comainu-temp"} . "/" . $basename . ".mstout";
-
-    my $mst_classpath = $mstparser_dir."/output/classes:".$mstparser_dir."/lib/trove.jar";
+    my $mst_classpath = $mstparser_dir . "/output/classes:" . $mstparser_dir . "/lib/trove.jar";
     my $memory = "-Xmx1800m";
     if ( $Config{osname} eq "MSWin32" ) {
-        $mst_classpath = $mstparser_dir."/output/classes;".$mstparser_dir."/lib/trove.jar";
+        $mst_classpath = $mstparser_dir . "/output/classes;" . $mstparser_dir . "/lib/trove.jar";
         $memory = "-Xmx1000m";
         # remove drive letter for MS-Windows
-        $muwmodel =~ s/^[a-zA-Z]\://;
-        $mstin =~ s/^[a-zA-Z]\://;
-        $output_file =~ s/^[a-zA-Z]\://;
+        $muwmodel    =~ s/^[a-zA-Z]\://;
+        $mstin_file  =~ s/^[a-zA-Z]\://;
+        $mstout_file =~ s/^[a-zA-Z]\://;
     }
     ## 入力ファイルが空だった場合
-    if ( -z $mstin ) {
-    	write_to_file($output_file, "");
+    if ( -z $mstin_file ) {
+    	write_to_file($mstout_file, "");
     	return 0;
     }
     my $cmd = sprintf("\"%s\" -classpath \"%s\" %s mstparser.DependencyParser test model-name:\"%s\" test-file:\"%s\" output-file:\"%s\" order:1",
-                      $java, $mst_classpath, $memory, $muwmodel, $mstin, $output_file);
+                      $java, $mst_classpath, $memory, $muwmodel, $mstin_file, $mstout_file);
     print STDERR $cmd,"\n" if $self->{debug};
     system($cmd);
 
-    unlink $mstin if !$self->{debug} && -f $mstin;
+    unlink $mstin_file if !$self->{debug} && -f $mstin_file;
 
     return 0;
 }
 
 sub merge_mst_result {
-    my ($self, $test_kc, $save_dir) = @_;
+    my ($self, $test_kc, $mstout_file, $mout_file) = @_;
     print STDERR "# MERGE RESULT\n";
     my $ret = 0;
 
-    my $mstout_file = $self->{"comainu-temp"} . "/" .
-        basename($test_kc, ".KC") . ".mstout";
-    my $output_file = $save_dir . "/" . basename($test_kc) . ".mout";
-
     my $buff = Comainu::Format->merge_kc_with_mstout($test_kc, $mstout_file);
-    write_to_file($output_file, $buff); undef $buff;
+    write_to_file($mout_file, $buff);
+    undef $buff;
 
     unlink $mstout_file if !$self->{debug} && -f $mstout_file;
 

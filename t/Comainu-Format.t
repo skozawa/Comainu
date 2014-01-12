@@ -58,38 +58,6 @@ sub trans_dataformat : Test(3) {
     };
 }
 
-sub kc2mstin : Test(1) {
-    my $data = <<KCLONG;
-*B
-詰め ツメル 詰める 動詞-一般 下一段-マ行 連用形-一般 ツメ ツメル 詰める 詰め * * 和 名詞-普通名詞-一般 * * ツメショウギ 詰め将棋 詰め将棋
-将棋 ショウギ 将棋 名詞-普通名詞-一般 * * ショウギ ショウギ 将棋 将棋 * * 漢 * * * * * *
-の ノ の 助詞-格助詞 * * ノ ノ の の * * 和 助詞-格助詞 * * ノ の の
-KCLONG
-
-    my $gold = <<GOLD;
-1\t詰め\t詰める\t動詞\t動詞-一般\t下一段|下一段-マ行|連用形|連用形-一般\t0\t_\t_
-2\t将棋\t将棋\t名詞\t名詞-普通名詞-一般\t名詞-普通名詞\t0\t_\t_
-
-GOLD
-
-    is Comainu::Format->kc2mstin($data), $gold;
-}
-
-sub create_mstfeature : Test(1) {
-    my $short_terms = [
-        "詰め ツメル 詰める 動詞-一般 下一段-マ行 連用形-一般 ツメ ツメル 詰める 詰め * * 和 名詞-普通名詞-一般 * * ツメショウギ 詰め将棋 詰め将棋",
-        "将棋 ショウギ 将棋 名詞-普通名詞-一般 * * ショウギ ショウギ 将棋 将棋 * * 漢 * * * * * *",
-    ];
-
-    my $gold = <<GOLD;
-1\t詰め\t詰める\t動詞\t動詞-一般\t下一段|下一段-マ行|連用形|連用形-一般\t0\t_\t_
-2\t将棋\t将棋\t名詞\t名詞-普通名詞-一般\t名詞-普通名詞\t0\t_\t_
-
-GOLD
-
-    is Comainu::Format->create_mstfeature($short_terms, 2), $gold;
-};
-
 sub merge_kc_with_mstout : Test(1) {
     my $buff = Comainu::Format->merge_kc_with_mstout("t/sample/test.plain.KC", "t/sample/test.plain.mstout");
     my $gold_buff = read_from_file("t/sample/test.plain.KC.mout");

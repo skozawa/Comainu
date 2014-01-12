@@ -274,4 +274,85 @@ sub pp_partial_bnst_with_luw {
     return $res;
 }
 
+
+sub create_mst_feature {
+    my ($class, $kc_file) = @_;
+
+    my $kc_data = read_from_file($kc_file);
+
+    my $buff = "";
+    my $short_terms = [];
+    my $pos = 0;
+    foreach my $line ( split /\r?\n/, $kc_data ) {
+        next if $line =~ /^\*B/ || $line eq "";
+        if ( $line =~ /^EOS/ ) {
+            $buff .= $class->_mst_feature($short_terms, $pos);
+            $short_terms = [];
+            $pos = 0;
+            next;
+        }
+        my @items = split(/[ \t]/, $line);
+        if ( $items[13] ne "*" ) {
+            $buff .= $class->_mst_feature($short_terms, $pos);
+            $short_terms = [];
+        }
+        push @$short_terms, $line;
+        $pos++;
+    }
+    undef $kc_data;
+    undef $short_terms;
+
+    return $buff;
+}
+
+# 中単位解析用の素性を生成
+sub _mst_feature {
+    my ($class, $short_terms, $pos) = @_;
+    my $res = "";
+
+    my $id = 1;
+    if ( scalar(@$short_terms) > 1 ) {
+        foreach my $line ( @$short_terms ) {
+            my @items = split(/[ \t]/, $line);
+            $items[19] //= '';
+            my $depend = "_";
+            if ( $items[19] =~ /Ｐ/ ) {
+                $depend = "P";
+            }
+            if ( $items[19] ne "*" && $items[19] ne "" ) {
+                $items[19] -= $pos - scalar(@$short_terms) - 1;
+            } else {
+                $items[19] = 0;
+            }
+            if ( scalar(@$short_terms) < $items[19] || $items[19] < 0 ) {
+                print STDERR "error: $items[0]: $line\n";
+                print STDERR $pos, " ", $items[19], " ", scalar(@$short_terms), "\n";
+            }
+            my @cpos = split(/\-/, $items[3]);
+            my @features;
+
+            foreach my $i ( 3 .. 5 ) {
+                next if $items[$i] eq "*";
+                my @pos = split(/\-/, $items[$i]);
+                foreach my $j ( 0 .. $#pos ) {
+                    next if ($i == 3 && ($j == 0 || $j == $#pos));
+                    push @features, join("-",@pos[0..$j]);
+                }
+            }
+
+            $res .= $id++ . "\t" . $items[0] . "\t" . $items[2] . "\t" . $cpos[0] . "\t" . $items[3] . "\t";
+            if ( scalar @features > 0 ) {
+                $res .= join("|",@features);
+            } else {
+                $res .= "_";
+            }
+            $res .= "\t" . $items[19] . "\t" . $depend . "\t_\n";
+        }
+        $res .= "\n";
+    }
+
+    return $res;
+}
+
+
 1;
