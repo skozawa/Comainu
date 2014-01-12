@@ -81,7 +81,7 @@ sub compare {
             return $res;
         }
         my $buff = read_from_file($kc_file);
-        Comainu::Format->trans_dataformat($buff, {
+        $buff = Comainu::Format->trans_dataformat($buff, {
             input_type       => 'input-kc',
             output_type      => 'kc',
             data_format_file => $self->{data_format},

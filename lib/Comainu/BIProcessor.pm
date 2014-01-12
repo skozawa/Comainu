@@ -21,91 +21,85 @@ my $DEFAULT_VALUES = {
 };
 
 sub new {
-    my $proto = shift;
-    my $class = ref($proto) || $proto;
-    my $self = {%$DEFAULT_VALUES, @_};
-    bless $self, $class;
-    return $self;
+    my ($class, %args) = @_;
+    bless { %$DEFAULT_VALUES, %args }, $class;
 }
 
 ## 学習用KCファイルから学習データを取得
-sub extract_from_train {
-    my ($self, $fh_ref, $fh_svmin, $train_dir, $basename) = @_;
+sub create_train_data {
+    my ($self, $kc_file, $svmin_file, $train_dir, $basename) = @_;
 
-    my @long_units;
-    my @BI_units;
-    my %line;
+    open(my $fh_kc, "<", $kc_file) or die "Cannot open '$kc_file'";
+    open(my $fh_svmin, "<", $svmin_file) or die "Cannot open '$svmin_file'";
 
-    my $svmin = <$fh_svmin>;
-    $svmin = decode_utf8 $svmin;
+    my $long_units = [];
+    my $BI_units = [];
+
+    my $svmin = decode_utf8 <$fh_svmin>;
     $svmin =~ s/\r?\n//mg;
 
-    while ( my $ref = <$fh_ref> ) {
-        $ref = decode_utf8 $ref;
-        $ref =~ s/\r?\n//mg;
-        if ( $ref =~ /^\*B|^EOS/ ) {
+    while ( my $kc = <$fh_kc> ) {
+        $kc = decode_utf8 $kc;
+        $kc =~ s/\r?\n//mg;
+
+        if ( $kc =~ /^\*B|^EOS/ ) {
             if ( $svmin eq "" ) {
-                $svmin = <$fh_svmin>;
-                $svmin = decode_utf8 $svmin;
+                $svmin = decode_utf8 <$fh_svmin>;
                 $svmin =~ s/\r?\n//mg;
-                push @long_units, [("* * * * * * * * * * * * * * * * * * * *")];
+                push @$long_units, [("* * * * * * * * * * * * * * * * * * * *")];
             }
             next;
         }
 
         my $short = "";
-        my $BI = "";
-        my @first = split(/ /, $ref);
+        my $label = "";
+        my @first = split / /, $kc;
 
-        if ( $svmin =~ / B/ ) {
-            $short = $ref;
-            $BI = $svmin;
+        if ( $svmin =~ / Ba?$/ ) {
+            $short = $kc;
+            $label = (split / /, $svmin)[-1];
         } else {
-            $svmin = <$fh_svmin>;
-            $svmin = decode_utf8 $svmin;
+            $svmin = decode_utf8 <$fh_svmin>;
             $svmin =~ s/\r?\n//mg;
             next;
         }
 
-        $svmin = <$fh_svmin>;
-        $svmin = decode_utf8 $svmin;
+        $svmin = decode_utf8 <$fh_svmin>;
         $svmin =~ s/\r?\n//mg;
 
-        while ( $svmin =~ / I/ ) {
-            $ref = <$fh_ref>;
-            $ref = decode_utf8 $ref;
-            $ref =~ s/\r?\n//mg;
-            last if $ref =~ /^\*B|^EOS/;
+        while ( $svmin =~ / Ia?$/ ) {
+            $kc = decode_utf8 <$fh_kc>;
+            $kc =~ s/\r?\n//mg;
+            last if $kc =~ /^\*B|^EOS/;
 
-            $short .= "\n".$ref;
-            $BI .= "\t".$svmin;
-            $svmin = <$fh_svmin>;
-            $svmin = decode_utf8 $svmin;
+            $short .= "\n" . $kc;
+            $label .= " " . (split / /, $svmin)[-1];
+
+            $svmin = decode_utf8 <$fh_svmin>;
             $svmin =~ s/\r?\n//mg;
         }
         next if $short eq "";
 
-        my @shorts = split(/\n/,$short);
-        push @long_units, \@shorts;
-        if ( $BI !~ /a/ ) {
-            push @BI_units, $#long_units;
-            $line{$short} //= 1
-        }
+        push @$long_units, [ split /\n/, $short ];
+        push @$BI_units, $#{$long_units} if $label !~ /[BI]a/;
+
         if ( $svmin eq "" ) {
-            $svmin = <$fh_svmin>;
-            $svmin = decode_utf8 $svmin;
+            $svmin = decode_utf8 <$fh_svmin>;
             $svmin =~ s/\r?\n//mg;
-            push @long_units, [("* * * * * * * * * * * * * * * * * * * *")];
+            push @$long_units, [("* * * * * * * * * * * * * * * * * * * *")];
         }
     }
+    close($fh_kc);
+    close($fh_svmin);
 
-    $self->extract_BI_data(\@long_units, \@BI_units, {
+    $self->create_BI_data($long_units, $BI_units, {
         dir      => $train_dir,
         basename => $basename,
-        is_test  => 0
+        is_test  => 0,
     });
-    undef @long_units;
-    undef @BI_units;
+
+    undef $long_units;
+    undef $BI_units;
 }
 
 ## 解析用データからテストデータを作成
@@ -116,7 +110,7 @@ sub execute_test {
     my ($long_units, $BI_units) = $self->make_long_unit($lout_data, $kc2file);
     undef $lout_data;
 
-    $self->extract_BI_data($long_units, $BI_units, {
+    $self->create_BI_data($long_units, $BI_units, {
         dir      => $args->{temp_dir},
         basename => $args->{test_name},
         is_test  => 1,
@@ -190,11 +184,11 @@ sub make_long_unit {
     return ($long_units, $BI_units);
 }
 
-sub extract_BI_data {
+sub create_BI_data {
     my ($self, $long_units, $BI_units, $args) = @_;
 
     $self->create_label;
-    my $is_test = $args->{is_test} // 0;
+    my $is_test = $args->{is_test} ? 1 : 0;
 
     my $pos_feature   = "";
     my $cType_feature = "";
@@ -206,23 +200,22 @@ sub extract_BI_data {
         my %h_label  = reverse %{$self->{h_label}};
         # 助詞・助動詞の除去
         delete $h_label{$_} for (qw(H100 H110 H111 H112 H113 H114 H115));
-        $label_text = join(" ", keys %h_label);
+        $label_text = join " ", keys %h_label;
         $comp = $self->load_comp_file($args->{compfile});
     }
 
     foreach my $i ( @$BI_units ) {
-        my $long_unit = $$long_units[$i];
+        my $long_unit = $long_units->[$i];
 
         ## 長単位の先頭の短単位
-        my @first = split(/ /,$$long_unit[0]);
-        # my $long_lemma = $first[$#first];
-        my $long_lemma = $first[17 + $args->{is_test}];
+        my @first = split / /, $long_unit->[0];
+        my $long_lemma = $first[17 + $is_test];
         my $feature = $long_lemma;
 
         if ( $i <= 0 ) {
             $feature .= " *" x 64;
         } else {
-            my $pre_long_unit = $$long_units[$i-1];
+            my $pre_long_unit = $long_units->[$i-1];
             $feature .= $self->long2feature($pre_long_unit, $is_test);
         }
         $feature .= $self->long2feature($long_unit, $is_test);
@@ -230,7 +223,7 @@ sub extract_BI_data {
         if ( $i >= $#{$long_units} ) {
             $feature .= " *" x 64;
         } else {
-            my $post_long_unit = $$long_units[$i+1];
+            my $post_long_unit = $long_units->[$i+1];
             $feature .= $self->long2feature($post_long_unit, $is_test);
         }
 
@@ -240,18 +233,17 @@ sub extract_BI_data {
         my $f_cForm = $first[15 + $is_test];
 
         if ( $is_test ) {
-            # my $long_yomi = $first[$#first-1];
             my $long_yomi = $first[16 + $is_test];
             $pos_feature .= $feature;
             $pos_feature .= " " . $label_text;
-            if ( defined $comp->{$long_yomi."_".$long_lemma} ) {
-                $pos_feature .= " ".$self->{h_label}->{$comp->{$long_yomi."_".$long_lemma}};
+            if ( defined $comp->{$long_yomi . "_" . $long_lemma} ) {
+                $pos_feature .= " " . $self->{h_label}->{$comp->{$long_yomi . "_" . $long_lemma}};
             }
             $pos_feature .= "\n";
         } else {
-            $pos_feature .= $feature." ".$self->{h_label}->{$f_pos}."\n";
-            $cType_feature .= $feature." ".$self->{h_label}->{$f_pos}." ".$self->{k1_label}->{$f_cType}."\n";
-            $cForm_feature .= $feature." ".$self->{h_label}->{$f_pos}." ".$self->{k1_label}->{$f_cType}." ".$self->{k2_label}->{$f_cForm}."\n" ;
+            $pos_feature   .= join(" ", $feature, $self->{h_label}->{$f_pos}) . "\n";
+            $cType_feature .= join(" ", $feature, $self->{h_label}->{$f_pos}, $self->{k1_label}->{$f_cType}) . "\n";
+            $cForm_feature .= join(" ", $feature, $self->{h_label}->{$f_pos}, $self->{k1_label}->{$f_cType}, $self->{k2_label}->{$f_cForm}) . "\n";
         }
     }
     if ( $self->{model_type} == MODEL_TYPE_CRF ) {
@@ -263,19 +255,19 @@ sub extract_BI_data {
 
     my $dir = $args->{dir};
     my $basename = $args->{basename};
-    my $outputFileName1 = $dir . "/pos/" . $basename . ".BI_pos.dat";
+    my $output_file1 = $dir . "/pos/" . $basename . ".BI_pos.dat";
     mkdir $dir . "/pos" unless -d $dir . "/pos";
-    write_to_file($outputFileName1, $pos_feature."\n");
+    write_to_file($output_file1, $pos_feature."\n");
     undef $pos_feature;
 
-    my $outputFileName2 = $dir . "/cType/" . $basename . ".BI_cType.dat";
+    my $output_file2 = $dir . "/cType/" . $basename . ".BI_cType.dat";
     mkdir $dir . "/cType" unless -d $dir . "/cType";
-    write_to_file($outputFileName2, $cType_feature."\n");
+    write_to_file($output_file2, $cType_feature."\n");
     undef $cType_feature;
 
-    my $outputFileName3 = $dir . "/cForm/" . $basename . ".BI_cForm.dat";
+    my $output_file3 = $dir . "/cForm/" . $basename . ".BI_cForm.dat";
     mkdir $dir . "/cForm" unless -d $dir . "/cForm";
-    write_to_file($outputFileName3, $cForm_feature."\n");
+    write_to_file($output_file3, $cForm_feature."\n");
     undef $cForm_feature;
 }
 
@@ -303,28 +295,52 @@ sub short2feature {
     $is_test //= 0;
 
     my $feature = "";
-    my @short = split(/ /, $short_unit);
+    my @short = split / /, $short_unit;
 
     ## 見出し、読み、語彙素
-    $feature .= " ".$short[$_ + $is_test] for ( 0 .. 2 );
+    $feature .= " " . $short[$_ + $is_test] for ( 0 .. 2 );
     ## 品詞
-    $feature .= " ".$short[3 + $is_test];
-    my @pos = split(/\-/,$short[3 + $is_test]);
+    $feature .= " " . $short[3 + $is_test];
+    my @pos = split /\-/, $short[3 + $is_test];
     for my $i ( 0 .. 3 ) {
         $feature .= " " . ($pos[$i] // '*');
     }
 
     ## 活用型
-    $feature .= " ".$short[4 + $is_test];
-    my @cType = split(/\-/,$short[4 + $is_test]);
+    $feature .= " " . $short[4 + $is_test];
+    my @cType = split /\-/, $short[4 + $is_test];
     $feature .= " " . ($cType[$_] // '*') for ( 0 .. 2 );
 
     ## 活用形
-    $feature .= " ".$short[5 + $is_test];
-    my @cForm = split(/\-/,$short[5 + $is_test]);
+    $feature .= " " . $short[5 + $is_test];
+    my @cForm = split /\-/, $short[5 + $is_test];
     $feature .= " " . ($cForm[$_] // '*') for ( 0 .. 2 );
+
     undef @short;
     return $feature;
+}
+
+
+sub train {
+    my ($self, $name, $model_dir, $perl, $makefile) = @_;
+
+    my $pos_dat   = $model_dir . "/pos/" . $name . ".BI_pos.dat";
+    my $pos_model = $model_dir . "/pos/" . $name . ".BI_pos";
+    my $com1 = sprintf("make -f \"%s\" PERL=\"%s\" MULTI_CLASS=2 FEATURE=\"F:0:0.. \" CORPUS=\"%s\" MODEL=\"%s\" train",
+                       $makefile, $perl, $pos_dat, $pos_model);
+    system($com1);
+
+    my $cType_dat   = $model_dir . "/cType/" . $name . ".BI_cType.dat";
+    my $cType_model = $model_dir . "/cType/" . $name . ".BI_cType";
+    my $com2 = sprintf("make -f \"%s\" PERL=\"%s\" MULTI_CLASS=2 FEATURE=\"F:0:0.. \" CORPUS=\"%s\" MODEL=\"%s\" train",
+                       $makefile, $perl, $cType_dat, $cType_model);
+    system($com2);
+
+    my $cForm_dat   = $model_dir . "/cForm/" . $name . ".BI_cForm.dat";
+    my $cForm_model = $model_dir . "/cForm/" . $name . ".BI_cForm";
+    my $com3 = sprintf("make -f \"%s\" PERL=\"%s\" MULTI_CLASS=2 FEATURE=\"F:0:0.. \" CORPUS=\"%s\" MODEL=\"%s\" train",
+                      $makefile, $perl, $cForm_dat, $cForm_model);
+    system($com3);
 }
 
 sub exec_test {

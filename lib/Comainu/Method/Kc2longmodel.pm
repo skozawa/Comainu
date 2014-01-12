@@ -52,8 +52,7 @@ sub run {
     my $kc2_file   = $model_dir . "/" . $basename . ".KC2";
     my $svmin_file = $model_dir . "/" . $basename .".svmin";
 
-    $self->make_luw_traindata($tmp_train_kc, $svmin_file);
-    $self->add_luw_label($tmp_train_kc, $model_dir);
+    $self->make_luw_traindata($tmp_train_kc, $svmin_file, $model_dir);
 
     if ( $self->{"luwmodel"} eq "SVM" ) {
         $self->train_luwmodel_svm($tmp_train_kc, $svmin_file, $model_dir);
@@ -71,7 +70,7 @@ sub run {
 
 # 長単位解析モデル学習用データを作成
 sub make_luw_traindata {
-    my ($self, $tmp_train_kc, $svmin_file) = @_;
+    my ($self, $tmp_train_kc, $svmin_file, $model_dir) = @_;
     print STDERR "# MAKE TRAIN DATA\n";
 
     my $buff = Comainu::Feature->create_longmodel_feature($tmp_train_kc);
@@ -80,34 +79,9 @@ sub make_luw_traindata {
 
     print STDERR "Make $svmin_file\n";
 
-    return 0;
-}
-
-# 長単位学習用のラベルを付与
-# BIのみから構成されるデータを作成
-sub add_luw_label {
-    my ($self, $tmp_train_kc, $model_dir) = @_;
-    print STDERR "# ADD LUW LABEL\n";
-
-    if ( -s $model_dir . "/" . $tmp_train_kc . ".svmin" ) {
-        print "Use Cache '$3/$1.svmin'.\n";
-        return 0;
-    }
-
     my $basename = basename($tmp_train_kc);
-    my $output_file = $model_dir . "/" . $basename .".svmin";
-
-    ## 後処理用学習データの作成
-    {
-        open(my $fh_ref, "<", $tmp_train_kc)  or die "Cannot open '$tmp_train_kc'";
-        open(my $fh_svmin, "<", $output_file) or die "Cannot open'$output_file'";
-        my $bip_processor = Comainu::BIProcessor->new;
-        $bip_processor->extract_from_train($fh_ref, $fh_svmin, $model_dir, $basename);
-        close($fh_ref);
-        close($fh_svmin);
-    }
-
-    unlink $output_file unless -s $output_file;
+    my $bi_processor = Comainu::BIProcessor->new;
+    $bi_processor->create_train_data($tmp_train_kc, $svmin_file, $model_dir, $basename);
 
     return 0;
 }
@@ -164,25 +138,9 @@ sub train_bi_model {
     my $makefile = Comainu::ExternalTool->create_yamcha_makefile(
         $self, $model_dir, $basename
     );
-    my $perl = $self->{perl};
 
-    my $pos_dat   = $model_dir . "/pos/" . $basename . ".BI_pos.dat";
-    my $pos_model = $model_dir . "/pos/" . $basename . ".BI_pos";
-    my $BI_com1 = sprintf("make -f \"%s\" PERL=\"%s\" MULTI_CLASS=2 FEATURE=\"F:0:0.. \" CORPUS=\"%s\" MODEL=\"%s\" train",
-                          $makefile, $perl, $pos_dat, $pos_model);
-    system($BI_com1);
-
-    my $cType_dat   = $model_dir . "/cType/" . $basename . ".BI_cType.dat";
-    my $cType_model = $model_dir . "/cType/" . $basename . ".BI_cType";
-    my $BI_com2 = sprintf("make -f \"%s\" PERL=\"%s\" MULTI_CLASS=2 FEATURE=\"F:0:0.. \" CORPUS=\"%s\" MODEL=\"%s\" train",
-                          $makefile, $perl, $cType_dat, $cType_model);
-    system($BI_com2);
-
-    my $cForm_dat   = $model_dir . "/cForm/" . $basename . ".BI_cForm.dat";
-    my $cForm_model = $model_dir . "/cForm/" . $basename . ".BI_cForm";
-    my $BI_com3 = sprintf("make -f \"%s\" PERL=\"%s\" MULTI_CLASS=2 FEATURE=\"F:0:0.. \" CORPUS=\"%s\" MODEL=\"%s\" train",
-                          $makefile, $perl, $cForm_dat, $cForm_model);
-    system($BI_com3);
+    my $bi_processor = Comainu::BIProcessor->new;
+    $bi_processor->train($basename, $model_dir, $self->{perl}, $makefile);
 
     return 0;
 }
