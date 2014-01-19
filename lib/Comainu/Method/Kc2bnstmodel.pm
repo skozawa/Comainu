@@ -67,9 +67,8 @@ sub train {
     print STDERR "# TRAIN BNST MODEL\n";
 
     my $basename = basename($tmp_train_kc);
-    my $makefile = Comainu::ExternalTool->create_yamcha_makefile(
-        $self, $model_dir, $basename
-    );
+    my $external_tool = Comainu::ExternalTool->new(%$self);
+    my $makefile = $external_tool->create_yamcha_makefile($model_dir, $basename);
     my $com = sprintf("make -f \"%s\" PERL=\"%s\" CORPUS=\"%s\" MODEL=\"%s\" train",
                       $makefile, $self->{perl}, $svmin_file, $model_dir . "/" . $basename);
 

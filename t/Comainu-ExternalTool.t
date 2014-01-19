@@ -18,7 +18,8 @@ sub create_crf_template : Test(1) {
     my $template_buff = "";
     my $g = guard_write_to_file('Comainu::ExternalTool', \$template_buff);
 
-    Comainu::ExternalTool->create_crf_template("file", 6);
+    my $external_tool = Comainu::ExternalTool->new;
+    $external_tool->create_crf_template("file", 6);
 
     my $expected_buff = <<FEATURE;
 U1:%x[-2,0]
@@ -173,7 +174,8 @@ MULTI_CLASS=2
 CONF
 
     my $file = create_tmp_file($confdata);
-    my $conf = Comainu::ExternalTool->load_yamcha_training_conf($file);
+    my $external_tool = Comainu::ExternalTool->new;
+    my $conf = $external_tool->load_yamcha_training_conf($file);
 
     is_deeply $conf, {
         SVM_PARAM   => "-t 1 -d 3 -c 1 -m 514",

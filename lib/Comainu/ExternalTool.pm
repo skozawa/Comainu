@@ -6,9 +6,22 @@ use utf8;
 
 use Comainu::Util qw(read_from_file write_to_file);
 
+my $DEFAULT_VALUES = {
+    "debug"        => 0,
+    "comainu-home" => "./",
+    "yamcha-dir"   => "/usr/local/bin",
+    "svm-tool-dir" => "/usr/local/bin",
+    "method"       => '',
+};
+
+sub new {
+    my ($class, %args) = @_;
+    bless { %$DEFAULT_VALUES, %args }, $class;
+}
+
 # CRF++用のテンプレート作成
 sub create_crf_template {
-    my ($class, $template_file, $feature_num) = @_;
+    my ($self, $template_file, $feature_num) = @_;
 
     my $buff = "";
     my $index = 1;
@@ -65,7 +78,7 @@ sub create_crf_template {
 
 ## テンプレート(後処理用)の作成
 sub create_crf_BI_template {
-    my ($class, $template_file, $feature_num, $num) = @_;
+    my ($self, $template_file, $feature_num, $num) = @_;
 
     my $buff = "";
     my $index = 0;
@@ -87,23 +100,22 @@ sub create_crf_BI_template {
 
 # yamchaのMakefileを作成
 sub create_yamcha_makefile {
-    my ($class, $comainu, $model_dir, $basename) = @_;
+    my ($self, $model_dir, $basename) = @_;
 
-    my $yamcha = $comainu->{"yamcha-dir"} . "/yamcha";
-    my $yamcha_tool_dir = $class->get_yamcha_tool_dir($comainu->{"yamcha-dir"});
-    my $svm_tool_dir = $comainu->{"svm-tool-dir"};
+    my $yamcha = $self->{"yamcha-dir"} . "/yamcha";
+    my $yamcha_tool_dir = $self->get_yamcha_tool_dir;
+    my $svm_tool_dir = $self->{"svm-tool-dir"};
     my $svm_learn = $svm_tool_dir . "/svm_learn";
 
-    my $comainu_etc_dir = $comainu->{"comainu-home"} . "/etc";
-    my $conf_file = $comainu_etc_dir . "/yamcha_training.conf";
+    my $conf_file = $self->{"comainu-home"} . "/etc/yamcha_training.conf";
 
     printf(STDERR "# use yamcha_training_conf_file=\"%s\"\n", $conf_file);
-    my $conf = $class->load_yamcha_training_conf($conf_file);
+    my $conf = $self->load_yamcha_training_conf($conf_file);
     my $makefile_template = $yamcha_tool_dir . "/Makefile";
-    my $check = $class->check_yamcha_training_makefile_template($makefile_template);
+    my $check = $self->check_yamcha_training_makefile_template($makefile_template);
 
     if ( $check == 0 ) {
-        $makefile_template = $comainu_etc_dir . "/yamcha_training.mk";
+        $makefile_template = $self->{"comainu-home"} . "/etc/yamcha_training.mk";
     }
     printf(STDERR "# use yamcha_training_makefile_template=\"%s\"\n",
            $makefile_template);
@@ -134,7 +146,7 @@ sub create_yamcha_makefile {
         $buff =~ s/^(DIRECTION.*)$/\# $1\nDIRECTION  = $conf->{"DIRECTION"}/mg;
         printf(STDERR "# changed DIRECTION : %s\n", $conf->{"DIRECTION"});
     }
-    if ( $comainu->{method} ne 'kc2bnstmodel' && $conf->{"MULTI_CLASS"} ne "" ) {
+    if ( $self->{method} ne 'kc2bnstmodel' && $conf->{"MULTI_CLASS"} ne "" ) {
         $buff =~ s/^(MULTI_CLASS.*)$/\# $1\nMULTI_CLASS = $conf->{"MULTI_CLASS"}/mg;
         printf(STDERR "# changed MULTI_CLASS : %s\n", $conf->{"MULTI_CLASS"});
     }
@@ -162,10 +174,10 @@ sub create_yamcha_makefile {
 }
 
 sub get_yamcha_tool_dir {
-    my ($class, $yamcha_dir) = @_;
-    my $yamcha_tool_dir = $yamcha_dir . "/libexec/yamcha";
+    my ($self) = @_;
+    my $yamcha_tool_dir = $self->{"yamcha-dir"} . "/libexec/yamcha";
     unless ( -d $yamcha_tool_dir ) {
-        $yamcha_tool_dir = $yamcha_dir . "/../libexec/yamcha";
+        $yamcha_tool_dir = $self->{"yamcha-dir"} . "/../libexec/yamcha";
     }
     unless ( -d $yamcha_tool_dir ) {
         printf(STDERR "# Error: not found YAMCHA TOOL_DIR (libexec/yamcha) '%s'\n",
@@ -176,7 +188,7 @@ sub get_yamcha_tool_dir {
 }
 
 sub load_yamcha_training_conf {
-    my ($class, $file) = @_;
+    my ($self, $file) = @_;
     my $conf = {};
     open(my $fh, $file) or die "Cannot open '$file'";
     while ( my $line = <$fh> ) {
@@ -195,7 +207,7 @@ sub load_yamcha_training_conf {
 }
 
 sub check_yamcha_training_makefile_template {
-    my ($class, $yamcha_training_makefile_template) = @_;
+    my ($self, $yamcha_training_makefile_template) = @_;
 
     unless ( -f $yamcha_training_makefile_template ) {
         printf(STDERR "# Warning: Not found yamcha_training_makefile_template \"%s\"\n", $yamcha_training_makefile_template);

@@ -285,9 +285,8 @@ sub short2feature {
 sub train {
     my ($self, $name, $model_dir) = @_;
 
-    my $makefile = Comainu::ExternalTool->create_yamcha_makefile(
-        $self, $model_dir, $name
-    );
+    my $external_tool = Comainu::ExternalTool->new(%$self);
+    my $makefile = $external_tool->create_yamcha_makefile($model_dir, $name);
 
     my $pos_dat   = $model_dir . "/pos/" . $name . ".BI_pos.dat";
     my $pos_model = $model_dir . "/pos/" . $name . ".BI_pos";

@@ -90,9 +90,8 @@ sub train_luwmodel_svm {
     print STDERR "# TRAIN LUWMODEL\n";
 
     my $basename = basename($train_kc);
-    my $makefile = Comainu::ExternalTool->create_yamcha_makefile(
-        $self, $model_dir, $basename
-    );
+    my $external_tool = Comainu::ExternalTool->new(%$self);
+    my $makefile = $external_tool->create_yamcha_makefile($model_dir, $basename);
     my $com = sprintf("make -f \"%s\" PERL=\"%s\" CORPUS=\"%s\" MODEL=\"%s\" train",
                       $makefile, $self->{perl}, $svmin_file, $model_dir . "/" . $basename);
     printf(STDERR "# COM: %s\n", $com);
@@ -118,7 +117,8 @@ sub train_luwmodel_crf {
     my $feature_num = scalar(split(/ /,$line))-2;
     close($fh_svmin);
 
-    Comainu::ExternalTool->create_crf_template($crf_template, $feature_num);
+    my $external_tool = Comainu::ExternalTool->new(%$self);
+    $external_tool->create_crf_template($crf_template, $feature_num);
 
     my $crf_model = $model_dir . "/" . $basename .".model";
     my $com = "\"$crf_learn\" \"$crf_template\" \"$svmin_file\" \"$crf_model\"";
