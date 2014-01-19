@@ -15,14 +15,15 @@ use constant MODEL_TYPE_SVM  => 0;
 use constant MODEL_TYPE_CRF  => 1;
 
 my $DEFAULT_VALUES = {
-    "model_type" => MODEL_TYPE_SVM,
-    "h_label"    => {},
-    "k1_label"   => {},
-    "k2_label"   => {},
-    "debug"      => 0,
-    "perl"       => '/usr/bin/perl',
-    "yamcha-dir" => '/usr/local/bin',
-    "comp_file"  => 'suw2luw/Comp.txt',
+    "model_type"   => MODEL_TYPE_SVM,
+    "h_label"      => {},
+    "k1_label"     => {},
+    "k2_label"     => {},
+    "debug"        => 0,
+    "perl"         => '/usr/bin/perl',
+    "yamcha-dir"   => '/usr/local/bin',
+    "comainu-temp" => 'tmp/temp',
+    "comp_file"    => 'suw2luw/Comp.txt',
 };
 
 sub new {
@@ -97,6 +98,7 @@ sub create_long_BI_units {
 
         if ( $kc eq '' || $kc eq '*B' || $kc eq 'EOS' ) {
             if ( $is_test ) {
+                # BI_unitsのindexがおかしくならないように, EOSの代わりに追加
                 push @$long_units, [("* * * * * * * * * * * * * * * * * * * *")];
                 # CRF++, Yamchaのため最後は空行が2つある
                 # EOSが重複しないようにlastする
@@ -104,6 +106,7 @@ sub create_long_BI_units {
             } elsif ( $line eq "" || $line eq 'EOS' ) {
                 $line = decode_utf8 <$fh_label>;
                 $line =~ s/\r?\n//mg;
+                # BI_unitsのindexがおかしくならないように, EOSの代わりに追加
                 push @$long_units, [("* * * * * * * * * * * * * * * * * * * *")];
             }
             next;
@@ -164,20 +167,7 @@ sub create_BI_data {
         my $long_lemma = $first[17 + $is_test];
         my $feature = $long_lemma;
 
-        if ( $i <= 0 ) {
-            $feature .= " *" x 64;
-        } else {
-            my $pre_long_unit = $long_units->[$i-1];
-            $feature .= $self->long2feature($pre_long_unit, $is_test);
-        }
-        $feature .= $self->long2feature($long_unit, $is_test);
-
-        if ( $i >= $#{$long_units} ) {
-            $feature .= " *" x 64;
-        } else {
-            my $post_long_unit = $long_units->[$i+1];
-            $feature .= $self->long2feature($post_long_unit, $is_test);
-        }
+        $feature .= $self->create_feature($long_units, $i, $is_test);
 
         # 長単位の品詞、活用型、活用形
         my $f_pos   = $first[13 + $is_test];
@@ -199,7 +189,7 @@ sub create_BI_data {
         }
     }
     if ( $self->{model_type} == MODEL_TYPE_CRF ) {
-        $pos_feature =~ s/\n/\n\n/g;
+        $pos_feature   =~ s/\n/\n\n/g;
         $cType_feature =~ s/\n/\n\n/g;
         $cForm_feature =~ s/\n/\n\n/g;
     }
@@ -207,20 +197,40 @@ sub create_BI_data {
 
     my $dir = $args->{dir};
     my $basename = $args->{basename};
-    my $output_file1 = $dir . "/pos/" . $basename . ".BI_pos.dat";
+    my $pos_dat = $dir . "/pos/" . $basename . ".BI_pos.dat";
     mkdir $dir . "/pos" unless -d $dir . "/pos";
-    write_to_file($output_file1, $pos_feature."\n");
+    write_to_file($pos_dat, $pos_feature."\n");
     undef $pos_feature;
 
-    my $output_file2 = $dir . "/cType/" . $basename . ".BI_cType.dat";
+    my $cType_dat = $dir . "/cType/" . $basename . ".BI_cType.dat";
     mkdir $dir . "/cType" unless -d $dir . "/cType";
-    write_to_file($output_file2, $cType_feature."\n");
+    write_to_file($cType_dat, $cType_feature."\n");
     undef $cType_feature;
 
-    my $output_file3 = $dir . "/cForm/" . $basename . ".BI_cForm.dat";
+    my $cForm_dat = $dir . "/cForm/" . $basename . ".BI_cForm.dat";
     mkdir $dir . "/cForm" unless -d $dir . "/cForm";
-    write_to_file($output_file3, $cForm_feature."\n");
+    write_to_file($cForm_dat, $cForm_feature."\n");
     undef $cForm_feature;
+}
+
+sub create_feature {
+    my ($self, $long_units, $bi_index, $is_test) = @_;
+
+    my $feature = '';
+    if ( $bi_index <= 0 ) {
+        $feature .= " *" x 52;
+    } else {
+        $feature .= $self->long2feature($long_units->[$bi_index - 1], $is_test);
+    }
+    $feature .= $self->long2feature($long_units->[$bi_index], $is_test);
+
+    if ( $bi_index >= $#{$long_units} ) {
+        $feature .= " *" x 52;
+    } else {
+        $feature .= $self->long2feature($long_units->[$bi_index + 1], $is_test);
+    }
+
+    return $feature;
 }
 
 sub long2feature {
@@ -237,7 +247,7 @@ sub long2feature {
         }
     } else {
         $feature .= $self->short2feature($$long_unit[0], $is_test);
-        $feature .= (" *" x 32) . $feature;
+        $feature .= (" *" x 26) . $feature;
     }
     return $feature;
 }
@@ -251,22 +261,21 @@ sub short2feature {
 
     ## 見出し、読み、語彙素
     $feature .= " " . $short[$_ + $is_test] for ( 0 .. 2 );
+
     ## 品詞
     $feature .= " " . $short[3 + $is_test];
     my @pos = split /\-/, $short[3 + $is_test];
-    for my $i ( 0 .. 3 ) {
-        $feature .= " " . ($pos[$i] // '*');
-    }
+    $feature .= " " . ($pos[$_+1] ? join("-", @pos[0..$_]) : '*') for ( 0 .. 2 );
 
     ## 活用型
     $feature .= " " . $short[4 + $is_test];
     my @cType = split /\-/, $short[4 + $is_test];
-    $feature .= " " . ($cType[$_] // '*') for ( 0 .. 2 );
+    $feature .= " " . ($cType[$_+1] ? join("-", @cType[0..$_]) : '*') for ( 0 .. 1 );
 
     ## 活用形
     $feature .= " " . $short[5 + $is_test];
     my @cForm = split /\-/, $short[5 + $is_test];
-    $feature .= " " . ($cForm[$_] // '*') for ( 0 .. 2 );
+    $feature .= " " . ($cForm[$_+1] ? join("-", @cForm[0..$_]) : '*') for ( 0 .. 1 );
 
     undef @short;
     return $feature;
@@ -496,6 +505,7 @@ sub load_comp_file {
     while ( my $line = <$fh> ) {
         $line = decode_utf8 $line;
         $line =~ s/\r?\n//g;
+        next unless $line;
 
         my @items = split(/\t/, $line);
         next if $items[0] !~ /助詞|助動詞/;
