@@ -64,7 +64,7 @@ sub analyze {
     $self->create_features($tmp_test_kc, $kc2_file);
     $self->chunk_luw($kc2_file, $svmout_file, $luwmodel);
     $self->merge_chunk_result($tmp_test_kc, $svmout_file, $lout_file);
-    $self->post_process($tmp_test_kc, $luwmodel, $save_dir);
+    $self->post_process($tmp_test_kc, $luwmodel, $save_dir, $kc2_file);
 
     unlink $tmp_test_kc if !$self->{debug} &&
         -f $tmp_test_kc && $self->{bnst_process} ne 'with_luw';
@@ -77,7 +77,7 @@ sub create_features {
     print STDERR "# CREATE FEATURE DATA\n";
 
     # すでに同じ名前の中間ファイルがあれば削除
-    unlink($kc2_file) if -s $kc2_file;
+    unlink $kc2_file if -s $kc2_file;
 
     my $buff = Comainu::Feature->create_longout_feature($tmp_test_kc, $self->{boundary});
     # SVMの場合はpartial parsing
@@ -126,7 +126,7 @@ sub chunk_luw {
     printf(STDERR "# COM: %s\n", $com) if $self->{debug};
 
     # すでに同じ名前の中間ファイルがあれば削除
-    unlink($svmout_file) if -s $svmout_file;
+    unlink $svmout_file if -s $svmout_file;
     check_file($kc2_file);
 
     my $buff = proc_file2stdout($com, $kc2_file, $self->{"comainu-temp"});
@@ -164,34 +164,24 @@ sub merge_chunk_result {
 
 # 後処理:BIのみのチャンクを再処理
 sub post_process {
-    my ($self, $tmp_test_kc, $luwmodel, $save_dir) = @_;
+    my ($self, $tmp_test_kc, $luwmodel, $save_dir, $kc2_file) = @_;
     my $ret = 0;
     print STDERR "# POST PROCESS\n";
-
-    my $cmd = $self->{"yamcha-dir"}."/yamcha";
-    $cmd .= ".exe" if $Config{osname} eq "MSWin32";
-    $cmd = sprintf("\"%s\" -C", $cmd);
 
     my $train_name = basename($luwmodel, ".model");
     my $test_name = basename($tmp_test_kc);
     my $lout_file = $save_dir . "/" . $test_name . ".lout";
-    my $lout_data = read_from_file($lout_file);
-    my $comp_file = $self->{"comainu-home"} . '/suw2luw/Comp.txt';
 
     my $bip_processor = Comainu::BIProcessor->new(
-        debug      => $self->{debug},
         model_type => 0,
+        %$self,
     );
-    my $buff = $bip_processor->execute_test($cmd, $lout_data, {
+    my $buff = $bip_processor->analyze($kc2_file, $lout_file, {
         train_name => $train_name,
         test_name  => $test_name,
-        temp_dir   => $self->{"comainu-temp"},
-        model_dir  => $self->{"comainu-svm-bip-model"},
-        comp_file  => $comp_file,
     });
-    undef $lout_data;
 
-    $buff = $self->create_long_lemma($buff, $comp_file);
+    $buff = $self->create_long_lemma($buff);
 
     write_to_file($lout_file, $buff);
     undef $buff;
@@ -201,9 +191,9 @@ sub post_process {
 
 # 語彙素・語彙素読みを生成
 sub create_long_lemma {
-    my ($self, $data, $comp_file) = @_;
+    my ($self, $data) = @_;
 
-    my $comp_data = read_from_file($comp_file);
+    my $comp_data = read_from_file($self->{comp_file});
     my %comp;
     foreach my $line (split(/\r?\n/, $comp_data)) {
     	next if $line eq "";

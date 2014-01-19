@@ -6,18 +6,23 @@ use strict;
 use warnings;
 use utf8;
 use Encode;
+use Config;
 
 use Comainu::Util qw(write_to_file);
+use Comainu::ExternalTool;
 
 use constant MODEL_TYPE_SVM  => 0;
 use constant MODEL_TYPE_CRF  => 1;
 
 my $DEFAULT_VALUES = {
-    model_type => MODEL_TYPE_SVM,
-    h_label    => {},
-    k1_label   => {},
-    k2_label   => {},
-    debug      => 0,
+    "model_type" => MODEL_TYPE_SVM,
+    "h_label"    => {},
+    "k1_label"   => {},
+    "k2_label"   => {},
+    "debug"      => 0,
+    "perl"       => '/usr/bin/perl',
+    "yamcha-dir" => '/usr/local/bin',
+    "comp_file"  => 'suw2luw/Comp.txt',
 };
 
 sub new {
@@ -29,69 +34,7 @@ sub new {
 sub create_train_data {
     my ($self, $kc_file, $svmin_file, $train_dir, $basename) = @_;
 
-    open(my $fh_kc, "<", $kc_file) or die "Cannot open '$kc_file'";
-    open(my $fh_svmin, "<", $svmin_file) or die "Cannot open '$svmin_file'";
-
-    my $long_units = [];
-    my $BI_units = [];
-
-    my $svmin = decode_utf8 <$fh_svmin>;
-    $svmin =~ s/\r?\n//mg;
-
-    while ( my $kc = <$fh_kc> ) {
-        $kc = decode_utf8 $kc;
-        $kc =~ s/\r?\n//mg;
-
-        if ( $kc =~ /^\*B|^EOS/ ) {
-            if ( $svmin eq "" ) {
-                $svmin = decode_utf8 <$fh_svmin>;
-                $svmin =~ s/\r?\n//mg;
-                push @$long_units, [("* * * * * * * * * * * * * * * * * * * *")];
-            }
-            next;
-        }
-
-        my $short = "";
-        my $label = "";
-        my @first = split / /, $kc;
-
-        if ( $svmin =~ / Ba?$/ ) {
-            $short = $kc;
-            $label = (split / /, $svmin)[-1];
-        } else {
-            $svmin = decode_utf8 <$fh_svmin>;
-            $svmin =~ s/\r?\n//mg;
-            next;
-        }
-
-        $svmin = decode_utf8 <$fh_svmin>;
-        $svmin =~ s/\r?\n//mg;
-
-        while ( $svmin =~ / Ia?$/ ) {
-            $kc = decode_utf8 <$fh_kc>;
-            $kc =~ s/\r?\n//mg;
-            last if $kc =~ /^\*B|^EOS/;
-
-            $short .= "\n" . $kc;
-            $label .= " " . (split / /, $svmin)[-1];
-
-            $svmin = decode_utf8 <$fh_svmin>;
-            $svmin =~ s/\r?\n//mg;
-        }
-        next if $short eq "";
-
-        push @$long_units, [ split /\n/, $short ];
-        push @$BI_units, $#{$long_units} if $label !~ /[BI]a/;
-
-        if ( $svmin eq "" ) {
-            $svmin = decode_utf8 <$fh_svmin>;
-            $svmin =~ s/\r?\n//mg;
-            push @$long_units, [("* * * * * * * * * * * * * * * * * * * *")];
-        }
-    }
-    close($fh_kc);
-    close($fh_svmin);
-
+    my ($long_units, $BI_units) = $self->create_long_BI_units($kc_file, $svmin_file);
     $self->create_BI_data($long_units, $BI_units, {
         dir      => $train_dir,
         basename => $basename,
@@ -102,24 +45,20 @@ sub create_train_data {
     undef $BI_units;
 }
 
-## 解析用データからテストデータを作成
-sub execute_test {
-    my ($self, $cmd, $lout_data, $args) = @_;
 
-    my $kc2file = $args->{temp_dir} . "/" . $args->{test_name} . "2";
-    my ($long_units, $BI_units) = $self->make_long_unit($lout_data, $kc2file);
-    undef $lout_data;
+sub analyze {
+    my ($self, $kc2_file, $lout_file, $args) = @_;
 
+    my ($long_units, $BI_units) = $self->create_long_BI_units($kc2_file, $lout_file, 1);
     $self->create_BI_data($long_units, $BI_units, {
-        dir      => $args->{temp_dir},
+        dir      => $self->{"comainu-temp"},
         basename => $args->{test_name},
         is_test  => 1,
-        compfile => $args->{comp_file},
     });
 
-    $self->exec_test($cmd, $args->{train_name}, $args->{test_name}, $args->{model_dir}, $args->{temp_dir});
+    $self->test($args->{train_name}, $args->{test_name});
 
-    $self->merge_data($args->{test_name}, $args->{temp_dir}, $long_units, $BI_units);
+    $self->merge_data($args->{test_name}, $long_units, $BI_units);
 
     my $res = "";
     foreach (@$long_units) {
@@ -127,59 +66,72 @@ sub execute_test {
             $res .= "EOS\n";
             next;
         }
-        $res .= join("\n",@$_)."\n";
+        $res .= join("\n", @$_)."\n";
     }
     undef $long_units;
     undef $BI_units;
 
-    unlink $kc2file if !$self->{debug} && -f $kc2file;
+    unlink $kc2_file if !$self->{debug} && -f $kc2_file;
 
     return $res."\n";
 }
 
-sub make_long_unit {
-    my ($self, $lout_data, $kc2file) = @_;
 
-    open(my $fh_kc2, "<", $kc2file) or die "Cannot open '$kc2file'";
+# 学習時:   kc_file, svmin_file
+# テスト時: kc2_file, lout_file
+sub create_long_BI_units {
+    my ($self, $kc_file, $labeled_file, $is_test) = @_;
+
+    open(my $fh_kc, "<", $kc_file) or die "Cannot open '$kc_file'";
+    open(my $fh_label, "<", $labeled_file) or die "Cannot open '$labeled_file'";
 
     my $long_units = [];
     my $BI_units = [];
 
-    my $kc2 = <$fh_kc2>;
-    $kc2 = decode_utf8 $kc2;
-    $kc2 =~ s/\r?\n//mg;
-    my @lout = split(/\r?\n/, $lout_data);
-    undef $lout_data;
+    my $line = decode_utf8 <$fh_label>;
+    $line =~ s/\r?\n//mg;
 
-    for ( my $i=0; $i<=$#lout; $i++ ) {
-        my $short = "";
-        my $BI = "";
-        my @first = split(/ /,$lout[$i]);
+    while ( my $kc = <$fh_kc> ) {
+        $kc = decode_utf8 $kc;
+        $kc =~ s/\r?\n//mg;
 
-        $short = $lout[$i] if $lout[$i] =~ /^B/;
+        if ( $kc eq '' || $kc eq '*B' || $kc eq 'EOS' ) {
+            if ( $is_test ) {
+                push @$long_units, [("* * * * * * * * * * * * * * * * * * * *")];
+                # CRF++, Yamchaのため最後は空行が2つある
+                # EOSが重複しないようにlastする
+                last unless $line;
+            } elsif ( $line eq "" || $line eq 'EOS' ) {
+                $line = decode_utf8 <$fh_label>;
+                $line =~ s/\r?\n//mg;
+                push @$long_units, [("* * * * * * * * * * * * * * * * * * * *")];
+            }
+            next;
+        }
 
-        while ( $lout[$i+1] =~ /^I/ ) {
-            $short .= "\n".$lout[++$i];
-            $kc2 = <$fh_kc2>;
+        my $short = $is_test ? $line : $kc;
+        my $label = (split / /, $line)[$is_test ? 0 : -1];
+
+        $line = decode_utf8 <$fh_label> // '';
+        $line =~ s/\r?\n//mg;
+        next unless $label && ($label eq 'B' || $label eq 'Ba');
+
+        while ( $line =~ /^Ia? | Ia?$/ ) {
+            $kc = decode_utf8 <$fh_kc>;
+            $kc =~ s/\r?\n//mg;
+            last if !$is_test && $kc =~ /^\*B|^EOS/;
+
+            $short .= "\n" . ($is_test ? $line : $kc);
+            $label .= " " . (split / /, $line)[$is_test ? 0 : -1];
+
+            $line = decode_utf8 <$fh_label>;
+            $line =~ s/\r?\n//mg;
         }
         next if $short eq "";
 
-        my @shorts = split(/\n/,$short);
-        push @$long_units, \@shorts;
-
-        push @$BI_units, $#{$long_units} if $short !~ /a/m;
-
-        $kc2 = <$fh_kc2>;
-        $kc2 = decode_utf8 $kc2;
-        $kc2 =~ s/\r?\n//mg;
-        if ( $kc2 =~ /^EOS/ || $kc2 eq "" ) {
-            $kc2 = <$fh_kc2>;
-            $kc2 = decode_utf8 $kc2;
-            $kc2 =~ s/\r?\n//mg;
-            push @$long_units, [("* * * * * * * * * * * * * * * * * * * *")];
-        }
+        push @$long_units, [ split /\n/, $short ];
+        push @$BI_units, $#{$long_units} if $label !~ /[BI]a/;
     }
-    undef @lout;
 
     return ($long_units, $BI_units);
 }
@@ -201,7 +153,7 @@ sub create_BI_data {
         # 助詞・助動詞の除去
         delete $h_label{$_} for (qw(H100 H110 H111 H112 H113 H114 H115));
         $label_text = join " ", keys %h_label;
-        $comp = $self->load_comp_file($args->{compfile});
+        $comp = $self->load_comp_file;
     }
 
     foreach my $i ( @$BI_units ) {
@@ -322,106 +274,69 @@ sub short2feature {
 
 
 sub train {
-    my ($self, $name, $model_dir, $perl, $makefile) = @_;
+    my ($self, $name, $model_dir) = @_;
+
+    my $makefile = Comainu::ExternalTool->create_yamcha_makefile(
+        $self, $model_dir, $name
+    );
 
     my $pos_dat   = $model_dir . "/pos/" . $name . ".BI_pos.dat";
     my $pos_model = $model_dir . "/pos/" . $name . ".BI_pos";
     my $com1 = sprintf("make -f \"%s\" PERL=\"%s\" MULTI_CLASS=2 FEATURE=\"F:0:0.. \" CORPUS=\"%s\" MODEL=\"%s\" train",
-                       $makefile, $perl, $pos_dat, $pos_model);
+                       $makefile, $self->{perl}, $pos_dat, $pos_model);
     system($com1);
 
     my $cType_dat   = $model_dir . "/cType/" . $name . ".BI_cType.dat";
     my $cType_model = $model_dir . "/cType/" . $name . ".BI_cType";
     my $com2 = sprintf("make -f \"%s\" PERL=\"%s\" MULTI_CLASS=2 FEATURE=\"F:0:0.. \" CORPUS=\"%s\" MODEL=\"%s\" train",
-                       $makefile, $perl, $cType_dat, $cType_model);
+                       $makefile, $self->{perl}, $cType_dat, $cType_model);
     system($com2);
 
     my $cForm_dat   = $model_dir . "/cForm/" . $name . ".BI_cForm.dat";
     my $cForm_model = $model_dir . "/cForm/" . $name . ".BI_cForm";
     my $com3 = sprintf("make -f \"%s\" PERL=\"%s\" MULTI_CLASS=2 FEATURE=\"F:0:0.. \" CORPUS=\"%s\" MODEL=\"%s\" train",
-                      $makefile, $perl, $cForm_dat, $cForm_model);
+                      $makefile, $self->{perl}, $cForm_dat, $cForm_model);
     system($com3);
 }
 
-sub exec_test {
-    my ($self, $COM, $TRAINNAME, $TESTNAME, $model_dir, $temp_dir) = @_;
+sub test {
+    my ($self, $train_name, $test_name) = @_;
 
-    my $pos = $temp_dir."/pos/".$TESTNAME.".BI_pos.dat";
-    my $pos_out = $temp_dir."/pos/".$TESTNAME.".BI_pos.out";
-    my $pos_model = $model_dir."/pos/".$TRAINNAME.".BI_pos.model";
+    my $cmd = $self->{"yamcha-dir"} . "/yamcha";
+    $cmd .= ".exe" if $Config{osname} eq "MSWin32";
+    $cmd = sprintf("\"%s\" -C", $cmd);
+
+    my $tmp_dir = $self->{"comainu-temp"};
+    my $model_dir = $self->{"comainu-svm-bip-model"};
+
+    my $pos_dat   = $tmp_dir   . "/pos/" . $test_name  . ".BI_pos.dat";
+    my $pos_out   = $tmp_dir   . "/pos/" . $test_name  . ".BI_pos.out";
+    my $pos_model = $model_dir . "/pos/" . $train_name . ".BI_pos.model";
     my $com1 = sprintf("%s -m \"%s\" < \"%s\" > \"%s\"",
-                       $COM, $pos_model, $pos, $pos_out);
+                       $cmd, $pos_model, $pos_dat, $pos_out);
     print STDERR "# $com1\n";
     system($com1);
-    unlink $pos if !$self->{debug} && -f $pos;
+    unlink $pos_dat if !$self->{debug} && -f $pos_dat;
 
-    my $cType = $temp_dir."/cType/".$TESTNAME.".BI_cType.dat";
-    my $cType_out = $temp_dir."/cType/".$TESTNAME.".BI_cType.out";
-    my $cType_model = $model_dir."/cType/".$TRAINNAME.".BI_cType.model";
-    $self->create_cType_dat($pos_out, $cType);
+    my $cType_dat   = $tmp_dir   . "/cType/" . $test_name  . ".BI_cType.dat";
+    my $cType_out   = $tmp_dir   . "/cType/" . $test_name  . ".BI_cType.out";
+    my $cType_model = $model_dir . "/cType/" . $train_name . ".BI_cType.model";
+    $self->create_cType_dat($pos_out, $cType_dat);
     my $com2 = sprintf("%s -m \"%s\" < \"%s\" > \"%s\"",
-                       $COM, $cType_model, $cType, $cType_out);
+                       $cmd, $cType_model, $cType_dat, $cType_out);
     print STDERR "# $com2\n";
     system($com2);
-    unlink $cType if !$self->{debug} && -f $cType;
+    unlink $cType_dat if !$self->{debug} && -f $cType_dat;
 
-    my $cForm = $temp_dir."/cForm/".$TESTNAME.".BI_cForm.dat";
-    my $cForm_out = $temp_dir."/cForm/".$TESTNAME.".BI_cForm.out";
-    my $cForm_model = $model_dir."/cForm/".$TRAINNAME.".BI_cForm.model";
-    $self->create_cForm_dat($cType_out, $cForm);
+    my $cForm_dat   = $tmp_dir   . "/cForm/" . $test_name  . ".BI_cForm.dat";
+    my $cForm_out   = $tmp_dir   . "/cForm/" . $test_name  . ".BI_cForm.out";
+    my $cForm_model = $model_dir . "/cForm/" . $train_name . ".BI_cForm.model";
+    $self->create_cForm_dat($cType_out, $cForm_dat);
     my $com3 = sprintf("%s -m \"%s\" < \"%s\" > \"%s\"",
-                       $COM, $cForm_model, $cForm, $cForm_out);
+                       $cmd, $cForm_model, $cForm_dat, $cForm_out);
     print STDERR "# $com3\n";
     system($com3);
-    unlink $cForm if !$self->{debug} && -f $cForm;
-}
-
-
-sub merge_data {
-    my ($self, $TESTNAME, $temp_dir, $long_units, $BI_units) = @_;
-
-    my $pos_file   = $temp_dir."/pos/".$TESTNAME.".BI_pos.out";
-    my $cType_file = $temp_dir."/cType/".$TESTNAME.".BI_cType.out";
-    my $cForm_file = $temp_dir."/cForm/".$TESTNAME.".BI_cForm.out";
-
-    my @pos   = split(/ /, $self->read_from_out($pos_file));
-    my @cType = split(/ /, $self->read_from_out($cType_file));
-    my @cForm = split(/ /, $self->read_from_out($cForm_file));
-    my %h_label  = reverse %{$self->{h_label}};
-    my %k1_label = reverse %{$self->{k1_label}};
-    my %k2_label = reverse %{$self->{k2_label}};
-
-    for my $i ( 0 .. $#{$BI_units} ) {
-        my $l_term = $long_units->[$BI_units->[$i]];
-        my @first = split(/ /, $l_term->[0]);
-        $first[14] = $h_label{$pos[$i]};
-        if ( $pos[$i] ~~ ["H080", "H081", "H090", "H091", "H100"] ) {
-            for my $j ( 0 .. $#{$l_term} ) {
-                my @items = split(/ /, $l_term->[$#{$l_term}-$j]);
-                $first[15] = $items[5];
-                $first[16] = $items[6];
-                last if $first[15] ne "*" && $first[16] ne "*";
-            }
-            if ( $first[15] eq "*" && $first[16] eq "*" ) {
-                $first[15] = $k1_label{$cType[$i]};
-                $first[16] = $k2_label{$cForm[$i]};
-            }
-        }else{
-            $first[15] = "*";
-            $first[16] = "*";
-        }
-        $$long_units[$$BI_units[$i]]->[0] = join(" ",@first);
-    }
-    undef @pos;
-    undef @cType;
-    undef @cForm;
-    undef %h_label;
-    undef %k1_label;
-    undef %k2_label;
-
-    unlink $pos_file   if !$self->{debug} && -f $pos_file;
-    unlink $cType_file if !$self->{debug} && -f $cType_file;
-    unlink $cForm_file if !$self->{debug} && -f $cForm_file;
+    unlink $cForm_dat if !$self->{debug} && -f $cForm_dat;
 }
 
 sub create_cType_dat {
@@ -449,9 +364,10 @@ sub create_cType_dat {
         $line = decode_utf8 $line;
         $line =~ s/\r?\n//g;
         $line =~ s/^EOS//g if $self->{model_type} == 2;
+        next unless $line;
 
-        my @items = split(/\t/,$line);
-        $buff .= join(" ",@items);
+        my @items = split /\t/, $line;
+        $buff .= join " ", @items;
         if ( $items[$#items] eq "H080" || $items[$#items] eq "H081" ) {
             $buff .= " " . $label_text->{verb} . "\n";
         } elsif ( $items[$#items] eq "H090" || $items[$#items] eq "H091" ) {
@@ -505,6 +421,56 @@ sub create_cForm_dat {
     undef $buff;
 }
 
+
+sub merge_data {
+    my ($self, $test_name, $long_units, $BI_units) = @_;
+    my $tmp_dir = $self->{"comainu-temp"};
+
+    my $pos_file   = $tmp_dir . "/pos/"   . $test_name . ".BI_pos.out";
+    my $cType_file = $tmp_dir . "/cType/" . $test_name . ".BI_cType.out";
+    my $cForm_file = $tmp_dir . "/cForm/" . $test_name . ".BI_cForm.out";
+
+    my @pos   = split / /, $self->read_from_out($pos_file);
+    my @cType = split / /, $self->read_from_out($cType_file);
+    my @cForm = split / /, $self->read_from_out($cForm_file);
+    my %h_label  = reverse %{$self->{h_label}};
+    my %k1_label = reverse %{$self->{k1_label}};
+    my %k2_label = reverse %{$self->{k2_label}};
+
+    for my $i ( 0 .. $#{$BI_units} ) {
+        my $l_term = $long_units->[$BI_units->[$i]];
+        my @first = split / /, $l_term->[0];
+        $first[14] = $h_label{$pos[$i]};
+        if ( $pos[$i] ~~ ["H080", "H081", "H090", "H091", "H100"] ) {
+            for my $j ( 0 .. $#{$l_term} ) {
+                my @items = split(/ /, $l_term->[$#{$l_term}-$j]);
+                $first[15] = $items[5];
+                $first[16] = $items[6];
+                last if $first[15] ne "*" && $first[16] ne "*";
+            }
+            if ( $first[15] eq "*" && $first[16] eq "*" ) {
+                $first[15] = $k1_label{$cType[$i]};
+                $first[16] = $k2_label{$cForm[$i]};
+            }
+        }else{
+            $first[15] = "*";
+            $first[16] = "*";
+        }
+        $$long_units[$$BI_units[$i]]->[0] = join " ", @first;
+    }
+    undef @pos;
+    undef @cType;
+    undef @cForm;
+    undef %h_label;
+    undef %k1_label;
+    undef %k2_label;
+
+    unlink $pos_file   if !$self->{debug} && -f $pos_file;
+    unlink $cType_file if !$self->{debug} && -f $cType_file;
+    unlink $cForm_file if !$self->{debug} && -f $cForm_file;
+}
+
+
 sub read_from_out {
     my ($self, $file) = @_;
     my $data = "";
@@ -522,10 +488,10 @@ sub read_from_out {
 }
 
 sub load_comp_file {
-    my ($self, $file) = @_;
+    my ($self) = @_;
 
-    my %comp;
-    open(my $fh, $file) or die "Cannot open '$file'";;
+    my $comp = {};
+    open(my $fh, $self->{comp_file}) or die "Cannot open '" . $self->{comp_file} . "'";
     binmode($fh);
     while ( my $line = <$fh> ) {
         $line = decode_utf8 $line;
@@ -533,11 +499,11 @@ sub load_comp_file {
 
         my @items = split(/\t/, $line);
         next if $items[0] !~ /助詞|助動詞/;
-        $comp{join("_",@items[1..2])} = $items[0];
+        $comp->{join("_",@items[1..2])} = $items[0];
     }
     close($fh);
 
-    return \%comp;
+    return $comp;
 }
 
 sub create_label {

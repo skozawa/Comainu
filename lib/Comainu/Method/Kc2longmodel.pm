@@ -11,7 +11,6 @@ use Config;
 use Comainu::Util qw(read_from_file write_to_file);
 use Comainu::Format;
 use Comainu::Feature;
-use Comainu::ExternalTool;
 use Comainu::BIProcessor;
 
 sub new {
@@ -80,7 +79,7 @@ sub make_luw_traindata {
     print STDERR "Make $svmin_file\n";
 
     my $basename = basename($tmp_train_kc);
-    my $bi_processor = Comainu::BIProcessor->new;
+    my $bi_processor = Comainu::BIProcessor->new(%$self);
     $bi_processor->create_train_data($tmp_train_kc, $svmin_file, $model_dir, $basename);
 
     return 0;
@@ -135,12 +134,8 @@ sub train_bi_model {
     print STDERR "# TRAIN BI MODEL\n";
 
     my $basename = basename($train_kc);
-    my $makefile = Comainu::ExternalTool->create_yamcha_makefile(
-        $self, $model_dir, $basename
-    );
-
-    my $bi_processor = Comainu::BIProcessor->new;
-    $bi_processor->train($basename, $model_dir, $self->{perl}, $makefile);
+    my $bi_processor = Comainu::BIProcessor->new(%$self);
+    $bi_processor->train($basename, $model_dir);
 
     return 0;
 }

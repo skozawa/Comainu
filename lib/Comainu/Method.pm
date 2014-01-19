@@ -29,6 +29,7 @@ my $DEFAULT_VALUES = {
     "suwmodel"              => "mecab",
     "luwmodel"              => "CRF",
     "bnst_process"          => "none",
+    "comp_file"             => $Bin . "/../suw2luw/Comp.txt",
 };
 
 sub new {
