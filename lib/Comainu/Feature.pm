@@ -87,18 +87,18 @@ sub _long_feature_from_line {
 
     ## 品詞を分割して素性に追加
     my @hinsi = split(/\-/,$features[3]);
-    for my $j ( 0 .. 3 ) {
-        push @features, $hinsi[$j] // '*';
+    for my $j ( 0 .. 2 ) {
+        push @features, $hinsi[$j+1] ? join("-", @hinsi[0..$j]) : '*';
     }
     ## 活用型を分割して素性に追加
     my @katuyou1 = split(/\-/,$features[4]);
-    for my $j ( 0 .. 2 ) {
-        push @features, $katuyou1[$j] // '*';
+    for my $j ( 0 .. 1 ) {
+        push @features, $katuyou1[$j+1] ? join("-", @katuyou1[0..$j]) : '*';
     }
     ## 活用形を分割して素性に追加
     my @katuyou2 = split(/\-/,$features[5]);
-    for my $j ( 0 .. 2 ) {
-        push @features, $katuyou2[$j] // '*';
+    for my $j ( 0 .. 1 ) {
+        push @features, $katuyou2[$j+1] ? join("-", @katuyou2[0..$j]) : '*';
     }
 
     return join " ", @features;

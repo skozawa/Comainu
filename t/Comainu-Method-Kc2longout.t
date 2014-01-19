@@ -68,7 +68,7 @@ sub create_features : Test(6) {
         $kc2longout->create_features("t/sample/kc2longout/test.KC", "t/sample/kc2longout/test.KC2");
         is $kc2_data, read_from_file('t/sample/kc2longout/test.KC2.svm_none');
     };
-};
+}
 
 sub chunk_luw : Test(1) {
     my $kc2longout = Comainu::Method::Kc2longout->new(
