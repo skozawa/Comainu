@@ -467,9 +467,9 @@ sub create_BI_data_test : Test(3) {
             $cform_dat = $data if $file =~ /BI_cForm/;
         },
         load_comp_file => sub { {} },
-        create_label   => sub {
+        load_label   => sub {
             my $self = shift;
-            $self->{h_label} = {
+            $self->{pos_label} = {
                 "名詞-普通名詞-一般" => "H000",
                 "動詞-一般" => "H080",
                 "動詞-非自立可能" => "H081",
@@ -480,6 +480,10 @@ sub create_BI_data_test : Test(3) {
                 "助詞-副助詞" => "H111",
                 "助詞-係助詞" => "H112",
             };
+            $self->{verb_labels} = ['H080', 'H081'];
+            $self->{adj_labels}  = ['H090', 'H091'];
+            $self->{aux_labels}  = ['H100'];
+            $self->{part_labels} = ['H110', 'H111', 'H112'];
         },
     });
 
@@ -622,7 +626,7 @@ DATA
     close $fh;
 
     my $bip = Comainu::BIProcessor->new;
-    $bip->{k1_label} = {
+    $bip->{cType_label} = {
         "五段-ナ行" => "K1006",
         "五段-バ行" => "K1007",
         "形容詞" => "K1130",
@@ -661,7 +665,7 @@ DATA
     close $fh;
 
     my $bip = Comainu::BIProcessor->new;
-    $bip->{k2_label} = {
+    $bip->{cForm_label} = {
         "語幹-一般" => "K2000",
         "未然形-一般" => "K2010",
         "未然形-サ" => "K2011",
@@ -682,7 +686,7 @@ sub merge_data : Test(2) {
     my $g = mock_guard('Comainu::BIProcessor' => {
         read_from_out => sub {
             my ($self, $file) = @_;
-            return "H080 H000"    if $file =~ /BI_pos/;
+            return "H080 H000"   if $file =~ /BI_pos/;
             return "K1050 K1999" if $file =~ /BI_cType/;
             return "K2030 K2999" if $file =~ /BI_cForm/;
             return "";
@@ -696,9 +700,9 @@ sub merge_data : Test(2) {
     my $BI_units = [ 0, 1 ];
 
     my $bip = Comainu::BIProcessor->new;
-    $bip->{h_label} = { "動詞-一般" => "H080", "名詞-普通名詞-一般" => "H000" };
-    $bip->{k1_label} = {};
-    $bip->{k2_label} = {};
+    $bip->{pos_label} = { "動詞-一般" => "H080", "名詞-普通名詞-一般" => "H000" };
+    $bip->{cType_label} = {};
+    $bip->{cForm_label} = {};
 
     $bip->merge_data("", $long_units, $BI_units);
 

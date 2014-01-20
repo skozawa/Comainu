@@ -30,6 +30,9 @@ my $DEFAULT_VALUES = {
     "luwmodel"              => "CRF",
     "bnst_process"          => "none",
     "comp_file"             => $Bin . "/../suw2luw/Comp.txt",
+    "pos_label_file"        => $Bin . '/../etc/pos_label',
+    "cType_label_file"      => $Bin . '/../etc/cType_label',
+    "cForm_label_file"      => $Bin . '/../etc/cForm_label',
 };
 
 sub new {
