@@ -32,6 +32,9 @@ my $DEFAULT_VALUES = {
     "adj_labels"           => [],
     "aux_labels"           => [],
     "part_labels"          => [],
+    "cType_verb_labels"    => [],
+    "cType_adj_labels"     => [],
+    "cType_all_labels"     => [],
     "cType_asterisk_label" => 'K1999',
     "cForm_asterisk_label" => 'K2999',
 };
@@ -138,6 +141,7 @@ sub create_long_BI_units {
             $label .= " " . (split / /, $line)[$is_test ? 0 : -1];
 
             $line = decode_utf8 <$fh_label>;
+            last unless $line;
             $line =~ s/\r?\n//mg;
         }
         next if $short eq "";
@@ -360,20 +364,11 @@ sub test {
 sub create_cType_dat {
     my ($self, $out, $file) = @_;
 
-    my $labels = { verb => [], adj => [], aux => [] };
-    for ( keys %{$self->{cType_label}} ) {
-        my $label = $self->{cType_label}->{$_};
-        push @{$labels->{verb}}, $label if $label =~ /^K10|^K11[12]|^K120/;
-        push @{$labels->{adj}},  $label if $label =~ /^K11[34]/;
-        push @{$labels->{aux}},  $label if $label =~ /^K11[56789]/;
-    }
-
     my $label_text = {
-        verb => join(" ", @{$labels->{verb}}),
-        adj  => join(" ", @{$labels->{adj}}),
-        aux  => join(" ", @{$labels->{aux}}),
+        verb => join(' ', @{$self->{cType_verb_labels}}),
+        adj  => join(' ', @{$self->{cType_adj_labels}}),
+        all  => join(' ', @{$self->{cType_all_labels}}),
     };
-    undef $labels;
 
     my $buff = "";
     open(my $fh, $out) or die "Cannot open '$out'";
@@ -390,9 +385,7 @@ sub create_cType_dat {
         } elsif ( grep { $items[-1] eq $_ } @{$self->{adj_labels}} ) {
             $buff .= " " . $label_text->{adj} . "\n";
         } elsif ( grep { $items[-1] eq $_ } @{$self->{aux_labels}} ) {
-            $buff .= " " . $label_text->{verb} .
-                     " " . $label_text->{adj} .
-                     " " . $label_text->{aux} . "\n";
+            $buff .= " " . $label_text->{all} . "\n";
         } else {
             $buff .= " " . $self->{cType_asterisk_label} . "\n";
         }
@@ -525,28 +518,13 @@ sub load_comp_file {
 sub load_label {
     my $self = shift;
 
-    $self->{pos_label}   = $self->load_label_file($self->{pos_label_file});
-    $self->{cType_label} = $self->load_label_file($self->{cType_label_file});
-    $self->{cForm_label} = $self->load_label_file($self->{cForm_label_file});
-
-    foreach my $pos ( keys %{$self->{pos_label}} ) {
-        push @{$self->{verb_labels}}, $self->{pos_label}->{$pos} if $pos =~ /^動詞/;
-        push @{$self->{adj_labels}},  $self->{pos_label}->{$pos} if $pos =~ /^形容詞/;
-        push @{$self->{aux_labels}},  $self->{pos_label}->{$pos} if $pos =~ /^助動詞/;
-        push @{$self->{part_labels}}, $self->{pos_label}->{$pos} if $pos =~ /^助詞/;
-    }
-
-    foreach my $cType ( keys %{$self->{cType_label}} ) {
-        $self->{cType_asterisk_label} = $self->{cType_label}->{$cType} if $cType eq '*';
-    }
-
-    foreach my $cForm ( keys %{$self->{cForm_label}} ) {
-        $self->{cForm_asterisk_label} = $self->{cForm_label}->{$cForm} if $cForm eq '*';
-    }
+    $self->{pos_label}   = $self->load_label_file($self->{pos_label_file}, 'pos');
+    $self->{cType_label} = $self->load_label_file($self->{cType_label_file}, 'cType');
+    $self->{cForm_label} = $self->load_label_file($self->{cForm_label_file}, 'cForm');
 }
 
 sub load_label_file {
-    my ($self, $file) = @_;
+    my ($self, $file, $type) = @_;
 
     my $labels = {};
     open(my $fh, $file) or die "Cannot open '$file'";
@@ -559,6 +537,22 @@ sub load_label_file {
 
         my @items = split /\t/, $line;
         $labels->{$items[0]} = $items[1];
+
+        if ( $type eq 'pos' ) {
+            push @{$self->{verb_labels}}, $items[1] if $items[0] =~ /^動詞/;
+            push @{$self->{adj_labels}},  $items[1] if $items[0] =~ /^形容詞/;
+            push @{$self->{aux_labels}},  $items[1] if $items[0] =~ /^助動詞/;
+            push @{$self->{part_labels}}, $items[1] if $items[0] =~ /^助詞/;
+        } elsif ( $type eq 'cType' ) {
+            if ( $items[0] eq '*' ) {
+                $self->{cType_asterisk_label} = $items[1];
+                next;
+            }
+            push @{$self->{cType_all_labels}}, $items[1];
+            push @{$self->{'cType_' . $items[2] . '_labels'}}, $items[1] if $items[2];
+        } elsif ( $type eq 'cForm' ) {
+            $self->{cForm_asterisk_label} = $items[1] if $items[0] eq '*';
+        }
     }
     close($fh);
 

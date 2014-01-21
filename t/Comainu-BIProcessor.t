@@ -635,6 +635,9 @@ DATA
         "文語助動詞-キ" => "K1170",
         "*" => "K1999",
     };
+    $bip->{cType_verb_labels} = ['K1006', 'K1007'];
+    $bip->{cType_adj_labels}  = ['K1130', 'K1140'];
+    $bip->{cType_all_labels}  = ['K1006', 'K1007', 'K1130', 'K1140', 'K1165', 'K1170'];
     $bip->create_cType_dat($filename);
 
     my @buffs = split /\n/, $dat_buff;

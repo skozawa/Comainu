@@ -119,9 +119,9 @@ sub pp_partial {
         push @$buff_list, $line;
         if ( defined $buff_list->[$curr] && $buff_list->[$curr] !~ /^EOS|^\*B/ ) {
             my $mark = "";
-            if ( $buff_list->[$prev] =~ /^EOS|^\*B/) {
+            if ( !defined $buff_list->[$prev] ) {
                 $mark = $B_label;
-            } elsif ( !defined $buff_list->[$prev] ) {
+            } elsif ( $buff_list->[$prev] =~ /^EOS|^\*B/) {
                 $mark = $B_label;
             } else {
                 $mark = $BI_label;
