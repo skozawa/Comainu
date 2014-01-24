@@ -202,25 +202,37 @@ sub _bnst_feature_from_line {
     my ($class, $line, $parenthetic) = @_;
 
     my @items = split /[ \t]/, $line;
-    my @pos   = split /\-/, $items[3] . "-*-*-*";
-    my @cType = split /\-/, $items[4] . "-*-*";
-    my @cForm = split /\-/, $items[5] . "-*-*";
+    my @features = @items[0..5];
 
-    my $feature = join " ", @items[0..5], @pos[0..3], @cType[0..2], @cForm[0..2];
-
-    if ( $items[3] eq '補助記号-括弧開' ) {
-        $feature .= $$parenthetic ? ' I' : ' B';
-        $$parenthetic++;
-    } elsif ( $items[3] eq '補助記号-括弧閉' ) {
-        $$parenthetic--;
-        $feature .= ' I';
-    } elsif ( $$parenthetic ) {
-        $feature .= ' I';
-    } else {
-        $feature .= ' O';
+    ## 品詞を分割して素性に追加
+    my @pos = split(/\-/,$items[3]);
+    for my $j ( 0 .. 2 ) {
+        push @features, $pos[$j+1] ? join("-", @pos[0..$j]) : '*';
+    }
+    ## 活用型を分割して素性に追加
+    my @cType = split(/\-/,$items[4]);
+    for my $j ( 0 .. 1 ) {
+        push @features, $cType[$j+1] ? join("-", @cType[0..$j]) : '*';
+    }
+    ## 活用形を分割して素性に追加
+    my @cForm = split(/\-/,$items[5]);
+    for my $j ( 0 .. 1 ) {
+        push @features, $cForm[$j+1] ? join("-", @cForm[0..$j]) : '*';
     }
 
-    return $feature;
+    if ( $items[3] eq '補助記号-括弧開' ) {
+        push @features, $$parenthetic ? 'I' : 'B';
+        $$parenthetic++;
+    } elsif ( $items[3] eq '補助記号-括弧閉' ) {
+        push @features, 'I';
+        $$parenthetic--;
+    } elsif ( $$parenthetic ) {
+        push @features, 'I';
+    } else {
+        push @features, 'O';
+    }
+
+    return join " ", @features;
 }
 
 # 前処理（partial chunkingの入力フォーマットへの変換）
@@ -240,17 +252,17 @@ sub pp_partial_bnst_with_luw {
             my $mark = "";
             my $lw = shift @$svmout_item_list;
             my @svmout = split(/[ \t]/,$lw);
-            if ( $buff_list->[$prev] =~ /^EOS|^\*B/) {
+            if ( !defined $buff_list->[$prev] ) {
                 $mark = "B";
-            } elsif ( !defined $buff_list->[$prev] ) {
+            } elsif ( $buff_list->[$prev] =~ /^EOS|^\*B/) {
                 $mark = "B";
             } elsif ( $svmout[0] =~ /I/ ) {
                 $mark = "I";
             } elsif ( $svmout[4] =~ /^動詞/ ) {
                 $mark = "B";
-            } elsif ( $svmout[4] =~ /^名詞|^形容詞|^副詞|^形状詞/ &&
-                          ($svmout[21] == 1 || $svmout[22] == 1) ) {
-                $mark = "B";
+            # } elsif ( $svmout[4] =~ /^名詞|^形容詞|^副詞|^形状詞/ &&
+            #               ($svmout[21] == 1 || $svmout[22] == 1) ) {
+            #     $mark = "B";
             } else {
                 $mark = "B I";
             }
