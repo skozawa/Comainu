@@ -8,13 +8,13 @@
         MSYS/MinGW
         Cygwin(optional)
     Packager: Inno Setup 5.0 or lator
-    Active Perl: 5.8.8 or lator
+    Active Perl: 5.10.0 or lator
       Perl/Tk: 804.028 or lator
       Win32::Exe, PAR, PAR::Packer: 0.982 or lator
 
   UNIX:
     OS: Linux
-    Perl: 5.8.8 or lator
+    Perl: 5.10.0 or lator
     Perl/Tk: 804.028 or lator
 
   Common:

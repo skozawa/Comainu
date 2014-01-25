@@ -7,7 +7,7 @@ MS-Windows:
 
 UNIX:
   OS: Linux
-  Perl: 5.8.8 以上
+  Perl: 5.10.0 以上
   Perl/Tk: 804.028 以上
 
 共通:

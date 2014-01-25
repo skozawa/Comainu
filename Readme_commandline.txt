@@ -4,7 +4,7 @@
 0. Requirements
   Common:
     GCC:          3.4.4 or later (optional: to built, Cygwin/MinGW on MS-Windows)
-    Perl:         5.8.8 or later (recomended Active Perl on MS-Windows)
+    Perl:         5.10.0 or later (recomended Active Perl on MS-Windows)
     Java:         1.6.0 or later (optional: for mid analysis)
     YamCha:       0.33 or lator
     UniDic2:      2.1.0 or later (optional)
