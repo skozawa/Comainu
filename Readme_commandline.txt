@@ -91,20 +91,20 @@ option:
     --luwmodel          LUWMODEL        specify the type of the model for boundary of long-unit-word
                                           LUWMODEL:=SVM|CRF
                                           (curr: 'CRF')
-    --perl                      PERL                    specify PERL
-    --java                      JAVA                    specify JAVA
-    --comainu-home              COMAINU_HOME            specify COMAINU_HOME
-    --ofilter                   OFILTER                 specify OFILTER
-    --yamcha-dir                YAMCHA_DIR              specify YAMCHA_DIR
-    --mecab-dir                 MECAB_DIR               specify MECAB_DIR
-    --mecab-dic-dir             MECAB_DIC_DIR           specify MECAB_DIC_DIR
-    --unidic-db                 UNIDIC_DB               specify UNIDIC_DB
-    --svm-tool-dir              SVM_TOOL_DIR            specify SVM_TOOL_DIR
-    --crf-dir                   CRF_DIR                 specify CRF_DIR
-    --mstparser-dir             MSTPARSER_DIR           specify MSTPARSER_DIR
-    --comainu-svm-bip-model     COMAINU_SVM_BIP_MODEL   specify COMAINU_SVM_BIP_MODEL
-    --comainu-output            COMAINU_OUTPUT          specify COMAINU_OUTPUT
-    --comainu-temp              COMAINU_TEMP            specify COMAINU_TEMP
+    --perl                     PERL                    specify PERL
+    --java                     JAVA                    specify JAVA
+    --comainu-home             COMAINU_HOME            specify COMAINU_HOME
+    --ofilter                  OFILTER                 specify OFILTER
+    --yamcha-dir               YAMCHA_DIR              specify YAMCHA_DIR
+    --mecab-dir                MECAB_DIR               specify MECAB_DIR
+    --mecab-dic-dir            MECAB_DIC_DIR           specify MECAB_DIC_DIR
+    --unidic-db                UNIDIC_DB               specify UNIDIC_DB
+    --svm-tool-dir             SVM_TOOL_DIR            specify SVM_TOOL_DIR
+    --crf-dir                  CRF_DIR                 specify CRF_DIR
+    --mstparser-dir            MSTPARSER_DIR           specify MSTPARSER_DIR
+    --comainu-bi-svm-model     COMAINU_BI_SVM_MODEL    specify COMAINU_BI_SVM_MODEL
+    --comainu-output           COMAINU_OUTPUT          specify COMAINU_OUTPUT
+    --comainu-temp             COMAINU_TEMP            specify COMAINU_TEMP
 
 Preset Environments :
   PERL=/usr/bin/perl
@@ -118,7 +118,7 @@ Preset Environments :
   SVM_TOOL_DIR=/usr/local/bin
   CRF_DIR=/usr/local/bin
   MSTPARSER_DIR=mstparser
-  COMAINU_SVM_BIP_MODEL=train/BI_process_model
+  COMAINU_BI_SVM_MODEL=train/BI_model
   COMAINU_OUTPUT=out
   COMAINU_TEMP=tmp/temp
 

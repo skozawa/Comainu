@@ -76,8 +76,8 @@ my $CONFIGURATION_VIEW = [
             ["comainu-home", "dirname"],
             ["comainu-crf-model", "pathname"],
             ["comainu-svm-model", "pathname"],
-            ["comainu-svm-bnst-model", "pathname"],
-            ["comainu-svm-bip-model", "dirname"],
+            ["comainu-bnst-svm-model", "pathname"],
+            ["comainu-bi-svm-model", "dirname"],
             ["comainu-mst-model", "pathname"],
         ],
     },
@@ -1675,8 +1675,8 @@ sub execute_analysis_data {
     my $comainu_home            = $app_conf->get("comainu-home");
     my $comainu_crf_model       = $app_conf->get("comainu-crf-model");
     my $comainu_svm_model       = $app_conf->get("comainu-svm-model");
-    my $comainu_svm_bnst_model  = $app_conf->get("comainu-svm-bnst-model");
-    my $comainu_svm_bip_model   = $app_conf->get("comainu-svm-bip-model");
+    my $comainu_bnst_svm_model  = $app_conf->get("comainu-bnst-svm-model");
+    my $comainu_bi_svm_model    = $app_conf->get("comainu-bi-svm-model");
     my $comainu_mst_model       = $app_conf->get("comainu-mst-model");
     my $comainu_input_type      = $app_conf->get("comainu-input-type");
     my $comainu_output_type     = $app_conf->get("comainu-output-type");
@@ -1716,7 +1716,7 @@ sub execute_analysis_data {
     my $comainu_long_model = $comainu_crf_model;
     $comainu_long_model = $comainu_svm_model if $comainu_long_model_type =~ /svm/;
     my $comainu_mid_model = $comainu_mst_model;
-    my $comainu_bnst_model = $comainu_svm_bnst_model;
+    my $comainu_bnst_model = $comainu_bnst_svm_model;
 
     mkdir $tmp_dir unless -d $tmp_dir;
     unlink $out_file if -f $out_file;
@@ -1744,21 +1744,21 @@ sub execute_analysis_data {
 
     $ENV{"PERL"} = $runcom;
     my $comainu_opts = {
-        "debug"                 => $self->_data->{debug},
-        "comainu-home"          => $comainu_home,
-        "mecab-dir"             => $mecab_dir,
-        "mecab-dic-dir"         => $mecab_dic_dir,
-        "unidic-db"             => $unidic_db,
-        "yamcha-dir"            => $yamcha_dir,
-        "crf-dir"               => $crf_dir,
-        "java"                  => $java,
-        "mstparser-dir"         => $mstparser_dir,
-        "comainu-output"        => $tmp_dir,
-        "comainu-temp"          => $tmp_dir."/temp",
-        "comainu-svm-bip-model" => $comainu_svm_bip_model,
-        "boundary"              => $comainu_boundary,
-        "luwmodel"              => uc($comainu_long_model_type),
-        "luwmrph"               => $luwmrph,
+        "debug"                => $self->_data->{debug},
+        "comainu-home"         => $comainu_home,
+        "mecab-dir"            => $mecab_dir,
+        "mecab-dic-dir"        => $mecab_dic_dir,
+        "unidic-db"            => $unidic_db,
+        "yamcha-dir"           => $yamcha_dir,
+        "crf-dir"              => $crf_dir,
+        "java"                 => $java,
+        "mstparser-dir"        => $mstparser_dir,
+        "comainu-output"       => $tmp_dir,
+        "comainu-temp"         => $tmp_dir."/temp",
+        "comainu-bi-svm-model" => $comainu_bi_svm_model,
+        "boundary"             => $comainu_boundary,
+        "luwmodel"             => uc($comainu_long_model_type),
+        "luwmrph"              => $luwmrph,
     };
 
     my $comainu_opts_str = join(" ", map {"--".$_." \"".$comainu_opts->{$_}."\"";} keys %$comainu_opts);
