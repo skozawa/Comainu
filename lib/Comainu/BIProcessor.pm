@@ -8,7 +8,7 @@ use utf8;
 use Encode;
 use Config;
 
-use Comainu::Util qw(write_to_file);
+use Comainu::Util qw(any write_to_file);
 use Comainu::ExternalTool;
 
 use constant MODEL_TYPE_SVM  => 0;
@@ -380,11 +380,11 @@ sub create_cType_dat {
 
         my @items = split /\t/, $line;
         $buff .= join " ", @items;
-        if ( grep { $items[-1] eq $_ } @{$self->{verb_labels}} ) {
+        if ( any { $items[-1] eq $_ } @{$self->{verb_labels}} ) {
             $buff .= " " . $label_text->{verb} . "\n";
-        } elsif ( grep { $items[-1] eq $_ } @{$self->{adj_labels}} ) {
+        } elsif ( any { $items[-1] eq $_ } @{$self->{adj_labels}} ) {
             $buff .= " " . $label_text->{adj} . "\n";
-        } elsif ( grep { $items[-1] eq $_ } @{$self->{aux_labels}} ) {
+        } elsif ( any { $items[-1] eq $_ } @{$self->{aux_labels}} ) {
             $buff .= " " . $label_text->{all} . "\n";
         } else {
             $buff .= " " . $self->{cType_asterisk_label} . "\n";
@@ -415,7 +415,7 @@ sub create_cForm_dat {
 
         my @items = split /\t/, $line;
         $buff .= join(" ",@items);
-        if ( grep { $items[$#items - 1] eq $_ } @{$self->{verb_labels}}, @{$self->{adj_labels}}, @{$self->{aux_labels}} ) {
+        if ( any { $items[$#items - 1] eq $_ } @{$self->{verb_labels}}, @{$self->{adj_labels}}, @{$self->{aux_labels}} ) {
             $buff .= " " . $label_text . "\n";
         } else {
             $buff .= " " . $self->{cForm_asterisk_label} . "\n";
@@ -449,7 +449,7 @@ sub merge_data {
         my @first = split / /, $l_term->[0];
         $first[14] = $pos_label{$pos[$i]};
 
-        if ( grep { $pos[$i] eq $_ } @{$self->{verb_labels}}, @{$self->{adj_labels}}, @{$self->{aux_labels}} ) {
+        if ( any { $pos[$i] eq $_ } @{$self->{verb_labels}}, @{$self->{adj_labels}}, @{$self->{aux_labels}} ) {
             for my $j ( 0 .. $#{$l_term} ) {
                 my @items = split(/ /, $l_term->[$#{$l_term}-$j]);
                 $first[15] = $items[5];

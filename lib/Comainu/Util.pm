@@ -10,6 +10,7 @@ use Encode qw(encode_utf8 decode_utf8);
 use Exporter 'import';
 
 our @EXPORT_OK = qw(
+    any
     read_from_file
     write_to_file
     check_file
@@ -19,6 +20,15 @@ our @EXPORT_OK = qw(
     proc_file2stdout
     proc_file2file
 );
+
+# from List::MoreUtils
+sub any (&@) {
+    my $f = shift;
+    foreach ( @_ ) {
+        return 1 if $f->();
+    }
+    return 0;
+}
 
 sub read_from_file {
     my $file = shift;

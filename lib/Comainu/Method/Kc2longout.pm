@@ -7,7 +7,7 @@ use parent 'Comainu::Method';
 use File::Basename qw(basename fileparse);
 use Config;
 
-use Comainu::Util qw(read_from_file write_to_file check_file proc_file2stdout);
+use Comainu::Util qw(any read_from_file write_to_file check_file proc_file2stdout);
 use Comainu::Format;
 use Comainu::Feature;
 use Comainu::BIProcessor;
@@ -239,16 +239,16 @@ sub create_long_lemma {
         if ( $first->[14] =~ /助詞|助動詞/ && $#{$luw} == 0 ) {
         }
         # 特定の品詞の場合は、長単位語彙素、語彙素読みを空文字にする
-        elsif ( $first->[14] ~~ ["英単語", "URL", "言いよどみ", "漢文", "web誤脱", "ローマ字文"] ) {
-            @$first[17,18] = ("","");
+        elsif ( any { $first->[14] eq $_ } ("英単語", "URL", "言いよどみ", "漢文", "web誤脱", "ローマ字文") ) {
+            @$first[17,18] = ("", "");
         }
         # 括弧内
-        elsif ( $$first[19] ~~ ["（）内", "〔〕内", "「」内", "｛｝内",
-                                  "〈〉内", "［］内", "《　》内"] ) {
-            @$first[17,18] = ("カッコナイ","括弧内");
+        elsif ( any { $first->[19] eq $_ } ("（）内", "〔〕内", "「」内", "｛｝内",
+                                            "〈〉内", "［］内", "《　》内") ) {
+            @$first[17,18] = ("カッコナイ", "括弧内");
         }
         else {
-            @$first[17,18] = ("","");
+            @$first[17,18] = ("", "");
             my $parential = 0; # 括弧があるか
             for my $j ( 0 .. $#{$luw} - 1 ) {
                 $self->generate_long_lemma($luw, $j);
@@ -296,7 +296,7 @@ sub create_long_lemma {
             my $pos_lemma_reading = join("_", @$first[14,17,18]);
             if ( defined $comp{$pos_lemma_reading} ) {
                 my ($reading, $lemma) = split(/\_/, $comp{$pos_lemma_reading});
-                if( $first->[18] ~~ ["に因る", "に拠る", "による"] && $last->[6] eq "連用形-一般" ) {
+                if( any { $first->[18] eq $_ } ("に因る", "に拠る", "による") && $last->[6] eq "連用形-一般" ) {
                     ($reading, $lemma) = ("ニヨリ", "により");
                 } elsif ( $first->[18] eq "に対する" && $last->[6] eq "連用形-一般" ) {
                     ($reading, $lemma) = ("ニタイシ", "に対し");
