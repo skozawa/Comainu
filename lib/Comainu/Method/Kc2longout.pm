@@ -296,7 +296,8 @@ sub create_long_lemma {
             my $pos_lemma_reading = join("_", @$first[14,17,18]);
             if ( defined $comp{$pos_lemma_reading} ) {
                 my ($reading, $lemma) = split(/\_/, $comp{$pos_lemma_reading});
-                if( any { $first->[18] eq $_ } ("に因る", "に拠る", "による") && $last->[6] eq "連用形-一般" ) {
+                if( (any { $first->[18] eq $_ } ("に因る", "に拠る", "による"))
+                        && $last->[6] eq "連用形-一般" ) {
                     ($reading, $lemma) = ("ニヨリ", "により");
                 } elsif ( $first->[18] eq "に対する" && $last->[6] eq "連用形-一般" ) {
                     ($reading, $lemma) = ("ニタイシ", "に対し");
