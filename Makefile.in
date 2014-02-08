@@ -81,6 +81,7 @@ dist-src:
 	rm -f  $${pkg_dir}/script/wincomainu.pl && \
 	rm -f  $${pkg_dir}/script/comainu.pl && \
 	rm -f  $${pkg_dir}/script/comainu_setup.pl && \
+	if test -d $${pkg_dir}/script/tools; then rm -rf $${pkg_dir}/script/tools; fi && \
 	echo "  Copy lib files ... " && \
 	cp -pr ../../lib $${pkg_dir}/ && \
 	echo "  Copy etc files ... " && \
@@ -92,8 +93,6 @@ dist-src:
 	echo "  Copy pkg files ... " && \
 	mkdir $${pkg_dir}/pkg && \
 	cp -p ../../pkg/*.iss.in $${pkg_dir}/pkg/ && \
-	echo "  Copy suw2luw files ... " && \
-	cp -pr ../../suw2luw $${pkg_dir}/ && \
 	echo "  Copy sample data files ... " && \
 	cp -pr ../../sample $${pkg_dir}/ && \
 	echo "  Copy mstparser files ... " && \
