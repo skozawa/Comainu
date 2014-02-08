@@ -157,6 +157,7 @@ build-package:
 	cp -pr ../../script $(APP_NAME)/ && \
 	rm -f  $(APP_NAME)/script/wincomainu.pl && \
 	rm -f  $(APP_NAME)/script/comainu.pl && \
+	if test -d $${pkg_dir}/script/tools; then rm -rf $${pkg_dir}/script/tools; fi && \
 	echo "  Copy lib files ... " && \
 	cp -pr ../../lib $(APP_NAME)/ && \
 	echo "  Copy etc files ... " && \
@@ -168,8 +169,6 @@ build-package:
 	echo "  Copy pkg files ... " && \
 	mkdir $(APP_NAME)/pkg && \
 	cp -p ../../pkg/*.iss.in $(APP_NAME)/pkg/ && \
-	echo "  Copy suw2luw files ... " && \
-	cp -pr ../../suw2luw $(APP_NAME)/ && \
 	echo "  Copy sample data files ... " && \
 	cp -pr ../../sample $(APP_NAME)/ && \
 	echo "  Copy mstparser files ... " && \
