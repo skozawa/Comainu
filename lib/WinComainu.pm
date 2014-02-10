@@ -468,6 +468,7 @@ sub make_toolbar {
         my $combobox = $self->make_comainu_type_selector(
             "output-type", $combo_frame, -width => 16,
         );
+        $self->_data->{"_comainu_output-type_combobox"} = $combobox;
         $combobox->g_pack(-side => "left");
     }
     # model
@@ -777,8 +778,9 @@ sub get_comainu_type_list {
     return ["plain", "bccwj", "bccwjlong", "kc", "kclong"] if $type eq "input-type";
 
     if ($type eq "output-type") {
-        my $input_type = $self->get_comainu_type_by_name("input-type", $self->_data->{_comainu_input_name});
-        return ["mid"] if $input_type =~ /^bccwjlong|kclong$/;
+        my $input_type = $self->get_comainu_type_by_name("input-type", $self->_data->{"_comainu_input-type_name"});
+        return ["bnst", "long"] if $input_type eq "kc";
+        return ["mid"] if $input_type eq "bccwjlong" || $input_type eq "kclong";
         return ["bnst", "long_only_boundary", "long", "longbnst", "mid", "midbnst"];
     }
 
@@ -889,28 +891,31 @@ sub make_comainu_type_selector {
 sub check_comainu_limitation {
     my ($self, $type) = @_;
 
-    if ($type eq "input-type") {
-        my $input_type = $self->get_comainu_type_by_name("input-type", $self->_data->{_comainu_input_name});
-        if ($input_type =~ /^bccwjlong|kclong$/) {
-            my $output_type_name = $self->_data->{_comainu_output_name};
-            my $output_type = $self->get_comainu_type_by_name("output-type", $output_type_name);
-            my $output_type_name_list = $self->get_comainu_type_name_list("output-type");
-            my $found = 0;
-            foreach my $tmp_output_type_name (@$output_type_name_list) {
-                if ($output_type_name eq $tmp_output_type_name) {
-                    $found = 1;
-                    last;
-                }
-            }
-            if ($found == 0) {
-                $output_type_name = $output_type_name_list->[0];
-                $self->_data->{_comainu_output_name} = $output_type_name;
-                my $app_conf = $self->_data->{"app-conf"};
-                $output_type = $self->get_comainu_type_by_name("output-type", $output_type_name);
-                $app_conf->set("comainu-output", $output_type);
-            }
+    return unless $type eq "input-type";
+
+    my $input_type = $self->get_comainu_type_by_name("input-type", $self->_data->{"_comainu_input-type_name"});
+
+    my $output_type_name = $self->_data->{"_comainu_output-type_name"};
+    my $output_type = $self->get_comainu_type_by_name("output-type", $output_type_name);
+    my $output_type_name_list = $self->get_comainu_type_name_list("output-type");
+    my $found = 0;
+    foreach my $tmp_output_type_name (@$output_type_name_list) {
+        if ($output_type_name eq $tmp_output_type_name) {
+            $found = 1;
+            last;
         }
     }
+    if ($found == 0) {
+        $output_type_name = $output_type_name_list->[0];
+        $self->_data->{"_comainu_output-type_name"} = $output_type_name;
+        my $app_conf = $self->_data->{"app-conf"};
+        $output_type = $self->get_comainu_type_by_name("output-type", $output_type_name);
+        $app_conf->set("comainu-output-type", $output_type);
+    }
+    $self->_data->{"_comainu_output-type_name_list"} = $output_type_name_list;
+    $self->_data->{"_comainu_output-type_combobox"}->m_configure(
+        -values => $output_type_name_list
+    );
 }
 
 
