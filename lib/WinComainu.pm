@@ -274,66 +274,65 @@ sub make_menubar {
         $top->g_bind("<Control-Key-q>", sub { $self->cmd_exit; });
     }
 
-    # XXX Edit Menu
-    # {
-    #     my $mb = $menubar_buttons->new_menubutton(
-    #         -text => $self->_data->{msg}{MENU_STR_EDIT}, -underline => 1
-    #     );
-    #     $mb->g_pack(-side => "left");
+    {
+        my $mb = $menubar_buttons->new_menubutton(
+            -text => $self->_data->{msg}{MENU_STR_EDIT}, -underline => 1
+        );
+        $mb->g_pack(-side => "left");
 
-    #     my $mc = $mb->new_menu(-tearoff => 0);
-    #     $mb->configure(-menu => $mc);
+        my $mc = $mb->new_menu(-tearoff => 0);
+        $mb->configure(-menu => $mc);
 
-    #     # undo
-    #     $mc->add_command(
-    #         -label       => $self->_data->{msg}{MENU_STR_UNDO},
-    #         -underline   => 1,
-    #         -accelerator => "Ctrl+Z",
-    #         -command     => sub { $self->eventGenerate("<Control-Key-z>"); }
-    #     );
+        # undo
+        $mc->add_command(
+            -label       => $self->_data->{msg}{MENU_STR_UNDO},
+            -underline   => 1,
+            -accelerator => "Ctrl+Z",
+            -command     => sub { $self->g_event_generate("<Control-Key-z>"); }
+        );
 
-    #     # redo
-    #     $mc->add_command(
-    #         -label       => $self->_data->{msg}{MENU_STR_REDO},
-    #         -underline   => 1,
-    #         -accelerator => "Ctrl+Y",
-    #         -command     => sub { $self->eventGenerate("<Control-Key-y>"); }
-    #     );
-    #     $mc->add_separator;
+        # redo
+        $mc->add_command(
+            -label       => $self->_data->{msg}{MENU_STR_REDO},
+            -underline   => 1,
+            -accelerator => "Ctrl+Y",
+            -command     => sub { $self->g_event_generate("<Control-Key-y>"); }
+        );
+        $mc->add_separator;
 
-    #     # cut
-    #     $mc->add_command(
-    #         -label       => $self->_data->{msg}{MENU_STR_CUT},
-    #         -underline   => 1,
-    #         -accelerator => "Ctrl+X",
-    #         -command     => sub { $self->eventGenerate("<Control-Key-x>"); }
-    #     );
+        # cut
+        $mc->add_command(
+            -label       => $self->_data->{msg}{MENU_STR_CUT},
+            -underline   => 1,
+            -accelerator => "Ctrl+X",
+            -command     => sub { $self->g_event_generate("<Control-Key-x>"); }
+        );
 
-    #     # copy
-    #     $mc->add_command(
-    #         -label       => $self->_data->{msg}{MENU_STR_COPY},
-    #         -underline   => 1,
-    #         -accelerator => "Ctrl+C",
-    #         -command     => sub { $self->eventGenerate("<Control-Key-c>"); }
-    #     );
+        # copy
+        $mc->add_command(
+            -label       => $self->_data->{msg}{MENU_STR_COPY},
+            -underline   => 1,
+            -accelerator => "Ctrl+C",
+            -command     => sub { $self->g_event_generate("<Control-Key-c>"); }
+        );
 
-    #     # paste
-    #     $mc->add_command(
-    #         -label       => $self->_data->{msg}{MENU_STR_PASTE},
-    #         -underline   => 1,
-    #         -accelerator => "Ctrl+V",
-    #         -command     => sub { $self->eventGenerate("<Control-Key-v>"); }
-    #     );
-    #     $mc->add_separator;
+        # paste
+        $mc->add_command(
+            -label       => $self->_data->{msg}{MENU_STR_PASTE},
+            -underline   => 1,
+            -accelerator => "Ctrl+V",
+            -command     => sub { $self->g_event_generate("<Control-Key-v>"); }
+        );
+        $mc->add_separator;
 
-    #     # select_all
-    #     $mc->add_command(
-    #         -label       => $self->_data->{msg}{MENU_STR_SELECT_ALL},
-    #         -underline   => 1,
-    #         -accelerator => "Ctrl+A",
-    #         -command     => sub { $self->eventGenerate("<Control-Key-a>"); }
-    #     );
-    # }
+        # select_all
+        $mc->add_command(
+            -label       => $self->_data->{msg}{MENU_STR_SELECT_ALL},
+            -underline   => 1,
+            -accelerator => "Ctrl+A",
+            -command     => sub { $self->g_event_generate("<Control-Key-a>"); }
+        );
+    }
 
     # Tool
     {
