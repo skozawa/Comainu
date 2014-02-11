@@ -60,7 +60,7 @@ sub initialize {
             open(my $fh, $msg_file) or die "Cannot open '$msg_file'";
             my $msg_str = join("", (<$fh>));
             close($fh);
-            $msg_str = Encode::decode("utf-8", $msg_str);
+            $msg_str = decode_utf8 $msg_str;
             eval "$msg_str";
             $self->_data->{msg} = $MSG;
         };
@@ -78,7 +78,6 @@ sub initialize {
 
     # icon
     if ( $self->_data->{"gif-file"} && -f $self->_data->{"gif-file"}) {
-        # $self->_data->{img} = $self->Photo( -format => "gif", -file => $self->_data->{"gif-file"});
         $self->_data->{img} = Tkx::image(
             "create", "photo",
             -format => "gif",
@@ -174,7 +173,6 @@ sub toggle_menubar {
         $manubar->_data->{flag} = 0;
     } else {
         $manubar->_data->{oc}->configure(-width => 8, -height => 40);
-        # XXX
         $manubar->_data->{bts}->g_pack(
             -side => "left", -padx => 5, -pady => 5, -fill => "x", -expand => "yes"
         );
@@ -193,7 +191,6 @@ sub toggle_toolbar {
         $toolbar->_data->{flag} = 0;
     } else {
         $toolbar->_data->{oc}->configure(-width => 8, -height => 40);
-        # XXX
         $toolbar->_data->{bts}->g_pack(
             -side => "left", -padx => 5, -pady => 5, -fill => "x", -expand => "yes");
         $toolbar->_data->{flag} = 1;
@@ -287,9 +284,7 @@ sub cmd_new {
 sub cmd_show_help {
     my $self = shift;
 
-    # if ($self->_data->{_help_window} && Tkx::tk__Exists($self->{"_help_window"})) {
     if ($self->_data->{_help_window}) {
-        # $self->_data->{_help_window}->{text}->focus();
         $self->_data->{_help_window}->g_wm_deiconify;
         return;
     }
@@ -299,7 +294,7 @@ sub cmd_show_help {
         open(my $fh, $file) or die "Cannot open '$file'.";
         $data = join("", (<$fh>));
         close($fh);
-        $data = Encode::decode("utf-8", $data);
+        $data = decode_utf8 $data;
         $data =~ s/\r\n/\n/sg;
     }
 
@@ -329,7 +324,6 @@ sub cmd_show_help {
     $top->_data->{bt} = $bt;
 
     $text->insert("1.0", $data);
-    # $text->SetCursor("1.0");
     $text->configure(-state=>"disabled");
     $text->g_bind("<Control-Key-f>", sub { $text->FindPopUp; });
     $text->g_bind("<Button>", sub { $text->g_focus; });
@@ -338,18 +332,10 @@ sub cmd_show_help {
     Tkx::update();
     $top->g_wm_deiconify;
     $self->_data->{_help_window} = $top;
-    # $self->_data->{_help_window}->_data->{text}->focus();
 }
 
 sub cmd_show_about {
     my $self = shift;
-
-    # if ($self->_data->{_about_window} && Tkx::tk__Exists($self->_data->{_about_window})) {
-    # if ($self->_data->{_about_window}) {
-    #     # $self->_data->{_about_window}->_data->{"bt"}->g_wm_focus;
-    #     $self->_data->{_about_window}->g_wm_deiconify;
-    #     return;
-    # }
 
     my ($sx, $sy, $ox, $oy) =
         ($self->g_wm_geometry() =~ /(\d+)x(\d+)\+(\d+)\+(\d+)/);
@@ -400,7 +386,6 @@ sub cmd_show_about {
     $bt->g_pack(-side => "bottom");
 
     $top->_data->{bt} = $bt;
-    # $top->_data->{bt}->focus;
     $self->_data->{_about_window} = $top;
     $top->g_bind("<Key-Escape>", sub { $top->_data->{bt}->invoke; });
     $top->g_wm_resizable(0, 0);
@@ -515,7 +500,6 @@ sub popup_configuration_dialogue {
     Tkx::update();
     $top->g_wm_deiconify;
     Tkx::update();
-    # $top->_data->{ok}->focus();
     $top->g_grab;
 }
 

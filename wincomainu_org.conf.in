@@ -19,7 +19,7 @@
     "comainu-bi-svm-model" => "train/BI_model",
     "comainu-mst-model" => "train/MST/@MODEL_NAME@.KC.model",
     "comainu-input-type" => "plain",
-    "comainu-output-type" => "midbnst",
+    "comainu-output-type" => "long",
     "comainu-model-type" => "svm",
     "comainu-tagger-type" => "mecab",
     "comainu-boundary-type" => "sentence",

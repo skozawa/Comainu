@@ -23,31 +23,31 @@ use RunCom;
 
 
 my $DEFAULT_VALUES = {
-    "debug"            => 0,
-    "perl"             => "perl",
-    "app-name"         => "WinComainu",
-    "app-version"      => '0.70',
-    "title"            => "",
-    "copyright"        => "",
-    "icon-file"        => "$Bin/../img/wincomainu.ico",
-    "gif-file"         => "$Bin/../img/wincomainu.gif",
-    "conf-file"        => "$Bin/../wincomainu.conf",
-    "conf-org-file"    => "$Bin/../wincomainu_org.conf",
-    "conf-geometry"    => "600x400",
-    "msg-file"         => "$Bin/../msg/ja.txt",
-    "help-file"        => "$Bin/../Readme.txt",
-    "default-dirname"  => "",
-    "in-pathname"      => "",
-    "in-dirname"       => "",
-    "in-filename"      => "",
-    "out-pathname"     => "",
-    "out-dirname"      => "",
-    "out-filename"     => "",
-    "comainu-input"    => "plain",
-    "comainu-output"   => "longbnst",
-    "comainu-model"    => "SVM",
-    "comainu-tagger"   => "mecab",
-    "comainu-boundary" => "sentence",
+    "debug"                 => 0,
+    "perl"                  => "perl",
+    "app-name"              => "WinComainu",
+    "app-version"           => '0.70',
+    "title"                 => "",
+    "copyright"             => "",
+    "icon-file"             => "$Bin/../img/wincomainu.ico",
+    "gif-file"              => "$Bin/../img/wincomainu.gif",
+    "conf-file"             => "$Bin/../wincomainu.conf",
+    "conf-org-file"         => "$Bin/../wincomainu_org.conf",
+    "conf-geometry"         => "600x400",
+    "msg-file"              => "$Bin/../msg/ja.txt",
+    "help-file"             => "$Bin/../Readme.txt",
+    "default-dirname"       => "",
+    "in-pathname"           => "",
+    "in-dirname"            => "",
+    "in-filename"           => "",
+    "out-pathname"          => "",
+    "out-dirname"           => "",
+    "out-filename"          => "",
+    "comainu-input-type"    => "plain",
+    "comainu-output-type"   => "long",
+    "comainu-model-type"    => "SVM",
+    "comainu-tagger-type"   => "mecab",
+    "comainu-boundary-type" => "sentence",
 };
 
 my $FONT_FAMILY_LIST = [];
@@ -125,17 +125,6 @@ sub initialize {
     $self->_data->{_com_worker} = $com_worker;
 
     $self->_set_app_path;
-
-    # my $dummy_text_undo = $self->TextUndo_patch(); # for rebinding
-    # # skip key binding on TextUndo_patch
-    # $self->g_bind("TextUndo_patch", "<Control-Key-o>", sub { return; });
-    # $self->g_bind("TextUndo_patch", "<Control-Key-s>", sub { return; });
-    # $self->g_bind("TextUndo_patch", "<Control-Key-q>", sub { return; });
-    # # rebind selectAll
-    # $self->g_bind("TextUndo_patch", "<Control-Key-a>", $self->bind("TextUndo_patch", "<Control-Key-slash>"));
-    # # rebind <<Undo>> and <<Redo>>
-    # $self->g_bind("TextUndo_patch", "<Control-Key-slash>", $self->bind("TextUndo_patch", "<<Undo>>"));
-    # $self->g_bind("TextUndo_patch", "<Control-Key-y>", $self->bind("TextUndo_patch", "<<Redo>>"));
 
     unless ( $self->_parent ) {
         $self->g_wm_deiconify;
@@ -555,21 +544,25 @@ sub make_mainframe {
         my $frame = $input_frame->new_frame;
         $frame->g_pack(-side => "top", -fill => "x");
 
+        # input
         my $label = $frame->new_label(-text => $self->_data->{msg}{STR_INPUT});
         $label->g_pack(-side => "left", -fill => "x", -anchor => "w");
 
+        # open button
         my $open_button = $frame->new_button(
             -text    => $self->_data->{msg}{BT_STR_OPEN},
             -command => sub { $self->cmd_open; }
         );
         $open_button->g_pack(-side => "left");
 
+        # file path
         my $entry = $frame->new_entry(
             -textvariable => \$self->_data->{"in-pathname"},
             -state        => "readonly"
         );
         $entry->g_pack(-side => "left", -fill => "x", -expand => "yes", -anchor => "w");
 
+        # checkbox for wrap
         my $wrap_button = $frame->new_checkbutton(
             -text     => $self->_data->{msg}{BT_STR_WRAP},
             -onvalue  => "word",
@@ -581,6 +574,7 @@ sub make_mainframe {
         );
         $wrap_button->g_pack(-side => "left");
 
+        # checkbox for readonly
         my $readonly_button = $frame->new_checkbutton(
             -text     => $self->_data->{msg}{BT_STR_READONLY},
             -onvalue  => "1",
@@ -594,6 +588,7 @@ sub make_mainframe {
         );
         $readonly_button->g_pack(-side => "left");
 
+        # checkbox for table display
         my $table_button = $frame->new_checkbutton(
             -text     => $self->_data->{msg}{BT_STR_TABLE_DISP},
             -onvalue  => "1",
@@ -611,6 +606,7 @@ sub make_mainframe {
         );
         $table_button->g_pack(-side => "left");
 
+        # scrool for input pane
         my $in_text = $input_frame->new_tkx_Scrolled(
             "text",
             -scrollbars => "se",
@@ -653,21 +649,25 @@ sub make_mainframe {
         my $frame = $output_frame->new_frame;
         $frame->g_pack(-side => "top", -fill => "x");
 
+        # output label
         my $label = $frame->new_label(-text => $self->_data->{msg}{STR_OUTPUT});
         $label->g_pack(-side => "left", -anchor => "w");
 
+        # save button
         my $save_button = $frame->new_button(
             -text    => $self->_data->{msg}{BT_STR_SAVE},
             -command => sub { $self->cmd_save_as; }
         );
         $save_button->g_pack(-side => "left");
 
+        # file path
         my $entry = $frame->new_entry(
             -textvariable => \$self->_data->{"out-pathname"},
             -state        => "readonly"
         );
         $entry->g_pack(-side => "left", -fill => "x", -expand => "yes", -anchor => "w");
 
+        # checkbox for wrap
         my $wrap_button = $frame->new_checkbutton(
             -text     => $self->_data->{msg}{BT_STR_WRAP},
             -onvalue  => "word",
@@ -679,6 +679,7 @@ sub make_mainframe {
         );
         $wrap_button->g_pack(-side => "left");
 
+        # checkbox for readonly
         my $readonly_button = $frame->new_checkbutton(
             -text     => $self->_data->{msg}{BT_STR_READONLY},
             -onvalue  => "1",
@@ -692,6 +693,7 @@ sub make_mainframe {
         );
         $readonly_button->g_pack(-side => "left");
 
+        # checkbox for table display
         my $table_button = $frame->new_checkbutton(
             -text     => $self->_data->{msg}{BT_STR_TABLE_DISP},
             -onvalue  => "1",
@@ -709,6 +711,7 @@ sub make_mainframe {
         );
         $table_button->g_pack(-side => "left");
 
+        # scrool for output frame
         my $out_text = $output_frame->new_tkx_Scrolled(
             "text",
             -scrollbars => "se",
@@ -771,6 +774,7 @@ sub bind_wheel {
 }
 
 
+# list for select box
 sub get_comainu_type_list {
     my ($self, $type) = @_;
 
@@ -788,6 +792,7 @@ sub get_comainu_type_list {
     return ["sentence", "word"] if $type eq "boundary-type";
 }
 
+# label list for select box
 sub get_comainu_type_name_list {
     my ($self, $type) = @_;
 
@@ -887,6 +892,7 @@ sub make_comainu_type_selector {
     return $combobox;
 }
 
+# limit output-type by intput-type
 sub check_comainu_limitation {
     my ($self, $type) = @_;
 
@@ -918,7 +924,7 @@ sub check_comainu_limitation {
 }
 
 
-
+# open file menu
 sub cmd_open {
     my ($self, $in_file) = @_;
 
@@ -964,7 +970,7 @@ sub cmd_open {
             my $data = join("", (<$fh>));
             close($fh);
             $data =~ s/\r\n/\n/sg;
-            $data = Encode::decode("utf-8", $data);
+            $data = decode_utf8 $data;
             $self->cmd_clear_input;
             if ( $app_conf->get("in-table-disp") ) {
                 $self->put_table(

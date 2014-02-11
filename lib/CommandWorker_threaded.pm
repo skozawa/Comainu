@@ -52,8 +52,7 @@ sub _execute_system {
 }
 
 sub system_nb {
-    my $self = shift;
-    my ($com) = @_;
+    my ($self, $com) = @_;
     $self->{"_com_queue"}->enqueue($com);
     $self->{"_com_queue"}->enqueue("");
     if ($self->{"debug"} > 0) {
