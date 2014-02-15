@@ -1498,7 +1498,7 @@ sub get_data_from_text {
     $data =~ s/^\n$//s;
 
     # merge text data
-    my @lines = split /\r?\n/, $self->_data->{$type . "_data"};
+    my @lines = split /\r?\n/, $self->_data->{$type . "_data"} // '';
     my $max_line_number = $self->_data->{"app-conf"}->get("max-display-line-number");
     if ( scalar @lines > $max_line_number ) {
         splice @lines, 0, $max_line_number;
@@ -1602,7 +1602,7 @@ sub get_data_from_table {
     my $data = join("\n", @$row_list);
 
     # merge text data
-    my @lines = split /\r?\n/, $self->_data->{$type . "_data"};
+    my @lines = split /\r?\n/, $self->_data->{$type . "_data"} // '';
     my $max_line_number = $self->_data->{"app-conf"}->get("max-display-line-number");
     if ( scalar @lines > $max_line_number ) {
         splice @lines, 0, $max_line_number;
