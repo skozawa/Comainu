@@ -535,7 +535,10 @@ sub make_pathname_entry {
             my $dirname_enc = $self->encode_pathname(
                 $pathname eq "" ? $self->_data->{"default-dirname"} : $pathname
             );
-            $dirname_enc = Tkx::tk___chooseDirectory(-initialdir => $dirname_enc);
+            $dirname_enc = Tkx::tk___chooseDirectory(
+                -initialdir => $dirname_enc,
+                -parent     => $e,
+            );
             my $dirname = $self->decode_pathname($dirname_enc);
             if (defined $dirname) {
                 $self->_data->{"default-dirname"} = $dirname;
@@ -545,10 +548,11 @@ sub make_pathname_entry {
             my $dirname = $self->_data->{"defautl-dirname"};
             $dirname = $$dirnamevariable if defined $dirnamevariable;
             my $filename = $pathname;
-            $pathname = $e->getOpenFile(
+            $pathname = Tkx::tk___getOpenFile(
                 -filetypes   => $filetypes,
                 -initialdir  => $dirname,
                 -initialfile => $filename,
+                -parent      => $e,
             );
             if ($pathname) {
                 $dirname  = File::Basename::dirname($pathname);
@@ -564,10 +568,11 @@ sub make_pathname_entry {
                 $dirname  = File::Basename::dirname($pathname);
                 $filename = File::Basename::basename($pathname);
             }
-            $new_pathname = $e->getOpenFile(
+            $new_pathname = Tkx::tk___getOpenFile(
                 -filetypes   => $filetypes,
                 -initialdir  => $dirname,
                 -initialfile => $filename,
+                -parent      => $e,
             );
         }
         if (defined $new_pathname) {
@@ -575,6 +580,7 @@ sub make_pathname_entry {
             $e->insert("end", $new_pathname);
             $e->icursor("end");
         }
+        $e->validate;
     };
 
     my $e;
