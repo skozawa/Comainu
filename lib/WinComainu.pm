@@ -1494,57 +1494,59 @@ sub put_table {
     my $table = $self->_data->{$type . "_table"};
     my $sep = ($str =~ /\t/) ? "\t" : " ";
     $table->_data->{__sep} = $sep;
-    my $or = 1;
-    my $oc = 1;
+    my $or = 0;
+    my $oc = 0;
+    my $has_row_number = 0;
+    my $has_col_number = 0;
 
     $str =~ s/\n$//s;
     my $row_list = [split(/\n/, $str, -1)];
-    my $rows = scalar @$row_list;
-    my $columns = 0;
-    for (my $r = 0; $r < $rows; ++$r) {
+    my $row_count = scalar @$row_list;
+    my $column_count = 0;
+    for (my $r = 0; $r < $row_count; ++$r) {
         my $line = $row_list->[$r];
         my $column_list = [split(/$sep/, $line, -1)];
-        $columns = scalar @$column_list if $columns < scalar @$column_list;
+        $column_count = scalar @$column_list if $column_count < scalar @$column_list;
         $row_list->[$r] = $column_list;
     }
 
     my $bg = $table->cget(-background);
     my $fg = $table->cget(-foreground);
     $table->configure(
-        -rows => $rows + $or,
-        -cols => $columns + $oc,
+        -rows => $row_count + $or + $has_row_number,
+        -cols => $column_count + $oc + $has_col_number,
         -roworigin => $or,
         -colorigin => $oc,
     );
 
     my $variables;
-    if ($or > 0) {
-        for (my $c = 0; $c < $columns; ++$c) {
+    if ($has_col_number) {
+        for (my $c = 0; $c < $column_count; $c++) {
             my $index = sprintf('%d,%d', 0, $c + 1);
             my $cell = $table->get($index) || ($c + 1);
             $variables->{$index} = $cell;
         }
     }
+    if ($has_row_number) {
+        for (my $r = 0; $r <= $row_count; $r++) {
+            my $index = sprintf('%d,%d', $r + 1, 0);
+            my $cell = $table->get($index) || ($r + 1);
+            $variables->{$index} = $cell;
+        }
+    }
 
-    for (my $r = 0; $r < $rows; ++$r) {
-        for (my $c = 0; $c < $columns; ++$c) {
-            if ($oc > 0) {
-                my $index = sprintf('%d,%d', $r + 1, 0);
-                my $cell = $table->get($index) || ($r + 1);
-                $variables->{$index} = $cell;
-            }
+    for (my $r = 0; $r < $row_count; $r++) {
+        for (my $c = 0; $c < $column_count; $c++) {
             my $item = $row_list->[$r][$c] // '';
             my $w = length($item) + 4;
             $w = 20 if $w > 20;
 
-            my $index = sprintf('%d,%d', $r + $or, $c + $oc);
+            my $index = sprintf('%d,%d', $r + $or + $has_row_number, $c + $oc + $has_col_number);
             my $cell = $table->get($index) || $item;
             $variables->{$index} = $cell;
         }
     }
     $table->configure(-variable => $variables);
-
-    return;
 }
 
 sub get_data_from_table {
@@ -1552,16 +1554,18 @@ sub get_data_from_table {
 
     my $table = $self->_data->{$type . "_table"};
     my $sep = $table->_data->{__sep};
-    my $or = 1;
-    my $oc = 1;
-    my $rows = $table->cget(-rows) - $or;
-    my $columns = $table->cget(-cols) - $oc;
+    my $or = 0;
+    my $oc = 0;
+    my $has_row_number = 0;
+    my $has_col_number = 0;
+    my $rows = $table->cget(-rows) - $or - $has_row_number;
+    my $columns = $table->cget(-cols) - $oc - $has_col_number;
 
     my $row_list = [];
-    for (my $r = 0; $r < $rows; ++$r) {
+    for (my $r = 0; $r < $rows; $r++) {
         my $column_list = [];
-        for (my $c = 0; $c < $columns; ++$c) {
-            my $cell = $table->get(($r + $or) . ',' . ($c + $oc)) or next;
+        for (my $c = 0; $c < $columns; $c++) {
+            my $cell = $table->get(($r + $or + $has_row_number) . ',' . ($c + $oc + $has_col_number));
             push @$column_list, $cell;
         }
         push @$row_list, join($sep, @$column_list);
