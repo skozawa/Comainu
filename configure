@@ -44,7 +44,6 @@ OSTYPE
 MINGW_HOME
 MSYS_HOME
 YAMCHA_DIR
-CHASEN_DIR
 MECAB_DIR
 MECAB_DIC_DIR
 UNIDIC_DB
@@ -69,7 +68,6 @@ OSTYPE_DEFAULT=$(uname | tr 'A-Z' 'a-z' | sed -e 's/_.*//;')
 MINGW_HOME_DEFAULT=$(if test -d "c:/MinGW"; then echo "c:/MinGW"; fi)
 MSYS_HOME_DEFAULT=$(if test -d "c:/msys/1.0"; then echo "c:/msys/1.0"; fi)
 YAMCHA_DIR_DEFAULT="/usr/local/bin"
-CHASEN_DIR_DEFAULT="/usr/local/bin"
 MECAB_DIR_DEFAULT="/usr/local/bin"
 MECAB_DIC_DIR_DEFAULT="/usr/local/lib/mecab/dic"
 UNIDIC_DB_DEFAULT="/usr/local/unidic2/share/unidic.db"
@@ -95,7 +93,6 @@ OSTYPE_HELP="specify the OS type"
 MINGW_HOME_HELP="specify the MinGW home"
 MSYS_HOME_HELP="specify the MSYS home"
 YAMCHA_DIR_HELP="specify the YAMCHA_DIR"
-CHASEN_DIR_HELP="specify the CHASEN_DIR"
 MECAB_DIR_HELP="specify the MECAB_DIR"
 MECAB_DIC_DIR_HELP="specify the MECAB_DIC_DIR"
 UNIDIC_DB_HELP="specify the UNIDIC_DB"

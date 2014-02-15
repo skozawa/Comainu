@@ -11,16 +11,10 @@ Comainu実行環境
   設定し直すこともできます。
 
 2. 必要な外部ツールと入手先
-・UniDic
-
-  形態素解析辞書UniDic
-  http://www.tokuteicorpus.jp/dist/
-  UniDic-1.3.12
-
 ・UniDic2
 
   形態素解析辞書UniDic2
-  http://www.tokuteicorpus.jp/dist/
+  http://sourceforge.jp/projects/unidic/
   UniDic-2.1.0
 
 ・MeCab
@@ -52,4 +46,4 @@ Comainu実行環境
   Java 1.6.0
   http://www.java.com
 
-Copyright (C) 2010-2011 The UniDic Consortium. All rights reserved.
+Copyright (C) 2010-2014 The UniDic Consortium. All rights reserved.
