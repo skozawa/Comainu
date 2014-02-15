@@ -48,6 +48,7 @@ my $DEFAULT_VALUES = {
     "comainu-model-type"    => "SVM",
     "comainu-tagger-type"   => "mecab",
     "comainu-boundary-type" => "sentence",
+    "max-display-line-number"       => 1000,
 };
 
 my $FONT_FAMILY_LIST = [];
@@ -102,6 +103,7 @@ my $CONFIGURATION_VIEW = [
             ["font-family", "string", {"-list" => $FONT_FAMILY_LIST}],
             ["font-size", "string", {"-list" => ["6", "9", "10", "12", "14", "18"]}],
             ["font-style", "string", {"-list" => ["normal", "bold", "roman", "italic"]}],
+            ["max-display-line-number", "string"],
         ],
     },
 ];
@@ -1467,40 +1469,66 @@ sub rm_fr {
 
 
 sub put_text {
-    my ($self, $type, $str) = @_;
+    my ($self, $type, $data) = @_;
 
     my $text = $self->_data->{$type . "_text"};
+
+    # limit display text
+    $self->_data->{$type . "_data"} = $data;
+    my @lines = split /\r?\n/, $data;
+    my $max_line_number = $self->_data->{"app-conf"}->get("max-display-line-number");
+    my $display_data = join "\n", (splice @lines, 0, $max_line_number);
+    undef @lines;
+
     my $state = $text->cget(-state);
     $text->configure(-state => "normal");
     $text->delete("1.0", "end");
-    $text->insert("end", $str);
+    $text->insert("end", $display_data);
     $text->configure(-state => $state);
-    return;
+    undef $display_data;
 }
 
 sub get_data_from_text {
     my ($self, $type) = @_;
 
     my $text = $self->_data->{$type . "_text"};
-    my $str = $text->get("1.0", "end");
-    $str =~ s/([^\n])\n$/$1/s;
-    $str =~ s/^\n$//s;
-    return $str;
+
+    my $data = $text->get("1.0", "end");
+    $data =~ s/([^\n])\n$/$1/s;
+    $data =~ s/^\n$//s;
+
+    # merge text data
+    my @lines = split /\r?\n/, $self->_data->{$type . "_data"};
+    my $max_line_number = $self->_data->{"app-conf"}->get("max-display-line-number");
+    if ( scalar @lines > $max_line_number ) {
+        splice @lines, 0, $max_line_number;
+        $data .= "\n" . join "\n", @lines;
+    }
+    undef @lines;
+
+    $self->_data->{$type . "_data"} = $data;
+    return $data;
 }
 
 sub put_table {
-    my ($self, $type, $str) = @_;
+    my ($self, $type, $data) = @_;
 
     my $table = $self->_data->{$type . "_table"};
-    my $sep = ($str =~ /\t/) ? "\t" : " ";
+    my $sep = ($data =~ /\t/) ? "\t" : " ";
     $table->_data->{__sep} = $sep;
     my $or = 0;
     my $oc = 0;
     my $has_row_number = 0;
     my $has_col_number = 0;
 
-    $str =~ s/\n$//s;
-    my $row_list = [split(/\n/, $str, -1)];
+    # limit display data
+    $data =~ s/\n$//s;
+    $self->_data->{$type . "_data"} = $data;
+    my @lines = split /\r?\n/, $data;
+    my $max_line_number = $self->_data->{"app-conf"}->get("max-display-line-number");
+    my $row_list = [splice @lines, 0, $max_line_number];
+    undef @lines;
+
     my $row_count = scalar @$row_list;
     my $column_count = 0;
     for (my $r = 0; $r < $row_count; ++$r) {
@@ -1566,14 +1594,25 @@ sub get_data_from_table {
         my $column_list = [];
         for (my $c = 0; $c < $columns; $c++) {
             my $cell = $table->get(($r + $or + $has_row_number) . ',' . ($c + $oc + $has_col_number));
+            next if ! $cell && $sep eq ' ';
             push @$column_list, $cell;
         }
         push @$row_list, join($sep, @$column_list);
     }
-    my $str = join("\n", @$row_list);
-    $str .= "\n" if $str ne "";
+    my $data = join("\n", @$row_list);
 
-    return $str;
+    # merge text data
+    my @lines = split /\r?\n/, $self->_data->{$type . "_data"};
+    my $max_line_number = $self->_data->{"app-conf"}->get("max-display-line-number");
+    if ( scalar @lines > $max_line_number ) {
+        splice @lines, 0, $max_line_number;
+        $data .= "\n" . join "\n", @lines;
+    }
+    undef @lines;
+
+    $data .= "\n" if $data ne "";
+    $self->_data->{$type . "_data"} = $data;
+    return $data;
 }
 
 sub change_table_display {

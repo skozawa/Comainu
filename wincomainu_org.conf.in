@@ -37,6 +37,7 @@
     "out-is-wrap" => "none",
     "out-is-readonly" => "1",
     "out-is-table-display" => "1",
+    "max-display-line-number" => 1000,
 };
 
 #################### end of file ####################
