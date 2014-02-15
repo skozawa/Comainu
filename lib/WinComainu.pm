@@ -567,9 +567,9 @@ sub make_mainframe {
             -text     => $self->_data->{msg}{BT_STR_WRAP},
             -onvalue  => "word",
             -offvalue => "none",
-            -variable => $app_conf->get_ref("in-wrap"),
+            -variable => $app_conf->get_ref("in-is-wrap"),
             -command  => sub {
-                $self->_data->{in_text}->configure(-wrap => $app_conf->get("in-wrap"));
+                $self->_data->{in_text}->configure(-wrap => $app_conf->get("in-is-wrap"));
             }
         );
         $wrap_button->g_pack(-side => "left");
@@ -579,11 +579,11 @@ sub make_mainframe {
             -text     => $self->_data->{msg}{BT_STR_READONLY},
             -onvalue  => "1",
             -offvalue => "0",
-            -variable => $app_conf->get_ref("in-readonly"),
+            -variable => $app_conf->get_ref("in-is-readonly"),
             -command  => sub {
-                my $state = $app_conf->get("in-readonly") ? "disabled" : "normal";
+                my $state = $app_conf->get("in-is-readonly") ? "disabled" : "normal";
                 $self->_data->{in_text}->configure(-state => $state);
-                $self->change_state_table($self->_data->{in_table}, $state);
+                $self->_data->{in_table}->configure(-state => $state);
             }
         );
         $readonly_button->g_pack(-side => "left");
@@ -593,15 +593,9 @@ sub make_mainframe {
             -text     => $self->_data->{msg}{BT_STR_TABLE_DISP},
             -onvalue  => "1",
             -offvalue => "0",
-            -variable => $app_conf->get_ref("in-table-disp"),
+            -variable => $app_conf->get_ref("in-is-table-display"),
             -command  => sub {
-                my $in_text  = $self->_data->{in_text};
-                my $in_table = $self->_data->{in_table};
-                my $table_disp = $app_conf->get("in-table-disp");
-                my $readonly = $app_conf->get("in-readonly");
-                $self->change_table_disp(
-                    $in_text, $in_table, $table_disp, $readonly
-                );
+                $self->change_table_display("in");
             }
         );
         $table_button->g_pack(-side => "left");
@@ -612,7 +606,7 @@ sub make_mainframe {
             -scrollbars => "se",
             -height     => 10,
             -bg         => "#ffffff",
-            -wrap       => $app_conf->get("in-wrap"),
+            -wrap       => $app_conf->get("in-is-wrap"),
         );
         my $in_table = $input_frame->new_tkx_Scrolled(
             "table",
@@ -625,17 +619,18 @@ sub make_mainframe {
             -multiline => 0,
         );
 
-        my $state = $app_conf->get("in-readonly") ? "disabled" : "normal";
-        $in_text->configure(-state=>$state);
+        my $state = $app_conf->get("in-is-readonly") ? "disabled" : "normal";
+        $in_text->configure(-state => $state);
         $in_text->g_bind("<Button>", sub { $in_text->g_focus; });
         $in_text->g_bind("<Control-Key-f>", sub { $in_text->FindPopUp; });
         $in_text->g_bind("<Control-Key-h>", sub { $in_text->FindAndReplacePopUp; });
+        $in_table->configure(-state => $state);
         $self->_data->{in_text} = $in_text;
         $self->_data->{in_table} = $in_table;
 
         $self->bind_wheel($in_table, $in_table);
 
-        if($app_conf->get("in-table-disp")) {
+        if($app_conf->get("in-is-table-display")) {
             $in_table->g_pack(-side => "top", -fill => "both", -expand => "yes");
         } else {
             $in_text->g_pack(-side => "top", -fill => "both", -expand => "yes");
@@ -672,9 +667,9 @@ sub make_mainframe {
             -text     => $self->_data->{msg}{BT_STR_WRAP},
             -onvalue  => "word",
             -offvalue => "none",
-            -variable => $app_conf->get_ref("out-wrap"),
+            -variable => $app_conf->get_ref("out-is-wrap"),
             -command  =>sub {
-                $self->_data->{out_text}->configure(-wrap => $app_conf->get("out-wrap"));
+                $self->_data->{out_text}->configure(-wrap => $app_conf->get("out-is-wrap"));
             }
         );
         $wrap_button->g_pack(-side => "left");
@@ -684,11 +679,11 @@ sub make_mainframe {
             -text     => $self->_data->{msg}{BT_STR_READONLY},
             -onvalue  => "1",
             -offvalue => "0",
-            -variable => $app_conf->get_ref("out-readonly"),
+            -variable => $app_conf->get_ref("out-is-readonly"),
             -command  => sub {
-                my $state = $app_conf->get("out-readonly") ? "disabled" : "normal";
+                my $state = $app_conf->get("out-is-readonly") ? "disabled" : "normal";
                 $self->_data->{out_text}->configure(-state => $state);
-                $self->change_state_table($self->_data->{out_table}, $state);
+                $self->_data->{out_table}->configure(-state => $state);
             }
         );
         $readonly_button->g_pack(-side => "left");
@@ -698,15 +693,9 @@ sub make_mainframe {
             -text     => $self->_data->{msg}{BT_STR_TABLE_DISP},
             -onvalue  => "1",
             -offvalue => "0",
-            -variable => $app_conf->get_ref("out-table-disp"),
+            -variable => $app_conf->get_ref("out-is-table-display"),
             -command  => sub {
-                my $out_text  = $self->_data->{out_text};
-                my $out_table = $self->_data->{out_table};
-                my $table_disp = $app_conf->get("out-table-disp");
-                my $readonly = $app_conf->get("out-readonly");
-                $self->change_table_disp(
-                    $out_text, $out_table, $table_disp, $readonly
-                );
+                $self->change_table_display("out");
             }
         );
         $table_button->g_pack(-side => "left");
@@ -717,7 +706,7 @@ sub make_mainframe {
             -scrollbars => "se",
             -height     => 10,
             -bg         => "#ffffff",
-            -wrap       => $app_conf->get("out-wrap")
+            -wrap       => $app_conf->get("out-is-wrap")
         );
         my $out_table = $output_frame->new_tkx_Scrolled(
             'table',
@@ -730,17 +719,18 @@ sub make_mainframe {
             -multiline => 0,
         );
 
-        my $state = $app_conf->get("out-readonly") ? "disabled" : "normal";
-        $out_text->configure(-state=>$state);
+        my $state = $app_conf->get("out-is-readonly") ? "disabled" : "normal";
+        $out_text->configure(-state => $state);
         $out_text->g_bind("<Button>", sub { $out_text->g_focus; });
         $out_text->g_bind("<Control-Key-f>", sub { $out_text->FindPopUp; });
         $out_text->g_bind("<Control-Key-h>", sub { $out_text->FindAndReplacePopUp; });
+        $out_table->configure(-state => $state);
         $self->_data->{out_text} = $out_text;
         $self->_data->{out_table} = $out_table;
 
         $self->bind_wheel($out_table, $out_table);
 
-        if ($app_conf->get("out-table-disp")) {
+        if ($app_conf->get("out-is-table-display")) {
             $out_table->g_pack(-side => "top", -fill => "both", -expand => "yes");
         } else {
             $out_text->g_pack(-side => "top", -fill => "both", -expand => "yes");
@@ -972,13 +962,10 @@ sub cmd_open {
             $data =~ s/\r\n/\n/sg;
             $data = decode_utf8 $data;
             $self->cmd_clear_input;
-            if ( $app_conf->get("in-table-disp") ) {
-                $self->put_table(
-                    $self->_data->{"in_table"}, $data,
-                    $app_conf->get("in-readonly")
-                );
+            if ( $app_conf->get("in-is-table-display") ) {
+                $self->put_table("in", $data);
             } else {
-                $self->put_text($self->_data->{"in_text"}, $data);
+                $self->put_text("in", $data);
             }
             $self->_data->{"in-pathname"} = $pathname;
         }
@@ -1001,9 +988,8 @@ sub cmd_save_as {
     my $in_filename = $app_conf->get("in-filename");
 
     my $pathname;
-    my $out_data = $app_conf->get("out-table-disp") ?
-        $self->get_table($self->_data->{out_table}) :
-        $self->get_text($self->_data->{out_text});
+    my $out_data = $app_conf->get("out-is-table-display") ?
+        $self->get_data_from_table('out') : $self->get_data_from_text('out');
 
     if (defined $out_file && $out_file ne "") {
         $pathname = $out_file;
@@ -1073,30 +1059,24 @@ sub cmd_analysis {
     my ($self, $cont_flag, $progress_func) = @_;
     my $app_conf = $self->_data->{"app-conf"};
 
-    my $in_table_disp = $app_conf->get("in-table-disp");
-    my $in_data = $in_table_disp ?
-        $self->get_table($self->_data->{in_table}) :
-        $self->get_text($self->_data->{in_text});
+    my $in_is_table_display = $app_conf->get("in-is-table-display");
+    my $in_data = $in_is_table_display ?
+        $self->get_data_from_table('in') : $self->get_data_from_text('in');
 
     if ($in_data !~ /^\s*$/s) {
-        if ($in_table_disp) {
-            $self->put_table(
-                $self->_data->{out_table}, "", $app_conf->get("out-readonly")
-            );
+        if ($in_is_table_display) {
+            $self->put_table("out", "");
         } else {
-            $self->put_text($self->_data->{out_text}, "");
+            $self->put_text("out", "");
         }
         $self->enable_analysis_buttons(0);
 
         my $res_data = $self->execute_analysis_data($in_data, $progress_func);
 
-        my $out_table_disp = $app_conf->get("out-table-disp");
-        if ($out_table_disp) {
-            $self->put_table(
-                $self->_data->{out_table}, $res_data, $app_conf->get("out-readonly")
-            );
+        if ( $app_conf->get("out-is-table-display") ) {
+            $self->put_table("out", $res_data);
         } else {
-            $self->put_text($self->_data->{out_text}, $res_data);
+            $self->put_text("out", $res_data);
         }
         $self->enable_analysis_buttons(1);
     } elsif (!$cont_flag) {
@@ -1437,23 +1417,17 @@ sub cmd_clear_input {
     my $self = shift;
 
     my $app_conf = $self->_data->{"app-conf"};
-    if ( $app_conf->get("in-table-disp") ) {
-        $self->put_table(
-            $self->_data->{"in_table"}, "",
-            $app_conf->get("in-readonly")
-        );
+    if ( $app_conf->get("in-is-table-display") ) {
+        $self->put_table("in", "");
     } else {
-        $self->put_text($self->_data->{"in_text"}, "");
+        $self->put_text("in", "");
     }
     $self->_data->{"in-pathname"} = "";
 
-    if ($app_conf->get("out-table-disp")) {
-        $self->put_table(
-            $self->_data->{"out_table"}, "",
-            $app_conf->get("out-readonly")
-        );
+    if ($app_conf->get("out-is-table-display")) {
+        $self->put_table("out", "");
     } else {
-        $self->put_text($self->_data->{"out_text"}, "");
+        $self->put_text("text", "");
     }
     $self->_data->{"out-pathname"} = "";
 }
@@ -1493,8 +1467,9 @@ sub rm_fr {
 
 
 sub put_text {
-    my ($self, $text, $str) = @_;
+    my ($self, $type, $str) = @_;
 
+    my $text = $self->_data->{$type . "_text"};
     my $state = $text->cget(-state);
     $text->configure(-state => "normal");
     $text->delete("1.0", "end");
@@ -1503,9 +1478,10 @@ sub put_text {
     return;
 }
 
-sub get_text {
-    my ($self, $text) = @_;
+sub get_data_from_text {
+    my ($self, $type) = @_;
 
+    my $text = $self->_data->{$type . "_text"};
     my $str = $text->get("1.0", "end");
     $str =~ s/([^\n])\n$/$1/s;
     $str =~ s/^\n$//s;
@@ -1513,13 +1489,13 @@ sub get_text {
 }
 
 sub put_table {
-    my ($self, $table, $str, $readonly) = @_;
+    my ($self, $type, $str) = @_;
 
+    my $table = $self->_data->{$type . "_table"};
     my $sep = ($str =~ /\t/) ? "\t" : " ";
     $table->_data->{__sep} = $sep;
     my $or = 1;
     my $oc = 1;
-    my $state = $readonly ? "disabled" : "normal";
 
     $str =~ s/\n$//s;
     my $row_list = [split(/\n/, $str, -1)];
@@ -1571,9 +1547,10 @@ sub put_table {
     return;
 }
 
-sub get_table {
-    my ($self, $table) = @_;
+sub get_data_from_table {
+    my ($self, $type) = @_;
 
+    my $table = $self->_data->{$type . "_table"};
     my $sep = $table->_data->{__sep};
     my $or = 1;
     my $oc = 1;
@@ -1595,29 +1572,26 @@ sub get_table {
     return $str;
 }
 
-sub change_state_table {
-    my ($self, $table, $state) = @_;
+sub change_table_display {
+    my ($self, $type) = @_;
 
-    $table->configure(-state => $state eq "disabled" ? "disabled" : "normal");
-}
+    my $app_conf = $self->_data->{"app-conf"};
+    my $is_table_display = $app_conf->get($type . "-is-table-display");
+    my $text = $self->_data->{$type . "_text"};
+    my $table = $self->_data->{$type . "_table"};
 
-sub change_table_disp {
-    my ($self, $text, $table, $table_disp, $readonly) = @_;
-
-    my $f = $table;
-    my $p = $text;
-    if ($table_disp) {
-        $f = $text;
-        $p = $table;
-        my $str = $self->get_text($text);
+    if ( $is_table_display ) {
+        my $data = $self->get_data_from_text($type);
         $table->clear('all');
-        $self->put_table($table, $str, $readonly);
+        $self->put_table($type, $data);
+        Tkx::pack('forget', $text);
+        $table->g_pack(-side => "top", -fill => "both", -expand => "yes");
     } else {
-        my $str = $self->get_table($table);
-        $self->put_text($text, $str);
+        my $data = $self->get_data_from_table($type);
+        $self->put_text($type, $data);
+        Tkx::pack('forget', $table);
+        $text->g_pack(-side => "top", -fill => "both", -expand => "yes");
     }
-    Tkx::pack('forget', $f);
-    $p->g_pack(-side => "top", -fill => "both", -expand => "yes");
 }
 
 

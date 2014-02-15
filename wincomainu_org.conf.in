@@ -31,12 +31,12 @@
     "crf-dir" => "@CRF_DIR@",
     "java" => "@JAVA@",
     "mstparser-dir" => "@MSTPARSER_DIR@",
-    "in-wrap" => "none",
-    "in-readonly" => "0",
-    "in-table-disp" => "0",
-    "out-wrap" => "none",
-    "out-readonly" => "1",
-    "out-table-disp" => "1",
+    "in-is-wrap" => "none",
+    "in-is-readonly" => "0",
+    "in-is-table-display" => "0",
+    "out-is-wrap" => "none",
+    "out-is-readonly" => "1",
+    "out-is-table-display" => "1",
 };
 
 #################### end of file ####################
