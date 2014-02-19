@@ -1,135 +1,135 @@
-五段-ガ行	K1000	verb
-五段-カ行-一般	K1001	verb
-五段-カ行-イク	K1002	verb
-五段-カ行-ユク	K1003	verb
-五段-サ行	K1004	verb
-五段-タ行	K1005	verb
-五段-ナ行	K1006	verb
-五段-バ行	K1007	verb
-五段-マ行	K1008	verb
-五段-ラ行	K1009	verb
-# 五段-ラ行-一般	K1009	verb
-# 五段-ラ行-アル	K1010	verb
-五段-ワア行-一般	K1011	verb
-五段-ワア行-イウ	K1012	verb
-五段-ワア行-ャウ+一般	K1013	verb
-五段-カ行	K1014	verb
-五段-ワア行	K1015	verb
-上一段-ア行	K1020	verb
-上一段-カ行	K1021	verb
-上一段-ガ行	K1022	verb
-上一段-ザ行	K1023	verb
-上一段-タ行	K1024	verb
-上一段-ナ行	K1025	verb
-上一段-ハ行	K1026	verb
-上一段-バ行	K1027	verb
-上一段-マ行	K1028	verb
-上一段-ラ行	K1029	verb
-下一段-ア行	K1030	verb
-下一段-カ行	K1031	verb
-下一段-ガ行	K1032	verb
-下一段-ザ行	K1033	verb
-下一段-サ行	K1034	verb
-下一段-タ行	K1035	verb
-下一段-ダ行	K1036	verb
-下一段-ナ行	K1037	verb
-下一段-ハ行	K1038	verb
-下一段-バ行	K1039	verb
-下一段-マ行	K1040	verb
-下一段-ラ行-一般	K1041	verb
-下一段-ラ行-呉レル	K1042	verb
-下一段-ラ行	K1043	verb
-カ行変格	K1050	verb
-サ行変格	K1051	verb
-ザ行変格	K1052	verb
-文語四段-カ行	K1060	verb
-文語四段-ガ行	K1061	verb
-文語四段-サ行	K1062	verb
-文語四段-タ行	K1063	verb
-文語四段-バ行	K1064	verb
-文語四段-ハ行	K1065	verb
-文語四段-ハ行-イウ	K1066	verb
-文語四段-マ行	K1067	verb
-文語四段-ラ行	K1068	verb
-文語上二段-カ行	K1070	verb
-文語上二段-ガ行	K1071	verb
-文語上二段-タ行	K1072	verb
-文語上二段-ダ行	K1073	verb
-文語上二段-ハ行	K1074	verb
-文語上二段-バ行	K1075	verb
-文語上二段-マ行	K1076	verb
-文語上二段-ヤ行	K1077	verb
-文語上二段-ラ行	K1078	verb
-文語下二段-ア行	K1080	verb
-文語下二段-カ行	K1081	verb
-文語下二段-ガ行	K1082	verb
-文語下二段-サ行	K1083	verb
-文語下二段-タ行	K1084	verb
-文語下二段-ダ行	K1085	verb
-文語下二段-ナ行	K1086	verb
-文語下二段-ハ行	K1087	verb
-文語下二段-バ行	K1088	verb
-文語下二段-マ行	K1089	verb
-文語下二段-ヤ行	K1090	verb
-文語下二段-ラ行	K1091	verb
-文語下二段-ワ行	K1092	verb
-文語上一段-カ行	K1100	verb
-文語上一段-ナ行	K1101	verb
-文語上一段-ハ行	K1102	verb
-文語上一段-マ行	K1103	verb
-文語上一段-ヤ行	K1104	verb
-文語上一段-ワ行	K1105	verb
-文語下一段-カ行	K1110	verb
-文語カ行変格	K1120	verb
-文語サ行変格	K1121	verb
-文語ザ行変格	K1122	verb
-文語ナ行変格	K1123	verb
-文語ラ行変格	K1124	verb
-形容詞	K1130	adj
-文語形容詞-ク	K1140	adj
-文語形容詞-シク	K1141	adj
-文語形容詞-多シ	K1142	adj
-助動詞-ジャ	K1150
-助動詞-タ	K1151
-助動詞-タイ	K1152
-助動詞-ダ	K1153
-助動詞-デス	K1154
-助動詞-ナイ	K1155
-助動詞-ヌ	K1156
-助動詞-ヘン	K1157
-助動詞-マス	K1158
-助動詞-ヤ	K1159
-助動詞-ヤス	K1160
-助動詞-ラシイ	K1161
-助動詞-レル	K1162
-助動詞-ナンダ	K1163
-助動詞-マイ	K1164
-助動詞-ドス	K1165
-文語助動詞-キ	K1170
-文語助動詞-ケム	K1171
-文語助動詞-ゴトシ	K1173
-文語助動詞-ザマス	K1174
-文語助動詞-ザンス	K1175
-文語助動詞-ズ	K1176
-文語助動詞-タリ-完了	K1177
-文語助動詞-タリ-断定	K1178
-文語助動詞-ツ	K1179
-文語助動詞-テフ	K1180
-文語助動詞-ナリ-伝聞	K1181
-文語助動詞-ナリ-断定	K1182
-文語助動詞-ヌ	K1183
-文語助動詞-ベシ	K1184
-文語助動詞-マシ	K1185
-文語助動詞-マジ	K1186
-文語助動詞-ム	K1187
-文語助動詞-ラシ	K1188
-文語助動詞-ラム	K1189
-文語助動詞-リ	K1190
-文語助動詞-ンス	K1191
-文語助動詞-ケリ	K1192
-文語助動詞-ジ	K1193
-文語助動詞-コス	K1194
-文語助動詞-ムズ	K1195
-文語助動詞-メリ	K1196
-無変形	K1200	verb
-*	K1999
+五段-ガ行	CTYPE_000	verb
+五段-カ行-一般	CTYPE_001	verb
+五段-カ行-イク	CTYPE_002	verb
+五段-カ行-ユク	CTYPE_003	verb
+五段-サ行	CTYPE_004	verb
+五段-タ行	CTYPE_005	verb
+五段-ナ行	CTYPE_006	verb
+五段-バ行	CTYPE_007	verb
+五段-マ行	CTYPE_008	verb
+五段-ラ行	CTYPE_009	verb
+# 五段-ラ行-一般	CTYPE_009	verb
+# 五段-ラ行-アル	CTYPE_010	verb
+五段-ワア行-一般	CTYPE_011	verb
+五段-ワア行-イウ	CTYPE_012	verb
+五段-ワア行-ャウ+一般	CTYPE_013	verb
+五段-カ行	CTYPE_014	verb
+五段-ワア行	CTYPE_015	verb
+上一段-ア行	CTYPE_020	verb
+上一段-カ行	CTYPE_021	verb
+上一段-ガ行	CTYPE_022	verb
+上一段-ザ行	CTYPE_023	verb
+上一段-タ行	CTYPE_024	verb
+上一段-ナ行	CTYPE_025	verb
+上一段-ハ行	CTYPE_026	verb
+上一段-バ行	CTYPE_027	verb
+上一段-マ行	CTYPE_028	verb
+上一段-ラ行	CTYPE_029	verb
+下一段-ア行	CTYPE_030	verb
+下一段-カ行	CTYPE_031	verb
+下一段-ガ行	CTYPE_032	verb
+下一段-ザ行	CTYPE_033	verb
+下一段-サ行	CTYPE_034	verb
+下一段-タ行	CTYPE_035	verb
+下一段-ダ行	CTYPE_036	verb
+下一段-ナ行	CTYPE_037	verb
+下一段-ハ行	CTYPE_038	verb
+下一段-バ行	CTYPE_039	verb
+下一段-マ行	CTYPE_040	verb
+下一段-ラ行-一般	CTYPE_041	verb
+下一段-ラ行-呉レル	CTYPE_042	verb
+下一段-ラ行	CTYPE_043	verb
+カ行変格	CTYPE_050	verb
+サ行変格	CTYPE_051	verb
+ザ行変格	CTYPE_052	verb
+文語四段-カ行	CTYPE_060	verb
+文語四段-ガ行	CTYPE_061	verb
+文語四段-サ行	CTYPE_062	verb
+文語四段-タ行	CTYPE_063	verb
+文語四段-バ行	CTYPE_064	verb
+文語四段-ハ行	CTYPE_065	verb
+文語四段-ハ行-イウ	CTYPE_066	verb
+文語四段-マ行	CTYPE_067	verb
+文語四段-ラ行	CTYPE_068	verb
+文語上二段-カ行	CTYPE_070	verb
+文語上二段-ガ行	CTYPE_071	verb
+文語上二段-タ行	CTYPE_072	verb
+文語上二段-ダ行	CTYPE_073	verb
+文語上二段-ハ行	CTYPE_074	verb
+文語上二段-バ行	CTYPE_075	verb
+文語上二段-マ行	CTYPE_076	verb
+文語上二段-ヤ行	CTYPE_077	verb
+文語上二段-ラ行	CTYPE_078	verb
+文語下二段-ア行	CTYPE_080	verb
+文語下二段-カ行	CTYPE_081	verb
+文語下二段-ガ行	CTYPE_082	verb
+文語下二段-サ行	CTYPE_083	verb
+文語下二段-タ行	CTYPE_084	verb
+文語下二段-ダ行	CTYPE_085	verb
+文語下二段-ナ行	CTYPE_086	verb
+文語下二段-ハ行	CTYPE_087	verb
+文語下二段-バ行	CTYPE_088	verb
+文語下二段-マ行	CTYPE_089	verb
+文語下二段-ヤ行	CTYPE_090	verb
+文語下二段-ラ行	CTYPE_091	verb
+文語下二段-ワ行	CTYPE_092	verb
+文語上一段-カ行	CTYPE_100	verb
+文語上一段-ナ行	CTYPE_101	verb
+文語上一段-ハ行	CTYPE_102	verb
+文語上一段-マ行	CTYPE_103	verb
+文語上一段-ヤ行	CTYPE_104	verb
+文語上一段-ワ行	CTYPE_105	verb
+文語下一段-カ行	CTYPE_110	verb
+文語カ行変格	CTYPE_120	verb
+文語サ行変格	CTYPE_121	verb
+文語ザ行変格	CTYPE_122	verb
+文語ナ行変格	CTYPE_123	verb
+文語ラ行変格	CTYPE_124	verb
+形容詞	CTYPE_130	adj
+文語形容詞-ク	CTYPE_140	adj
+文語形容詞-シク	CTYPE_141	adj
+文語形容詞-多シ	CTYPE_142	adj
+助動詞-ジャ	CTYPE_150
+助動詞-タ	CTYPE_151
+助動詞-タイ	CTYPE_152
+助動詞-ダ	CTYPE_153
+助動詞-デス	CTYPE_154
+助動詞-ナイ	CTYPE_155
+助動詞-ヌ	CTYPE_156
+助動詞-ヘン	CTYPE_157
+助動詞-マス	CTYPE_158
+助動詞-ヤ	CTYPE_159
+助動詞-ヤス	CTYPE_160
+助動詞-ラシイ	CTYPE_161
+助動詞-レル	CTYPE_162
+助動詞-ナンダ	CTYPE_163
+助動詞-マイ	CTYPE_164
+助動詞-ドス	CTYPE_165
+文語助動詞-キ	CTYPE_170
+文語助動詞-ケム	CTYPE_171
+文語助動詞-ゴトシ	CTYPE_173
+文語助動詞-ザマス	CTYPE_174
+文語助動詞-ザンス	CTYPE_175
+文語助動詞-ズ	CTYPE_176
+文語助動詞-タリ-完了	CTYPE_177
+文語助動詞-タリ-断定	CTYPE_178
+文語助動詞-ツ	CTYPE_179
+文語助動詞-テフ	CTYPE_180
+文語助動詞-ナリ-伝聞	CTYPE_181
+文語助動詞-ナリ-断定	CTYPE_182
+文語助動詞-ヌ	CTYPE_183
+文語助動詞-ベシ	CTYPE_184
+文語助動詞-マシ	CTYPE_185
+文語助動詞-マジ	CTYPE_186
+文語助動詞-ム	CTYPE_187
+文語助動詞-ラシ	CTYPE_188
+文語助動詞-ラム	CTYPE_189
+文語助動詞-リ	CTYPE_190
+文語助動詞-ンス	CTYPE_191
+文語助動詞-ケリ	CTYPE_192
+文語助動詞-ジ	CTYPE_193
+文語助動詞-コス	CTYPE_194
+文語助動詞-ムズ	CTYPE_195
+文語助動詞-メリ	CTYPE_196
+無変形	CTYPE_200	verb
+*	CTYPE_999

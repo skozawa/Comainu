@@ -35,8 +35,8 @@ my $DEFAULT_VALUES = {
     "cType_verb_labels"    => [],
     "cType_adj_labels"     => [],
     "cType_all_labels"     => [],
-    "cType_asterisk_label" => 'K1999',
-    "cForm_asterisk_label" => 'K2999',
+    "cType_asterisk_label" => 'CTYPE_999',
+    "cForm_asterisk_label" => 'CFORM_999',
 };
 
 sub new {
