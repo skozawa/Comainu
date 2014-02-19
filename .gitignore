@@ -8,5 +8,11 @@ script/comainu_setup.pl
 script/wincomainu.pl
 wincomainu_org.conf
 tmp/
-train/
+train*
 *~
+/sample*
+CRF/
+bccwj_out/
+data/
+historical/
+out/
