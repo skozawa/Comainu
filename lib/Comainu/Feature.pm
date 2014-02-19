@@ -64,7 +64,10 @@ sub create_longmodel_feature {
         if ( $short_pos eq $curr_long_pos ) {
             if ( $i < $#{$line_in_list} ) {
                 my $next_items = [ split / /, $line_in_list->[$i+1] ];
-                $pivot .= "a" if !$next_items->[13] || $next_items !~ /^\*/;
+                if ( $next_items->[0] eq '*B' || $next_items->[0] eq 'EOS' ||
+                         ($next_items->[13] && $next_items->[13] ne "*") ) {
+                    $pivot .= "a";
+                }
             } else {
                 $pivot .= "a";
             }
