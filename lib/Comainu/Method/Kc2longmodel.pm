@@ -114,7 +114,8 @@ sub train_luwmodel_crf {
     open(my $fh_svmin, $svmin_file);
     my $line = <$fh_svmin>;
     $line = decode_utf8 $line;
-    my $feature_num = scalar(split(/ /,$line))-2;
+    my @items = split / /, $line;
+    my $feature_num = scalar @items - 2;
     close($fh_svmin);
 
     my $external_tool = Comainu::ExternalTool->new(%$self);

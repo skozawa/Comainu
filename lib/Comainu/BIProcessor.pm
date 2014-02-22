@@ -336,7 +336,7 @@ sub test {
     my $pos_model = $model_dir . "/pos/" . $train_name . ".BI_pos.model";
     my $com1 = sprintf("%s -m \"%s\" < \"%s\" > \"%s\"",
                        $cmd, $pos_model, $pos_dat, $pos_out);
-    print STDERR "# $com1\n";
+    print STDERR "# $com1\n" if $self->{debug};
     system($com1);
     unlink $pos_dat if !$self->{debug} && -f $pos_dat;
 
@@ -346,7 +346,7 @@ sub test {
     $self->create_cType_dat($pos_out, $cType_dat);
     my $com2 = sprintf("%s -m \"%s\" < \"%s\" > \"%s\"",
                        $cmd, $cType_model, $cType_dat, $cType_out);
-    print STDERR "# $com2\n";
+    print STDERR "# $com2\n" if $self->{debug};
     system($com2);
     unlink $cType_dat if !$self->{debug} && -f $cType_dat;
 
@@ -356,7 +356,7 @@ sub test {
     $self->create_cForm_dat($cType_out, $cForm_dat);
     my $com3 = sprintf("%s -m \"%s\" < \"%s\" > \"%s\"",
                        $cmd, $cForm_model, $cForm_dat, $cForm_out);
-    print STDERR "# $com3\n";
+    print STDERR "# $com3\n" if $self->{debug};
     system($com3);
     unlink $cForm_dat if !$self->{debug} && -f $cForm_dat;
 }
