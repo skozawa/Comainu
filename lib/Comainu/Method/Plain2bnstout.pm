@@ -36,7 +36,7 @@ sub run {
         dir => $save_dir, bnstmodel => $bnstmodel, args_num => scalar @_
     });
 
-    $self->analyze($test_file, $bnstmodel, $save_dir);
+    $self->analyze_files($test_file, $bnstmodel, $save_dir);
 
     return 0;
 }

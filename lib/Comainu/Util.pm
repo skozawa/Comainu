@@ -69,7 +69,7 @@ sub get_dir_files {
         my $files = [];
         opendir(my $dh, $target);
         while ( my $file = readdir($dh) ) {
-            push @$files, $file if $file =~ /\.$ext$/;
+            push @$files, $target . "/" . $file if $file =~ /\.$ext$/;
         }
         closedir($dh);
         return $files;

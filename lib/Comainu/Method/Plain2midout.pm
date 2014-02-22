@@ -40,7 +40,7 @@ sub run {
         args_num  => scalar @_
     });
 
-    $self->analyze($test_file, $luwmodel, $muwmodel, $save_dir);
+    $self->analyze_files($test_file, $luwmodel, $muwmodel, $save_dir);
 
     return 0;
 }
