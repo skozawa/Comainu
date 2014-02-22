@@ -73,9 +73,8 @@ sub get_mecab_dir_auto {
                 }
             }
         }
-        if (!-d $path) {
-            $path = "C:\\Program Files\\MeCab\\bin";
-        }
+        $path = "C:\\Program Files\\MeCab\\bin"       if ! -d $path;
+        $path = "C:\\Program Files (x86)\\MeCab\\bin" if ! -d $path;
         $path =~ s/\\/\//gs;
     }
     return $path;
@@ -103,12 +102,11 @@ sub get_mecab_dic_dir_auto {
                 }
             }
         }
-        if (!-d $path) {
-            $path = "C:\\Program Files\\unidic\\dic";
-        }
-        if (!-d $path) {
-            $path = "C:\\Program Files\\MeCab\\dic";
-        }
+        $path = "C:\\Program Files\\unidic\\dic"       if !-d $path;
+        $path = "C:\\Program Files (x86)\\unidic\\dic" if !-d $path;
+        $path = "C:\\Program Files\\MeCab\\dic"        if !-d $path;
+        $path = "C:\\Program Files (x86)\\MeCab\\dic"  if !-d $path;
+
         $path =~ s/\\/\//gs;
     }
     return $path;
@@ -118,12 +116,10 @@ sub get_unidic_db_auto {
     my $self = shift;
     my $path = "";
     if ($Config{"osname"} eq "MSWin32") {
-        if (!-d $path) {
-            $path = "C:\\Program Files\\unidic2\\share\\unidic.db";
-        }
-        if (!-d $path) {
-            $path = "C:\\unidic2\\share\\unidic.db";
-        }
+        $path = "C:\\Program Files\\unidic2\\share\\unidic.db"       if !-d $path;
+        $path = "C:\\Program Files (x86)\\unidic2\\share\\unidic.db" if !-d $path;
+        $path = "C:\\unidic2\\share\\unidic.db"                      if !-d $path;
+
         $path =~ s/\\/\//gs;
     }
     return $path;
@@ -134,18 +130,8 @@ sub get_yamcha_dir_auto {
     my $path = "";
     if ($Config{"osname"} eq "MSWin32") {
         $path = "C:/Program Files/yamcha-0.33/bin";
-        if (!-d $path) {
-            $path = "C:/Program Files/yamcha-0.32/bin";
-        }
-        if (!-d $path) {
-            $path = "C:/Program Files/yamcha-0.33/bin";
-        }
-        if (!-d $path) {
-            $path = "C:/yamcha-0.32/bin";
-        }
-        if (!-d $path) {
-            $path = "C:/yamcha-0.33/bin";
-        }
+        $path = "C:/Program Files (x86)/yamcha-0.33/bin" if !-d $path;
+        $path = "C:/yamcha-0.33/bin" if !-d $path;
     }
     return $path;
 }
@@ -155,9 +141,8 @@ sub get_svm_tool_dir_auto {
     my $path = "";
     if ($Config{"osname"} eq "MSWin32") {
         $path = "C:/Program Files/TinySVM-0.09/bin";
-        if (!-d $path) {
-            $path = "C:/TinySVM-0.09/bin";
-        }
+        $path = "C:/TinySVM-0.09/bin" if !-d $path;
+        $path = "C:/Program Files (x86)/TinySVM-0.09/bin" if !-d $path;
     }
     return $path;
 }
@@ -166,10 +151,15 @@ sub get_crf_dir_auto {
     my $self = shift;
     my $path = "";
     if($Config{"osname"} eq "MSWin32") {
-        $path = 'C:/Program Files/CRF++-0.54';
-        if(!-d $path) {
-            $path = 'C:/CRF++-0.54';
+        for ( (0.58, 0.57, 0.56, 0.55, 0.54) ) {
+            $path = 'C:/Program Files/CRF++-' . $_;
+            last if -d $path;
+            $path = 'C:/Program Files (x86)/CRF++-' . $_;
+            last if -d $path;
+            $path = 'C:/CRF++-' . $_;
+            last if -d $path;
         }
+        $path = 'C:/Program Files (x86)/CRF++-0.58';
     }
     return $path;
 }
@@ -184,6 +174,8 @@ sub get_java_auto {
                 glob("C:/jdk*/bin/java.exe"),
                 glob("C:/Program\\ Files/Java/jdk*/bin/java.exe"),
                 glob("C:/Program\\ Files/Java/jre*/bin/java.exe"),
+                glob("C:/Program\\ Files (x86)/Java/jdk*/bin/java.exe"),
+                glob("C:/Program\\ Files (x86)/Java/jre*/bin/java.exe"),
             );
         }
     }
@@ -195,12 +187,8 @@ sub get_mstparser_dir_auto {
     my $path = "";
     if ($Config{"osname"} eq "MSWin32") {
         $path = "C:/mstparser";
-        if (!-f $path) {
-            ($path) = glob("C:/mstparser*");
-        }
-        if (!-f $path) {
-            $path = "mstparser";
-        }
+        ($path) = glob("C:/mstparser*") if !-f $path;
+        $path = "mstparser" if !-f $path;
     }
     return $path;
 }
