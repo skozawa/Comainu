@@ -549,10 +549,6 @@ sub merge_kc_with_svmout {
     undef $svmout_data;
 
     foreach my $kc_data_line ( split /\r?\n/, $kc_data ) {
-    	if ( $kc_data_line =~ /^EOS/ && $luwmrph eq "without" ) {
-    	    $res .= "EOS\n";
-    	    next;
-    	}
     	next if $kc_data_line =~ /^\*B|^EOS/;
     	my @kc_item_list = split /[ \t]/, $kc_data_line;
 

@@ -85,6 +85,10 @@ sub analyze {
     undef $long_units;
     undef $BI_units;
 
+    # CRF++では*Bが境界とみなされない(kc2longout, boundary=word)
+    # *BがEOS扱いとされるのでEOS削除
+    $res =~ s/^EOS.*?\nB/B/mg if $self->{boundary} eq "word";
+
     unlink $kc2_file if !$self->{debug} && -f $kc2_file;
 
     return $res."\n";

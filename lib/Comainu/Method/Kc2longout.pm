@@ -83,7 +83,11 @@ sub create_features {
     # SVMの場合はpartial parsing
     $buff = Comainu::Feature->pp_partial($buff, { boundary => $self->{boundary} })
         if $self->{luwmodel} eq 'SVM';
-    $buff =~ s/^EOS.*?//mg if $self->{luwmodel} eq'CRF';
+    if ( $self->{luwmodel} eq 'CRF' ) {
+        $buff =~ s/^EOS.*?//mg;
+        # CRFでは*Bが境界とみなされないため、削除
+        $buff =~ s/^\*B.*?//mg if $self->{boundary} eq "word";
+    }
     # yamchaやCRF++のために、明示的に最終行に改行を付与
     $buff .= "\n";
 
