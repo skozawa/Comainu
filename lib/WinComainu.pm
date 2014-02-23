@@ -78,7 +78,7 @@ my $CONFIGURATION_VIEW = [
             ["comainu-crf-model", "pathname"],
             ["comainu-svm-model", "pathname"],
             ["comainu-bnst-svm-model", "pathname"],
-            ["comainu-bi-svm-model", "dirname"],
+            ["comainu-bi-model-dir", "dirname"],
             ["comainu-mst-model", "pathname"],
         ],
     },
@@ -1715,7 +1715,7 @@ sub execute_analysis_data {
     my $comainu_crf_model       = $app_conf->get("comainu-crf-model");
     my $comainu_svm_model       = $app_conf->get("comainu-svm-model");
     my $comainu_bnst_svm_model  = $app_conf->get("comainu-bnst-svm-model");
-    my $comainu_bi_svm_model    = $app_conf->get("comainu-bi-svm-model");
+    my $comainu_bi_model_dir    = $app_conf->get("comainu-bi-model-dir");
     my $comainu_mst_model       = $app_conf->get("comainu-mst-model");
     my $comainu_input_type      = $app_conf->get("comainu-input-type");
     my $comainu_output_type     = $app_conf->get("comainu-output-type");
@@ -1794,7 +1794,7 @@ sub execute_analysis_data {
         "mstparser-dir"        => $mstparser_dir,
         "comainu-output"       => $tmp_dir,
         "comainu-temp"         => $tmp_dir."/temp",
-        "comainu-bi-svm-model" => $comainu_bi_svm_model,
+        "comainu-bi-model-dir" => $comainu_bi_model_dir,
         "boundary"             => $comainu_boundary,
         "luwmodel"             => uc($comainu_long_model_type),
         "luwmrph"              => $luwmrph,

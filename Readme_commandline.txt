@@ -102,7 +102,7 @@ option:
     --svm-tool-dir             SVM_TOOL_DIR            specify SVM_TOOL_DIR
     --crf-dir                  CRF_DIR                 specify CRF_DIR
     --mstparser-dir            MSTPARSER_DIR           specify MSTPARSER_DIR
-    --comainu-bi-svm-model     COMAINU_BI_SVM_MODEL    specify COMAINU_BI_SVM_MODEL
+    --comainu-bi-model-dir     COMAINU_BI_SVM_MODEL    specify COMAINU_BI_SVM_MODEL
     --comainu-output           COMAINU_OUTPUT          specify COMAINU_OUTPUT
     --comainu-temp             COMAINU_TEMP            specify COMAINU_TEMP
 
