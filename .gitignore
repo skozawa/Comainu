@@ -7,6 +7,7 @@ script/comainu.pl
 script/comainu_setup.pl
 script/wincomainu.pl
 wincomainu_org.conf
+/tools
 tmp/
 train*
 *~
