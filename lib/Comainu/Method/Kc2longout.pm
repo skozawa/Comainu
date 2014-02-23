@@ -4,7 +4,7 @@ use strict;
 use warnings;
 use utf8;
 use parent 'Comainu::Method';
-use File::Basename qw(basename fileparse);
+use File::Basename qw(basename dirname fileparse);
 use Config;
 
 use Comainu::Util qw(any read_from_file write_to_file check_file proc_file2stdout);
@@ -176,6 +176,7 @@ sub post_process {
     my $test_name = basename($tmp_test_kc);
     my $lout_file = $save_dir . "/" . $test_name . ".lout";
 
+    $self->set_comainu_bi_model($luwmodel);
     my $bip_processor = Comainu::BIProcessor->new(
         model_type => 0,
         %$self,
@@ -191,6 +192,24 @@ sub post_process {
     undef $buff;
 
     return $ret;
+}
+
+# 後処理解析モデルを設定
+# 1. comainu-bi-model-dir
+# 2. 長単位解析モデルと同じ階層にあるpos, cForm, cTypeのモデル
+sub set_comainu_bi_model {
+    my ($self, $luwmodel) = @_;
+    return if $self->{"comainu-bi-model-dir"};
+
+    my $train_name = basename($luwmodel, ".model");
+    my $train_dir  = dirname($luwmodel);
+
+    for my $type ( ("pos", "cForm", "cType") ) {
+        return unless -d $train_dir . "/" . $type;
+        return unless -f $train_dir . "/" . $type . "/" . $train_name . ".BI_" . $type . ".model"
+    }
+
+    $self->{"comainu-bi-model-dir"} = $train_dir;
 }
 
 # 語彙素・語彙素読みを生成
@@ -290,7 +309,7 @@ sub create_long_lemma {
                     }
                     $self->generate_long_lemma($luw, $j);
                 }
-                for ($j; $j <= $#{$luw}-1; $j++) {
+                for (; $j <= $#{$luw}-1; $j++) {
                     $self->generate_long_lemma($luw, $j);
                 }
                 $self->generate_long_lemma($luw, $#{$luw});

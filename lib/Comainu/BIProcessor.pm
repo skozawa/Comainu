@@ -333,7 +333,7 @@ sub test {
     $cmd = sprintf("\"%s\" -C", $cmd);
 
     my $tmp_dir = $self->{"comainu-temp"};
-    my $model_dir = $self->{"comainu-bi-model-dir"};
+    my $model_dir = $self->{"comainu-bi-model-dir"} || $self->{"comainu-bi-model-default"};
 
     my $pos_dat   = $tmp_dir   . "/pos/" . $test_name  . ".BI_pos.dat";
     my $pos_out   = $tmp_dir   . "/pos/" . $test_name  . ".BI_pos.out";
