@@ -48,7 +48,7 @@ if [ ! -x tools/bin/yamcha ]; then
     echo "*** INSTALL yamcha ***"
     tar -xzf yamcha-0.33.tar.gz
     cd yamcha-0.33
-    ./configure --prefix=${PREFIX}
+    ./configure --prefix=${PREFIX} --with-svm-learn=${PREFIX}
     make
     make install
     cd ..
@@ -57,7 +57,7 @@ if [ ! -x tools/bin/yamcha ]; then
         wget http://unicus.jp/pub/yamcha.patch
         patch -p0 < yamcha.patch
         cd yamcha-0.33
-        ./configure --prefix=${PREFIX}
+        ./configure --prefix=${PREFIX} --with-svm-learn=${PREFIX}
         make
         make install
         cd ..
