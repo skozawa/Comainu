@@ -39,7 +39,7 @@ ComainuÀsŠÂ‹«
 
   CRF++: Yet Another CRF toolkit
   http://crfpp.sourceforge.net/
-  CRF++-0.54
+  CRF++-0.58
 
 EJava
 

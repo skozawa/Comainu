@@ -11,7 +11,7 @@
     MeCab:        0.98 or lator  (optional)
     UniDic-MeCab: 2.1.1 or lator (optional)
     TinySVM:      0.09 or lator  (optional: to make model)
-    CRF++         0.54 or lator  (optional)
+    CRF++         0.58 or lator  (optional)
     MSTParser:    0.50 or lator  (bundled)
 
   UNIX/Linux:
@@ -24,6 +24,11 @@
 1. How to build
   Type the next command to build.
   You need not 'make install' because it should be installed in place.
+  You use script/setup.sh if you need to install required tools.
+
+    $ ./script/setup.sh
+
+  Otherwise
 
     $ ./configure
 
@@ -48,12 +53,12 @@
                     --mecab-dic-dir 'c:/Program Files/MeCab/dic" \
                     --unidic-db "c:/Program Files/unidic2/share/unidic.db" \
                     --svm-tool-dir "c:/TinySVM-0.09/bin" \
-                    --crf-dir "c:/CRF++-0.54" \
+                    --crf-dir "c:/CRF++-0.58" \
                     --perl "c:/Perl/bin/perl" \
                     --java "c:/usr/bin/java"
 
     * You have to specify the place of binaries for --yamcha-dir,
-      --mecab-dir and --svm-tool-dir.
+      --mecab-dir, --mecab-dic-dir, unidic-db, --svm-tool-dir and --crf-dir.
     * You have to specify the perl program for --perl.
 
 2. Usage
@@ -75,42 +80,40 @@ Usage : ./script/comainu.pl [options] <COMAINU-METHOD>  [<arg> ...]
   This script is front end of COMAINU.
 
 option:
-    --help                              show this message and exit
-    --debug             LEVEL           specify the debug level
-                                          (curr: '0')
-    --version                           show version string
-    --help-method                       show the help of COMAINU-METHOD
-    --list-method                       show the list of COMAINU-METHOD
-    --force                             ignore cheking path of sub tools
-    --boundary          BOUNDARY        specify the type of boundary
-                                          BOUNDARY:=sentence|word
-                                          (curr: 'sentence')
-    --luwmrph           LUWMRPH         whether to output morphology of long-unit-word
-                                          LUWMRPH:=with|without
-                                          (curr: 'with')
-    --luwmodel          LUWMODEL        specify the type of the model for boundary of long-unit-word
-                                          LUWMODEL:=SVM|CRF
-                                          (curr: 'CRF')
-    --perl                     PERL                    specify PERL
-    --java                     JAVA                    specify JAVA
-    --comainu-home             COMAINU_HOME            specify COMAINU_HOME
-    --ofilter                  OFILTER                 specify OFILTER
-    --yamcha-dir               YAMCHA_DIR              specify YAMCHA_DIR
-    --mecab-dir                MECAB_DIR               specify MECAB_DIR
-    --mecab-dic-dir            MECAB_DIC_DIR           specify MECAB_DIC_DIR
-    --unidic-db                UNIDIC_DB               specify UNIDIC_DB
-    --svm-tool-dir             SVM_TOOL_DIR            specify SVM_TOOL_DIR
-    --crf-dir                  CRF_DIR                 specify CRF_DIR
-    --mstparser-dir            MSTPARSER_DIR           specify MSTPARSER_DIR
-    --comainu-bi-model-dir     COMAINU_BI_SVM_MODEL    specify COMAINU_BI_SVM_MODEL
-    --comainu-output           COMAINU_OUTPUT          specify COMAINU_OUTPUT
-    --comainu-temp             COMAINU_TEMP            specify COMAINU_TEMP
+    --help                           show this message and exit
+    --debug          LEVEL           specify the debug level
+                                       (curr: '0')
+    --version                        show version string
+    --help-method                    show the help of COMAINU-METHOD
+    --list-method                    show the list of COMAINU-METHOD
+    --force                          ignore cheking path of sub tools
+    --boundary       BOUNDARY        specify the type of boundary
+                                       BOUNDARY:=sentence|word
+                                       (curr: 'sentence')
+    --luwmrph        LUWMRPH         whether to output morphology of long-unit-word
+                                       LUWMRPH:=with|without
+                                       (curr: 'with')
+    --luwmodel       LUWMODEL        specify the type of the model for boundary of long-unit-word
+                                       LUWMODEL:=SVM|CRF
+                                       (curr: 'CRF')
+    --perl                      PERL                    specify PERL
+    --java                      JAVA                    specify JAVA
+    --comainu-home              COMAINU_HOME            specify COMAINU_HOME
+    --yamcha-dir                YAMCHA_DIR              specify YAMCHA_DIR
+    --mecab-dir                 MECAB_DIR               specify MECAB_DIR
+    --mecab-dic-dir             MECAB_DIC_DIR           specify MECAB_DIC_DIR
+    --unidic-db                 UNIDIC_DB               specify UNIDIC_DB
+    --svm-tool-dir              SVM_TOOL_DIR            specify SVM_TOOL_DIR
+    --crf-dir                   CRF_DIR                 specify CRF_DIR
+    --mstparser-dir             MSTPARSER_DIR           specify MSTPARSER_DIR
+    --comainu-bi-model-dir      COMAINU_BI_MODEL_DIR    specify COMAINU_BI_MODEL_DIR
+    --comainu-output            COMAINU_OUTPUT          specify COMAINU_OUTPUT
+    --comainu-temp              COMAINU_TEMP            specify COMAINU_TEMP
 
 Preset Environments :
   PERL=/usr/bin/perl
-  JAVA=
-  COMAINU_HOME=/usr/local/Comainu-0.52
-  OFILTER=
+  JAVA=/usr/bin/java
+  COMAINU_HOME=/usr/local/Comainu-0.70
   YAMCHA_DIR=/usr/local/bin
   MECAB_DIR=/usr/local/bin
   MECAB_DIC_DIR=/usr/local/lib/mecab/dic
@@ -118,7 +121,7 @@ Preset Environments :
   SVM_TOOL_DIR=/usr/local/bin
   CRF_DIR=/usr/local/bin
   MSTPARSER_DIR=mstparser
-  COMAINU_BI_SVM_MODEL=train/BI_model
+  COMAINU_BI_MODEL_DIR=
   COMAINU_OUTPUT=out
   COMAINU_TEMP=tmp/temp
 

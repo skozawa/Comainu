@@ -24,7 +24,7 @@
     UniDic2: 2.1.0 or lator
     YamCha: 0.33 or lator
     TinySVM: 0.09 or lator
-    CRF++: 0.54 or lator
+    CRF++: 0.58 or lator
 
 (2) Configuration and make
   From terminal of Linux/MinGW/Cygwin, Type "./configure" command.
