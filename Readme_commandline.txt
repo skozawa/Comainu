@@ -331,4 +331,4 @@ COMAINU-METHOD: plain2midout
   You need "Inno Setup 5" and Cygwin/MinGW to build *.exe files.
 
 
-Copyright (C) 2010-2011 The UniDic Consortium (UCHIMOTO Kiyotaka, KOZAWA Shunsuke, DEN Yasuharu). All rights reserved.
+Copyright (C) 2010-2014 The UniDic Consortium (UCHIMOTO Kiyotaka, KOZAWA Shunsuke, DEN Yasuharu). All rights reserved.
