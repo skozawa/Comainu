@@ -30,6 +30,7 @@ my $DEFAULT_VALUES = {
     "suwmodel"                 => "mecab",
     "luwmodel"                 => "CRF",
     "bnst_process"             => "none",
+    "eval-level"               => "lemma",
     "comp_file"                => $Bin . "/../etc/Comp.txt",
     "pos_label_file"           => $Bin . '/../etc/pos_label',
     "cType_label_file"         => $Bin . '/../etc/cType_label',

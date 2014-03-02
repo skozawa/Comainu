@@ -9,7 +9,7 @@ use File::Temp qw(tempfile);
 # *.KC と *.out (システムの出力)を比較し、精度を求める
 # segmentaion と POS information (発音を除くすべて)
 sub eval_long {
-    my ($class, $gld_file, $sys_file, $is_middle) = @_;
+    my ($class, $gld_file, $sys_file, $is_middle, $eval_level) = @_;
 
     my ($tmp1_fh, $tmp_file1) = tempfile;
     open(GLD, $gld_file) || die "Can't open $gld_file: $!\n";
@@ -23,7 +23,9 @@ sub eval_long {
         if ( $is_middle ) {
             print $tmp1_fh "$morph[0]\n";
         } else {
-            print $tmp1_fh "$morph[0] $morph[1] $morph[2] $morph[3] $morph[4] $morph[5]\n";
+            my @target = $eval_level eq "pos" ? @morph[0, 3..5] :
+                $eval_level eq "boundary" ? ($morph[0]) : @morph[0..5];
+            print $tmp1_fh join(" ", @target), "\n";
         }
     }
     close(GLD);
@@ -41,7 +43,9 @@ sub eval_long {
         if ( $is_middle ) {
             print $tmp2_fh "$morph[0]\n";
         } else {
-            print $tmp2_fh "$morph[0] $morph[1] $morph[2] $morph[3] $morph[4] $morph[5]\n";
+            my @target = $eval_level eq "pos" ? @morph[0, 3..5] :
+                $eval_level eq "boundary" ? ($morph[0]) : @morph[0..5];
+            print $tmp2_fh join(" ", @target), "\n";
         }
     }
     close(SYS);

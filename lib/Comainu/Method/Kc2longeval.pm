@@ -107,7 +107,7 @@ sub compare {
     my $output_file = $save_dir . "/" .
         basename($lout_file, ".lout").".eval.long";
 
-    $res = Comainu::Evaluate->eval_long($tmp1_file, $tmp2_file);
+    $res = Comainu::Evaluate->eval_long($tmp1_file, $tmp2_file, 0, $self->{"longeval-level"});
     write_to_file($output_file, $res);
     print $res;
 
