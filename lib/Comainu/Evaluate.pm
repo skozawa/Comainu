@@ -11,45 +11,8 @@ use File::Temp qw(tempfile);
 sub eval_long {
     my ($class, $gld_file, $sys_file, $is_middle, $eval_level) = @_;
 
-    my ($tmp1_fh, $tmp_file1) = tempfile;
-    open(GLD, $gld_file) || die "Can't open $gld_file: $!\n";
-    while ( <GLD> ) {
-        next if /^\#/ || /^\*/;
-        next if /^EOS/;
-        chomp;
-
-        my @morph = split /\s+/;
-        my @pos;
-        if ( $is_middle ) {
-            print $tmp1_fh "$morph[0]\n";
-        } else {
-            my @target = $eval_level eq "pos" ? @morph[0, 3..5] :
-                $eval_level eq "boundary" ? ($morph[0]) : @morph[0..5];
-            print $tmp1_fh join(" ", @target), "\n";
-        }
-    }
-    close(GLD);
-    $tmp1_fh->close;
-
-    my ($tmp2_fh, $tmp_file2) = tempfile;
-    open(SYS, $sys_file) || die "Can't open $sys_file: $!\n";
-    while ( <SYS> ) {
-        next if /^\#/ || /^\*/;
-        next if /^EOS/;
-        chomp;
-
-        my @morph = split /\s+/;
-        my @pos;
-        if ( $is_middle ) {
-            print $tmp2_fh "$morph[0]\n";
-        } else {
-            my @target = $eval_level eq "pos" ? @morph[0, 3..5] :
-                $eval_level eq "boundary" ? ($morph[0]) : @morph[0..5];
-            print $tmp2_fh join(" ", @target), "\n";
-        }
-    }
-    close(SYS);
-    $tmp2_fh->close;
+    my $tmp_file1 = $class->create_eval_temp_file($gld_file, $is_middle, $eval_level);
+    my $tmp_file2 = $class->create_eval_temp_file($sys_file, $is_middle, $eval_level);
 
     my $dif = $sys_file . ".diff";
     $class->diff_perl($tmp_file1, $tmp_file2, $dif);
@@ -85,12 +48,9 @@ sub eval_long {
     }
     close(DIF);
 
-    my $rec = 0.0;
-    if ($gld > 0) { $rec = $agr / $gld * 100; }
-    my $prec = 0.0;
-    if ($sys > 0) { $prec = $agr / $sys * 100; }
-    my $f = 0.0;
-    if (($rec + $prec) > 0) { $f = 2 * $rec * $prec / ($rec + $prec); }
+    my $rec  = $gld > 0 ? $agr / $gld * 100 : 0.0;
+    my $prec = $sys > 0 ? $agr / $sys * 100 : 0.0;
+    my $f    = $rec + $prec > 0 ? (2 * $rec * $prec / ($rec + $prec)) : 0.0;
 
     my $res = "";
     $res .= sprintf("Recall: %.2f%% ($agr/$gld) ", $rec);
@@ -98,6 +58,32 @@ sub eval_long {
     $res .= sprintf("F-measure: %.2f%%\n", $f);
 
     return $res;
+}
+
+sub create_eval_temp_file {
+    my ($class, $file, $is_middle, $eval_level) = @_;
+
+    my ($tmp_fh, $tmp_file) = tempfile;
+    open(IN, $file) || die "Can't open $file: $!\n";
+    while ( <IN> ) {
+        next if /^\#/ || /^\*/;
+        next if /^EOS/;
+        chomp;
+
+        my @morph = split /\s+/;
+        my @pos;
+        if ( $is_middle ) {
+            print $tmp_fh "$morph[0]\n";
+        } else {
+            my @target = $eval_level eq "pos" ? @morph[0, 3..5] :
+                $eval_level eq "boundary" ? ($morph[0]) : @morph[0..5];
+            print $tmp_fh join(" ", @target), "\n";
+        }
+    }
+    close(IN);
+    $tmp_fh->close;
+
+    return $tmp_file;
 }
 
 sub diff_perl {
