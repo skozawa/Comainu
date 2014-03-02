@@ -160,7 +160,7 @@ sub comainu {
         "mstparser-dir=s",
         "comainu-bi-model-dir=s",
         "comainu-output=s", "comainu-temp=s",
-        "boundary=s",
+        "boundary=s", "longeval-level=s",
         "luwmrph=s", "luwmodel=s",
     );
 
