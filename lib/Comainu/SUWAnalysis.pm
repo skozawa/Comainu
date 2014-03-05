@@ -96,6 +96,19 @@ sub mecab2kc_file {
     my $mecab_ext_file = $mecab_file."_ext";
     my $ext_def_file   = $self->{"comainu-temp"}."/mecab_ext.def";
 
+    # unidic dbがない場合の対処
+    unless ( -f $self->{"unidic-db"} ) {
+        printf STDERR "***********************************************\n";
+        printf STDERR "***** WARN: NO UNIDIC DB                  *****\n";
+        printf STDERR "***** Maybe long-word lemma is incorrect  *****\n";
+        printf STDERR "***********************************************\n";
+        my $buff = read_from_file($mecab_file);
+        $buff = $self->mecab2kc($buff);
+        write_to_file($kc_file, $buff);
+        undef $buff;
+        return;
+    }
+
     my $def_buff = "";
     $def_buff .= "dbfile:".$self->{"unidic-db"}."\n";
     $def_buff .= "table:lex\n";
@@ -135,11 +148,11 @@ sub mecab2kc {
         $item_list->[2] = $item_list->[1] if $item_list->[2] eq "";
         $item_list->[3] = $item_list->[1] if $item_list->[3] eq "";
         $item_list->[5] = "*"             if $item_list->[5] eq "";
-        $item_list->[6] = "*"             if $item_list->[6] eq "";
-        $item_list->[7] = "*"             if $item_list->[7] eq "";
+        $item_list->[6] = "*"             if ($item_list->[6] // "") eq "";
+        $item_list->[7] = "*"             if ($item_list->[7] // "") eq "";
 
         my $value_list = [ map {
-            $table->{$_} eq "*" ? "*" : $item_list->[$table->{$_}];
+            $table->{$_} eq "*" ? "*" : $item_list->[$table->{$_}] // "";
         } sort {$a <=> $b} keys %$table ];
         $value_list = [ @$value_list, "*", "*", "*", "*", "*", "*", "*", "*" ];
         if ( $first_flag == 1 ) {

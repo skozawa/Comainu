@@ -321,10 +321,8 @@ sub check_sub_tool_path {
         return 0 unless _check_tool_path($opts->{'mecab-dir'}, 'mecab');
         return 0 unless _check_tool_dir($opts->{'mecab-dic-dir'}, 'mecab-dic');
         unless ( -f $opts->{'unidic-db'} ) {
-            printf(STDERR "# Error: Not found Unidic database: '%s'\n",
-                   $opts->{"unidic-db"});
+            printf(STDERR "# Warn: Not found Unidic database: '%s'\n", $opts->{"unidic-db"});
             printf(STDERR "#   You might set wrong path or it was installed.\n");
-            return 0;
         }
     }
 

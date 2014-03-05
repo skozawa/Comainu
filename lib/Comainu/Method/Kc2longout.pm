@@ -238,7 +238,7 @@ sub create_long_lemma {
         } else {
             @items[17..19] = ("*","*","*");
         }
-        # form,formBase,formOrthBase,formOrth がない場合
+        # form,formBase,formOrthBase,formOrth (unidic-dbを利用していない場合など) がない場合
         if ( $items[7] eq "*" && $items[8] eq "*" &&
                  $items[9] eq "*" && $items[10] eq "*") {
             @items[7..10] = @items[2,2,3,3];
