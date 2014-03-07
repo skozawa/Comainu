@@ -175,5 +175,5 @@ if [ -z $NO_PERL ]; then
 fi
 
 ./configure --perl=${PERL} --java=${JAVA} --crf-dir=${CRF} \
-    --svm-tool-dir=${SVM_TOOL} --yamcha-dir=${YAMCHA}/bin \
+    --svm-tool-dir=${SVM_TOOL} --yamcha-dir=${YAMCHA} \
     --mecab-dir=${MECAB} --mecab-dic-dir=${MECAB_DIC} --unidic-db=${UNIDIC_DB}
