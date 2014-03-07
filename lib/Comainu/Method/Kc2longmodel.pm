@@ -53,9 +53,9 @@ sub run {
 
     $self->make_luw_traindata($tmp_train_kc, $svmin_file, $model_dir);
 
-    if ( $self->{"luwmodel"} eq "SVM" ) {
+    if ( $self->{"luwmodel-type"} eq "SVM" ) {
         $self->train_luwmodel_svm($tmp_train_kc, $svmin_file, $model_dir);
-    } elsif ( $self->{"luwmodel"} eq "CRF" ) {
+    } elsif ( $self->{"luwmodel-type"} eq "CRF" ) {
         $self->train_luwmodel_crf($tmp_train_kc, $svmin_file, $model_dir);
     }
     if ( $self->{"luwmrph"} eq "with" ) {

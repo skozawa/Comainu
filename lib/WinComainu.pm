@@ -1796,7 +1796,7 @@ sub execute_analysis_data {
         "comainu-temp"         => $tmp_dir."/temp",
         "comainu-bi-model-dir" => $comainu_bi_model_dir,
         "boundary"             => $comainu_boundary,
-        "luwmodel"             => uc($comainu_long_model_type),
+        "luwmodel-type"        => uc($comainu_long_model_type),
         "luwmrph"              => $luwmrph,
     };
 

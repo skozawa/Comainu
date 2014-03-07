@@ -28,7 +28,7 @@ my $DEFAULT_VALUES = {
     "boundary"                 => "sentence",
     "luwmrph"                  => "with",
     "suwmodel"                 => "mecab",
-    "luwmodel"                 => "CRF",
+    "luwmodel-type"            => "CRF",
     "bnst_process"             => "none",
     "eval-level"               => "lemma",
     "comp_file"                => $Bin . "/../etc/Comp.txt",
@@ -73,11 +73,11 @@ sub before_analyze {
 sub check_luwmodel {
    my ($self, $luwmodel) = @_;
 
-   if ( $self->{luwmodel} eq "SVM" || $self->{luwmodel} eq "CRF" ) {
+   if ( $self->{"luwmodel-type"} eq "SVM" || $self->{"luwmodel-type"} eq "CRF" ) {
        check_file($luwmodel);
    } else {
-       printf(STDERR "ERROR: '%s' not found model name.\n",
-              $self->{luwmodel});
+       printf(STDERR "ERROR: '%s' not found model type name.\n",
+              $self->{"luwmodel-type"});
        die;
    }
 }

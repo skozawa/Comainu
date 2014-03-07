@@ -44,8 +44,8 @@ sub create_features : Test(6) {
 
     subtest "sentence boundary (SVM)" => sub {
         my $kc2longout = Comainu::Method::Kc2longout->new(
-            boundary => "sentence",
-            luwmodel => 'SVM',
+            "boundary"      => "sentence",
+            "luwmodel-type" => 'SVM',
         );
         $kc2longout->create_features("t/sample/kc2longout/test.KC", "t/sample/kc2longout/test.Kc2");
         is $kc2_data, read_from_file('t/sample/kc2longout/test.KC2.svm_boundary');
@@ -53,8 +53,8 @@ sub create_features : Test(6) {
 
     subtest "word boundary (SVM)" => sub {
         my $kc2longout = Comainu::Method::Kc2longout->new(
-            boundary => "word",
-            luwmodel => 'SVM',
+            "boundary"      => "word",
+            "luwmodel-type" => 'SVM',
         );
         $kc2longout->create_features("t/sample/kc2longout/test.KC", "t/sample/kc2longout/test.KC2");
         is $kc2_data, read_from_file('t/sample/kc2longout/test.KC2.svm_word');
@@ -62,8 +62,8 @@ sub create_features : Test(6) {
 
     subtest "none boundary (SVM)" => sub {
         my $kc2longout = Comainu::Method::Kc2longout->new(
-            boundary => "none",
-            luwmodel => 'SVM',
+            "boundary"      => "none",
+            "luwmodel-type" => 'SVM',
         );
         $kc2longout->create_features("t/sample/kc2longout/test.KC", "t/sample/kc2longout/test.KC2");
         is $kc2_data, read_from_file('t/sample/kc2longout/test.KC2.svm_none');
