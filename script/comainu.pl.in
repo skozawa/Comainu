@@ -45,7 +45,10 @@ my $DEFAULT_VALUES = {
     "boundary"                 => "sentence",
     "luwmrph"                  => "with",
     "suwmodel"                 => "mecab",
+    "luwmodel"                 => "train/CRF/train.KC.model",
     "luwmodel-type"            => "CRF",
+    "bnstmodel"                => "train/bnst.model",
+    "muwmodel"                 => "train/MST/train.KC.model",
     "longeval-level"           => "lemma",
     # "luwmrphmodel"         => "SVM",
     # "muwmodel"             => "MST",
@@ -87,21 +90,15 @@ sub comainu_usage {
     printf("    --luwmrph        LUWMRPH         whether to output morphology of long-unit-word\n");
     printf("                                       LUWMRPH:=with|without\n");
     printf("                                       (curr: '%s')\n", $curr->{"luwmrph"});
-    # printf("    --suwmodel       SUWMODEL        specify the type of the short-unit-word model\n");
-    # printf("                                       SUWMODEL:=mecab\n");
-    # printf("                                       (curr: '%s')\n", $curr->{"suwmodel"});
-    printf("    --luwmodel-type   LUWMODEL_TYPE    specify the type of the model for boundary of long-unit-word\n");
+    printf("    --luwmodel       LUWMODEL        specify the model for boundary of long-unit-word\n");
+    printf("                                       (curr: '%s')\n", $curr->{"luwmodel"});
+    printf("    --luwmodel-type  LUWMODEL_TYPE   specify the type of the model for boundary of long-unit-word\n");
     printf("                                       LUWMODEL_TYPE:=SVM|CRF\n");
     printf("                                       (curr: '%s')\n", $curr->{"luwmodel-type"});
-    # printf("    --luwmrphmodel   LUWMRPHMODEL    specify the type of the long-unit-word model\n");
-    # printf("                                       LUWMRPHMODEL:=SVM\n");
-    # printf("                                       (curr: '%s')\n", $curr->{"luwmrphmodel"});
-    # printf("    --muwmodel       MUWMODEL        specify the type of the middle-unit-word model\n");
-    # printf("                                       MUWMODEL:=MST\n");
-    # printf("                                       (curr: '%s')\n", $curr->{"muwmodel"});
-    # printf("    --bnstmodel      BNSTMODEL       specify the type of the bnst model\n");
-    # printf("                                       BNSTMODEL:=SVM\n");
-    # printf("                                       (curr: '%s')\n", $curr->{"bnstmodel"});
+    printf("    --bnstmodel      BNSTMODEL       specify the bnst model\n");
+    printf("                                       (curr: '%s')\n", $curr->{"bnstmodel"});
+    printf("    --muwmodel       MUWMODEL        specify the middle-unit-word model\n");
+    printf("                                       (curr: '%s')\n", $curr->{"muwmodel"});
 
     foreach my $var_name (@$OPT_NAME_LIST) {
         my $var_name_env = uc($var_name);
@@ -161,7 +158,8 @@ sub comainu {
         "comainu-bi-model-dir=s",
         "comainu-output=s", "comainu-temp=s",
         "boundary=s", "longeval-level=s",
-        "luwmrph=s", "luwmodel-type=s",
+        "luwmrph=s", "luwmodel=s", "luwmodel-type=s",
+        "bnstmodel=s", "muwmodel=s",
     );
 
     if ( $Config{"osname"} =~ /MSWin32|cygwin|msys/i ) {
