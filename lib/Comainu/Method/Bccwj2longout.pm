@@ -28,7 +28,7 @@ sub usage {
     printf("  ex.)\n");
     printf("  \$ perl ./script/comainu.pl bccwj2longout sample/sample.bccwj.txt train/CRF/train.KC.model out\n");
     printf("    -> out/sample.bccwj.txt.lout\n");
-    printf("  \$ perl ./script/comainu.pl bccwj2longout --luwmodel=SVM sample/sample.bccwj.txt train/SVM/train.KC.model out\n");
+    printf("  \$ perl ./script/comainu.pl bccwj2longout --luwmodel-type=SVM sample/sample.bccwj.txt train/SVM/train.KC.model out\n");
     printf("    -> out/sample.bccwj.txt.lout\n");
     printf("\n");
 }

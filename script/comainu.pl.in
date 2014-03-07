@@ -45,7 +45,7 @@ my $DEFAULT_VALUES = {
     "boundary"                 => "sentence",
     "luwmrph"                  => "with",
     "suwmodel"                 => "mecab",
-    "luwmodel"                 => "CRF",
+    "luwmodel-type"            => "CRF",
     "longeval-level"           => "lemma",
     # "luwmrphmodel"         => "SVM",
     # "muwmodel"             => "MST",
@@ -90,9 +90,9 @@ sub comainu_usage {
     # printf("    --suwmodel       SUWMODEL        specify the type of the short-unit-word model\n");
     # printf("                                       SUWMODEL:=mecab\n");
     # printf("                                       (curr: '%s')\n", $curr->{"suwmodel"});
-    printf("    --luwmodel       LUWMODEL        specify the type of the model for boundary of long-unit-word\n");
-    printf("                                       LUWMODEL:=SVM|CRF\n");
-    printf("                                       (curr: '%s')\n", $curr->{"luwmodel"});
+    printf("    --luwmodel-type   LUWMODEL_TYPE    specify the type of the model for boundary of long-unit-word\n");
+    printf("                                       LUWMODEL_TYPE:=SVM|CRF\n");
+    printf("                                       (curr: '%s')\n", $curr->{"luwmodel-type"});
     # printf("    --luwmrphmodel   LUWMRPHMODEL    specify the type of the long-unit-word model\n");
     # printf("                                       LUWMRPHMODEL:=SVM\n");
     # printf("                                       (curr: '%s')\n", $curr->{"luwmrphmodel"});
@@ -161,7 +161,7 @@ sub comainu {
         "comainu-bi-model-dir=s",
         "comainu-output=s", "comainu-temp=s",
         "boundary=s", "longeval-level=s",
-        "luwmrph=s", "luwmodel=s",
+        "luwmrph=s", "luwmodel-type=s",
     );
 
     if ( $Config{"osname"} =~ /MSWin32|cygwin|msys/i ) {
@@ -295,7 +295,7 @@ sub check_sub_tool_path {
             return 0;
         }
 
-        if ( $opts->{luwmodel} eq 'CRF' ) {
+        if ( $opts->{"luwmodel-type"} eq 'CRF' ) {
             return 0 unless _check_tool_path($opts->{'crf-dir'}, 'crf_learn');
         }
     }
@@ -312,7 +312,7 @@ sub check_sub_tool_path {
     if ( $method =~ /longout|bnstout|longbnstout|midbnstout/ ) {
         return 0 unless _check_tool_path($opts->{"yamcha-dir"}, 'yamcha');
         return 0 unless _check_tool_path($opts->{"svm-tool-dir"}, 'svm_classify');
-        if ( $opts->{luwmodel} eq 'CRF' ) {
+        if ( $opts->{"luwmodel-type"} eq 'CRF' ) {
             return 0 unless _check_tool_path($opts->{'crf-dir'}, 'crf_test');
         }
     }

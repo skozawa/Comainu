@@ -93,8 +93,8 @@ option:
     --luwmrph        LUWMRPH         whether to output morphology of long-unit-word
                                        LUWMRPH:=with|without
                                        (curr: 'with')
-    --luwmodel       LUWMODEL        specify the type of the model for boundary of long-unit-word
-                                       LUWMODEL:=SVM|CRF
+    --luwmodel-type  LUWMODEL_TYPE   specify the type of the model for boundary of long-unit-word
+                                       LUWMODEL_TYPE:=SVM|CRF
                                        (curr: 'CRF')
     --perl                      PERL                    specify PERL
     --java                      JAVA                    specify JAVA
@@ -157,7 +157,7 @@ COMAINU-METHOD: bccwj2longout
   ex.)
   $ perl ./script/comainu.pl bccwj2longout sample/sample.bccwj.txt train/CRF/sample.KC.model out
     -> out/sample.bccwj.txt.lout
-  $ perl ./script/comainu.pl bccwj2longout --luwmodel=SVM sample/sample.bccwj.txt train/SVM/sample.KC.model out
+  $ perl ./script/comainu.pl bccwj2longout --luwmodel-type=SVM sample/sample.bccwj.txt train/SVM/sample.KC.model out
     -> out/sample.bccwj.txt.lout
 
 COMAINU-METHOD: bccwj2midbnstout
@@ -238,7 +238,7 @@ COMAINU-METHOD: kc2longout
   ex.)
   $ perl ./script/comainu.pl kc2longout sample/sample.KC train/CRF/train.KC.model out
     -> out/sample.lout
-  $ perl ./script/comainu.pl kc2longout --luwmodel=SVM sample/sample.KC sample/SVM/train.KC.model out
+  $ perl ./script/comainu.pl kc2longout --luwmodel-type=SVM sample/sample.KC sample/SVM/train.KC.model out
     -> out/sample.KC.lout
 
 COMAINU-METHOD: kclong2mideval

@@ -27,7 +27,7 @@ sub usage {
     printf("  ex.)\n");
     printf("  \$ perl ./script/comainu.pl kc2longout sample/sample.KC train/CRF/train.KC.model out\n");
     printf("    -> out/sample.lout\n");
-    printf("  \$ perl ./script/comainu.pl kc2longout --luwmodel=SVM sample/sample.KC train/SVM/train.KC.model out\n");
+    printf("  \$ perl ./script/comainu.pl kc2longout --luwmodel-type=SVM sample/sample.KC train/SVM/train.KC.model out\n");
     printf("    -> out/sample.KC.lout\n");
     printf("\n");
 }
@@ -82,8 +82,8 @@ sub create_features {
     my $buff = Comainu::Feature->create_longout_feature($tmp_test_kc, $self->{boundary});
     # SVMの場合はpartial parsing
     $buff = Comainu::Feature->pp_partial($buff, { boundary => $self->{boundary} })
-        if $self->{luwmodel} eq 'SVM';
-    if ( $self->{luwmodel} eq 'CRF' ) {
+        if $self->{"luwmodel-type"} eq 'SVM';
+    if ( $self->{"luwmodel-type"} eq 'CRF' ) {
         $buff =~ s/^EOS.*?//mg;
         # CRFでは*Bが境界とみなされないため、削除
         $buff =~ s/^\*B.*?//mg if $self->{boundary} eq "word";
@@ -107,11 +107,11 @@ sub chunk_luw {
 
     my $tool_cmd;
     my $opt = "";
-    if ( $self->{luwmodel} eq 'SVM' ) {
+    if ( $self->{"luwmodel-type"} eq 'SVM' ) {
         # sentence/word boundary
         $opt = "-C" if $self->{boundary} eq "sentence" || $self->{boundary} eq "word";
         $tool_cmd = $self->{"yamcha-dir"} . "/yamcha";
-    } elsif ( $self->{luwmodel} eq 'CRF' ) {
+    } elsif ( $self->{"luwmodel-type"} eq 'CRF' ) {
         $tool_cmd = $self->{"crf-dir"} . "/crf_test";
     }
     $tool_cmd .= ".exe" if $Config{osname} eq "MSWin32";
@@ -122,9 +122,9 @@ sub chunk_luw {
     }
 
     my $com = "";
-    if ( $self->{luwmodel} eq "SVM" ) {
+    if ( $self->{"luwmodel-type"} eq "SVM" ) {
         $com = "\"" . $tool_cmd . "\" " . $opt . " -m \"" . $luwmodel . "\"";
-    } elsif ( $self->{luwmodel} eq "CRF" ) {
+    } elsif ( $self->{"luwmodel-type"} eq "CRF" ) {
         $com = "\"$tool_cmd\" -m \"$luwmodel\"";
     }
     printf(STDERR "# COM: %s\n", $com) if $self->{debug};
