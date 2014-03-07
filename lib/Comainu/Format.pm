@@ -451,7 +451,7 @@ sub merge_bccwj_with_kc_mout_file {
         my @item_list = split /\t/;
         my $lw = shift @m;
         $lw = shift @m if $lw && $lw =~ /^EOS|^\*B/;
-        my @ml = split /[ \t]/, $lw;
+        my @ml = split /[ \t]/, $lw // "";
         $item_list[$_] //= '' for (0..33);
         # @item_list[34..36] = @ml[19..21];
         $item_list[$_ + 15] = $ml[$_] // '' for (19..21);

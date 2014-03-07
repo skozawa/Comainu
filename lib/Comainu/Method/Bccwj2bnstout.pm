@@ -12,37 +12,37 @@ use Comainu::Method::Kc2bnstout;
 
 sub new {
     my ($class, %args) = @_;
-    $class->SUPER::new( %args, args_num => 4 );
+    $class->SUPER::new( %args, args_num => 3 );
 }
 
 # 文節境界解析 BCCWJ
 sub usage {
     my $self = shift;
     printf("COMAINU-METHOD: bccwj2bnstout\n");
-    printf("  Usage: %s bccwj2bnstout <test-kc> <bnst-model-file> <out-dir>\n", $0);
+    printf("  Usage: %s bccwj2bnstout <test-kc> <out-dir>\n", $0);
     printf("    This command analyzes <test-kc> with <bnst-model-file>.\n");
     printf("    The result is put into <out-dir>.\n");
     printf("\n");
     printf("  ex.)\n");
-    printf("  \$ perl ./script/comainu.pl bccwj2bnstout sample/sample.bccwj.txt train/bnst.model out\n");
+    printf("  \$ perl ./script/comainu.pl bccwj2bnstout sample/sample.bccwj.txt out\n");
     printf("    -> out/sample.bccwj.txt.bout\n");
     printf("\n");
 }
 
 sub run {
-    my ($self, $test_bccwj, $bnstmodel, $save_dir) = @_;
+    my ($self, $test_bccwj, $save_dir) = @_;
 
     $self->before_analyze({
-        dir => $save_dir, bnstmodel => $bnstmodel, args_num => scalar @_
+        dir => $save_dir, bnstmodel => $self->{bnstmodel}, args_num => scalar @_
     });
 
-    $self->analyze_files($test_bccwj, $bnstmodel, $save_dir);
+    $self->analyze_files($test_bccwj, $save_dir);
 
     return 0;
 }
 
 sub analyze {
-    my ($self, $test_bccwj, $bnstmodel, $save_dir) = @_;
+    my ($self, $test_bccwj, $save_dir) = @_;
 
     my $tmp_dir = $self->{"comainu-temp"};
     my $basename = basename($test_bccwj);
@@ -61,7 +61,7 @@ sub analyze {
 
     Comainu::Format->bccwj2kc_file($tmp_test_bccwj, $kc_file, $self->{boundary});
     my $kc2bnstout = Comainu::Method::Kc2bnstout->new(%$self);
-    $kc2bnstout->run($kc_file, $bnstmodel, $tmp_dir);
+    $kc2bnstout->run($kc_file, $tmp_dir);
     Comainu::Format->merge_bccwj_with_kc_bout_file($tmp_test_bccwj, $kc_bout_file, $bccwj_bout_file);
 
     unless ( $self->{debug} ) {

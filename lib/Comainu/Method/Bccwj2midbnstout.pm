@@ -14,41 +14,41 @@ use Comainu::Method::Kclong2midout;
 
 sub new {
     my ($class, %args) = @_;
-    $class->SUPER::new( %args, args_num => 6 );
+    $class->SUPER::new( %args, args_num => 3 );
 }
 
 # 文節、長・中単位の同時解析
 sub usage {
     my $self = shift;
     printf("COMAINU-METHOD: bccwj2midbnstout\n");
-    printf("  Usage: %s bccwj2midbnstout <test-kc> <long-model-file> <mid-model-file> <bnst-model-file> <out-dir>\n", $0);
+    printf("  Usage: %s bccwj2midbnstout <test-kc> <out-dir>\n", $0);
     printf("    This command analyzes <test-kc> with <long-model-file>, <mid-model-file> and <bnst-model-file>.\n");
     printf("    The result is put into <out-dir>.\n");
     printf("\n");
     printf("  ex.)\n");
-    printf("  \$ perl ./script/comainu.pl bccwj2midbnstout sample/sample.bccwj.txt trian/CRF/train.KC.model train/MST/train.KC.model train/bnst.model out\n");
+    printf("  \$ perl ./script/comainu.pl bccwj2midbnstout sample/sample.bccwj.txt out\n");
     printf("    -> out/sample.bccwj.txt.mbout\n");
     printf("\n");
 }
 
 sub run {
-    my ($self, $test_bccwj, $luwmodel, $muwmodel, $bnstmodel, $save_dir) = @_;
+    my ($self, $test_bccwj, $save_dir) = @_;
 
     $self->before_analyze({
         dir       => $save_dir,
-        luwmodel  => $luwmodel,
-        muwmodel  => $muwmodel,
-        bnstmodel => $bnstmodel,
+        luwmodel  => $self->{luwmodel},
+        muwmodel  => $self->{muwmodel},
+        bnstmodel => $self->{bnstmodel},
         args_num  => scalar @_
     });
 
-    $self->analyze_files($test_bccwj, $luwmodel, $muwmodel, $bnstmodel, $save_dir);
+    $self->analyze_files($test_bccwj, $save_dir);
 
     return 0;
 }
 
 sub analyze {
-    my ($self, $test_bccwj, $luwmodel, $muwmodel, $bnstmodel, $save_dir) = @_;
+    my ($self, $test_bccwj, $save_dir) = @_;
 
     my $tmp_dir = $self->{"comainu-temp"};
     my $basename = basename($test_bccwj);
@@ -71,12 +71,12 @@ sub analyze {
 
     Comainu::Format->bccwj2kc_file($tmp_test_bccwj, $kc_file, $self->{boundary});
     my $kc2longout = Comainu::Method::Kc2longout->new(%$self);
-    $kc2longout->run($kc_file, $luwmodel, $tmp_dir);
+    $kc2longout->run($kc_file, $tmp_dir);
     my $kc2bnstout = Comainu::Method::Kc2bnstout->new(%$self);
-    $kc2bnstout->run($kc_file, $bnstmodel, $tmp_dir);
+    $kc2bnstout->run($kc_file, $tmp_dir);
     Comainu::Format->lout2kc4mid_file($kc_lout_file, $kc_file);
     my $kclong2midout = Comainu::Method::Kclong2midout->new(%$self);
-    $kclong2midout->run($kc_file, $muwmodel, $tmp_dir);
+    $kclong2midout->run($kc_file, $tmp_dir);
     Comainu::Format->merge_bccwj_with_kc_lout_file($tmp_test_bccwj, $kc_lout_file, $bccwj_mbout_file, $self->{boundary});
     Comainu::Format->merge_bccwj_with_kc_bout_file($bccwj_mbout_file, $kc_bout_file, $bccwj_mbout_file);
     Comainu::Format->merge_bccwj_with_kc_mout_file($bccwj_mbout_file, $kc_mout_file, $bccwj_mbout_file);

@@ -12,37 +12,37 @@ use Comainu::Method::Kclong2midout;
 
 sub new {
     my ($class, %args) = @_;
-    $class->SUPER::new( %args, args_num => 4 );
+    $class->SUPER::new( %args, args_num => 3 );
 }
 
 # 中単位解析 BCCWJ
 sub usage {
     my $self = shift;
     printf("COMAINU-METHOD: bccwjlong2midout\n");
-    printf("  Usage: %s bccwjlong2midout <test-kc> <mid-model-file> <out-dir>\n", $0);
+    printf("  Usage: %s bccwjlong2midout <test-kc> <out-dir>\n", $0);
     printf("    This command analyzes <test-kc> with <mid-model-file>.\n");
     printf("    The result is put into <out-dir>.\n");
     printf("\n");
     printf("  ex.)\n");
-    printf("  \$ perl ./script/comainu.pl bccwjlong2midout sample/sample.bccwj.txt train/MST/train.KC.model out\n");
+    printf("  \$ perl ./script/comainu.pl bccwjlong2midout sample/sample.bccwj.txt out\n");
     printf("    -> out/sample.bccwj.txt.mout\n");
     printf("\n");
 }
 
 sub run {
-    my ($self, $test_bccwj, $muwmodel, $save_dir) = @_;
+    my ($self, $test_bccwj, $save_dir) = @_;
 
     $self->before_analyze({
-        dir => $save_dir, muwmodel => $muwmodel, args_num => scalar @_
+        dir => $save_dir, muwmodel => $self->{muwmodel}, args_num => scalar @_
     });
 
-    $self->analyze_files($test_bccwj, $muwmodel, $save_dir);
+    $self->analyze_files($test_bccwj, $save_dir);
 
     return 0;
 }
 
 sub analyze {
-    my ($self, $test_bccwj, $muwmodel, $save_dir) = @_;
+    my ($self, $test_bccwj, $save_dir) = @_;
 
     my $tmp_dir = $self->{"comainu-temp"};
     my $basename = basename($test_bccwj);
@@ -61,7 +61,7 @@ sub analyze {
 
     Comainu::Format->bccwjlong2kc_file($tmp_test_bccwj, $kc_file, $self->{boundary});
     my $kclong2midout = Comainu::Method::Kclong2midout->new(%$self);
-    $kclong2midout->run($kc_file, $muwmodel, $tmp_dir);
+    $kclong2midout->run($kc_file, $tmp_dir);
     Comainu::Format->merge_bccwj_with_kc_mout_file($tmp_test_bccwj, $kc_mout_file, $bccwj_mout_file);
 
     unless ( $self->{debug} ) {
