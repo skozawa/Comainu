@@ -13,7 +13,7 @@ use Comainu::Feature;
 
 sub new {
     my ($class, %args) = @_;
-    $class->SUPER::new( %args, args_num => 4 );
+    $class->SUPER::new( %args, args_num => 3 );
 }
 
 # 中単位解析
@@ -22,30 +22,32 @@ sub new {
 sub usage {
     my $self = shift;
     printf("COMAINU-METHOD: kclong2midout\n");
-    printf("  Usage: %s kclong2midout <test-kc> <mid-model-file> <out-dir>\n", $0);
+    printf("  Usage: %s kclong2midout (--muwmodel=<mid-model-file>) <test-kc> <out-dir>\n", $0);
     printf("    This command analyzes <test-kc> with <mid-model-file>.\n");
     printf("    The result is put into <out-dir>.\n");
     printf("\n");
     printf("  ex.)\n");
-    printf("  \$ perl ./script/comainu.pl kclong2midout sample/sample.KC train/MST/train.KC.model out\n");
+    printf("  \$ perl ./script/comainu.pl kclong2midout sample/sample.KC out\n");
+    printf("    -> out/sample.KC.mout\n");
+    printf("  \$ perl ./script/comainu.pl kclong2midout --muwmodel=train/MST/train.KC.model sample/sample.KC out\n");
     printf("    -> out/sample.KC.mout\n");
     printf("\n");
 }
 
 sub run {
-    my ($self, $test_kc, $muwmodel, $save_dir) = @_;
+    my ($self, $test_kc, $save_dir) = @_;
 
     $self->before_analyze({
-        dir => $save_dir, muwmodel => $muwmodel, args_num => scalar @_
+        dir => $save_dir, muwmodel => $self->{muwmodel}, args_num => scalar @_
     });
 
-    $self->analyze_files($test_kc, $muwmodel, $save_dir);
+    $self->analyze_files($test_kc, $save_dir);
 
     return 0;
 }
 
 sub analyze {
-    my ($self, $test_kc, $muwmodel, $save_dir) = @_;
+    my ($self, $test_kc, $save_dir) = @_;
 
     my $tmp_test_kc = $self->{"comainu-temp"} . "/" . basename($test_kc);
     Comainu::Format->format_inputdata({
@@ -62,7 +64,7 @@ sub analyze {
     my $mout_file   = $save_dir . "/" . basename($test_kc) . ".mout";
 
     $self->create_mstin($tmp_test_kc, $mstin_file);
-    $self->parse_muw($mstin_file, $muwmodel, $mstout_file);
+    $self->parse_muw($mstin_file, $mstout_file);
     $self->merge_mst_result($tmp_test_kc, $mstout_file, $mout_file);
 
     unlink $tmp_test_kc if !$self->{debug} && -f $tmp_test_kc;
@@ -82,7 +84,7 @@ sub create_mstin {
 
 # mstparserを利用して中単位解析
 sub parse_muw {
-    my ($self, $mstin_file, $muwmodel, $mstout_file) = @_;
+    my ($self, $mstin_file, $mstout_file) = @_;
     print STDERR "# PARSE MUW\n";
 
     my $java = $self->{"java"};
@@ -90,6 +92,7 @@ sub parse_muw {
 
     my $mst_classpath = $mstparser_dir . "/output/classes:" . $mstparser_dir . "/lib/trove.jar";
     my $memory = "-Xmx1800m";
+    my $muwmodel = $self->{muwmodel};
     if ( $Config{osname} eq "MSWin32" ) {
         $mst_classpath = $mstparser_dir . "/output/classes;" . $mstparser_dir . "/lib/trove.jar";
         $memory = "-Xmx1000m";

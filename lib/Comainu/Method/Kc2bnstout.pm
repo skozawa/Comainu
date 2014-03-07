@@ -15,36 +15,39 @@ use Comainu::Format;
 
 sub new {
     my ($class, %args) = @_;
-    $class->SUPER::new( %args, args_num => 4 );
+    $class->SUPER::new( %args, args_num => 3 );
 }
 
 sub usage {
     my $self = shift;
     printf("COMAINU-METHOD: kc2bnstout\n");
-    printf("  Usage: %s kc2bnstout <test-kc> <bnst-model-file> <out-dir>\n", $0);
+    printf("  Usage: %s kc2bnstout (--bnstmodel=<bnst-model-file>) <test-kc> <out-dir>\n", $0);
     printf("    This command analyzes <test-kc> with <bnst-model-file>.\n");
     printf("    The result is put into <out-dir>.\n");
     printf("\n");
     printf("  ex.)\n");
-    printf("  \$ perl ./script/comainu.pl kc2bnstout sample/sample.KC train/bnst.model out\n");
+    printf("  \$ perl ./script/comainu.pl kc2bnstout sample/sample.KC out\n");
+    printf("    -> out/sample.KC.bout\n");
+    printf("  ex.) specify the bnst model \n");
+    printf("  \$ perl ./script/comainu.pl kc2bnstout --bnstmodel=train/bnst.model sample/sample.KC out\n");
     printf("    -> out/sample.KC.bout\n");
     printf("\n");
 }
 
 sub run {
-    my ($self, $test_kc, $bnstmodel, $save_dir) = @_;
+    my ($self, $test_kc, $save_dir) = @_;
 
     $self->before_analyze({
-        dir => $save_dir, bnstmodel => $bnstmodel, args_num => scalar @_
+        dir => $save_dir, bnstmodel => $self->{bnstmodel}, args_num => scalar @_
     });
 
-    $self->analyze_files($test_kc, $bnstmodel, $save_dir);
+    $self->analyze_files($test_kc, $save_dir);
 
     return 0;
 }
 
 sub analyze {
-    my ($self, $test_kc, $bnstmodel, $save_dir) = @_;
+    my ($self, $test_kc, $save_dir) = @_;
 
     my $tmp_test_kc = $self->{"comainu-temp"} . "/" . basename($test_kc);
     Comainu::Format->format_inputdata({
@@ -60,7 +63,7 @@ sub analyze {
     my $bout_file    = $save_dir . "/" . $basename . ".bout";
 
     $self->format_bnstdata($tmp_test_kc, $svmdata_file);
-    $self->chunk_bnst($svmdata_file, $bnstmodel, $bout_file);
+    $self->chunk_bnst($svmdata_file, $bout_file);
     $self->merge_chunk_result($tmp_test_kc, $bout_file);
 
     unlink $tmp_test_kc if !$self->{debug} && -f $tmp_test_kc;
@@ -101,7 +104,7 @@ sub format_bnstdata {
 
 # yamchaを利用して文節境界解析
 sub chunk_bnst {
-    my ($self, $svmdata_file, $bnstmodel, $bout_file) = @_;
+    my ($self, $svmdata_file, $bout_file) = @_;
     print STDERR "# CHUNK BNST\n";
     my $yamcha_opt = "";
     if ($self->{"boundary"} eq "sentence" || $self->{"boundary"} eq "word") {
@@ -119,7 +122,7 @@ sub chunk_bnst {
     unlink $bout_file if -s $bout_file;
     check_file($svmdata_file);
 
-    my $yamcha_com = "\"".$YAMCHA."\" ".$yamcha_opt." -m \"".$bnstmodel."\"";
+    my $yamcha_com = "\"".$YAMCHA."\" ".$yamcha_opt." -m \"".$self->{bnstmodel}."\"";
     printf(STDERR "# YAMCHA_COM: %s\n", $yamcha_com) if $self->{debug};
 
     my $buff = proc_file2stdout($yamcha_com, $svmdata_file, $self->{"comainu-temp"});

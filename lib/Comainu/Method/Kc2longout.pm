@@ -14,38 +14,38 @@ use Comainu::BIProcessor;
 
 sub new {
     my ($class, %args) = @_;
-    $class->SUPER::new( %args, args_num => 4 );
+    $class->SUPER::new( %args, args_num => 3 );
 }
 
 sub usage {
     my ($self) = @_;
     printf("COMAINU-METHOD: kc2longout\n");
-    printf("  Usage: %s kc2longout <test-kc> <long-model-file> <out-dir>\n", $0);
+    printf("  Usage: %s kc2longout (--luwmodel=<long-model-file>) <test-kc> <out-dir>\n", $0);
     printf("    This command analyzes <test-kc> with <long-model-file>.\n");
     printf("    The result is put into <out-dir>.\n");
     printf("\n");
     printf("  ex.)\n");
-    printf("  \$ perl ./script/comainu.pl kc2longout sample/sample.KC train/CRF/train.KC.model out\n");
+    printf("  \$ perl ./script/comainu.pl kc2longout sample/sample.KC out\n");
     printf("    -> out/sample.lout\n");
-    printf("  \$ perl ./script/comainu.pl kc2longout --luwmodel-type=SVM sample/sample.KC train/SVM/train.KC.model out\n");
+    printf("  \$ perl ./script/comainu.pl kc2longout --luwmodel-type=SVM --luwmodel=train/SVM/train.KC.model sample/sample.KC out\n");
     printf("    -> out/sample.KC.lout\n");
     printf("\n");
 }
 
 sub run {
-    my ($self, $test_kc, $luwmodel, $save_dir) = @_;
+    my ($self, $test_kc, $save_dir) = @_;
 
     $self->before_analyze({
-        dir => $save_dir, luwmodel => $luwmodel, args_num => scalar @_,
+        dir => $save_dir, luwmodel => $self->{luwmodel}, args_num => scalar @_,
     });
 
-    $self->analyze_files($test_kc, $luwmodel, $save_dir);
+    $self->analyze_files($test_kc, $save_dir);
 
     return 0;
 }
 
 sub analyze {
-    my ($self, $test_kc, $luwmodel, $save_dir) = @_;
+    my ($self, $test_kc, $save_dir) = @_;
 
     my $tmp_test_kc = $self->{"comainu-temp"} . "/" . basename($test_kc);
     Comainu::Format->format_inputdata({
@@ -62,9 +62,9 @@ sub analyze {
     my $lout_file   = $save_dir . "/" . $basename . ".lout";
 
     $self->create_features($tmp_test_kc, $kc2_file);
-    $self->chunk_luw($kc2_file, $svmout_file, $luwmodel);
+    $self->chunk_luw($kc2_file, $svmout_file);
     $self->merge_chunk_result($tmp_test_kc, $svmout_file, $lout_file);
-    $self->post_process($tmp_test_kc, $luwmodel, $save_dir, $kc2_file);
+    $self->post_process($tmp_test_kc, $save_dir, $kc2_file);
 
     unlink $tmp_test_kc if !$self->{debug} &&
         -f $tmp_test_kc && $self->{bnst_process} ne 'with_luw';
@@ -102,7 +102,7 @@ sub create_features {
 
 # 解析用KC２ファイルをチャンキングモデル(yamcha, crf++)で解析
 sub chunk_luw {
-    my ($self, $kc2_file, $svmout_file, $luwmodel) = @_;
+    my ($self, $kc2_file, $svmout_file) = @_;
     print STDERR "# CHUNK LUW\n";
 
     my $tool_cmd;
@@ -123,9 +123,9 @@ sub chunk_luw {
 
     my $com = "";
     if ( $self->{"luwmodel-type"} eq "SVM" ) {
-        $com = "\"" . $tool_cmd . "\" " . $opt . " -m \"" . $luwmodel . "\"";
+        $com = "\"" . $tool_cmd . "\" " . $opt . " -m \"" . $self->{luwmodel} . "\"";
     } elsif ( $self->{"luwmodel-type"} eq "CRF" ) {
-        $com = "\"$tool_cmd\" -m \"$luwmodel\"";
+        $com = "\"$tool_cmd\" -m \"". $self->{luwmodel} . "\"";
     }
     printf(STDERR "# COM: %s\n", $com) if $self->{debug};
 
@@ -168,15 +168,15 @@ sub merge_chunk_result {
 
 # 後処理:BIのみのチャンクを再処理
 sub post_process {
-    my ($self, $tmp_test_kc, $luwmodel, $save_dir, $kc2_file) = @_;
+    my ($self, $tmp_test_kc, $save_dir, $kc2_file) = @_;
     my $ret = 0;
     print STDERR "# POST PROCESS\n";
 
-    my $train_name = basename($luwmodel, ".model");
+    my $train_name = basename($self->{luwmodel}, ".model");
     my $test_name = basename($tmp_test_kc);
     my $lout_file = $save_dir . "/" . $test_name . ".lout";
 
-    $self->set_comainu_bi_model($luwmodel);
+    $self->set_comainu_bi_model;
     my $bip_processor = Comainu::BIProcessor->new(
         model_type => 0,
         %$self,
@@ -198,11 +198,11 @@ sub post_process {
 # 1. comainu-bi-model-dir
 # 2. 長単位解析モデルと同じ階層にあるpos, cForm, cTypeのモデル
 sub set_comainu_bi_model {
-    my ($self, $luwmodel) = @_;
+    my ($self) = @_;
     return if $self->{"comainu-bi-model-dir"};
 
-    my $train_name = basename($luwmodel, ".model");
-    my $train_dir  = dirname($luwmodel);
+    my $train_name = basename($self->{luwmodel}, ".model");
+    my $train_dir  = dirname($self->{luwmodel});
 
     for my $type ( ("pos", "cForm", "cType") ) {
         return unless -d $train_dir . "/" . $type;

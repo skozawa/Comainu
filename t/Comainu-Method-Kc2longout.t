@@ -82,7 +82,7 @@ sub chunk_luw : Test(1) {
         proc_file2stdout => sub { read_from_file('t/sample/kc2longout/test.KC.svmout.system') },
     });
 
-    $kc2longout->chunk_luw('t/sample/kc2longout/test.KC', 't/sample/kc2longout/test.KC.svmout', 't/sample/kc2longout/test.KC.model');
+    $kc2longout->chunk_luw('t/sample/kc2longout/test.KC', 't/sample/kc2longout/test.KC.svmout');
 
     is $svmout_data, read_from_file('t/sample/kc2longout/test.KC.svmout.gold');
 };

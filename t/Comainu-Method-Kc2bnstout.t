@@ -58,7 +58,7 @@ sub chunk_bnst : Test(1) {
         proc_file2stdout => sub { read_from_file('t/sample/kc2bnstout/test.KC.svmdata.system') },
     });
 
-    $kc2bnstout->chunk_bnst('t/sample/kc2bnstout/test.KC.svmdata.system', 't/sample/kc2bnstout/test.KC.model', 't/sample/kc2bnstout/test.KC.bout');
+    $kc2bnstout->chunk_bnst('t/sample/kc2bnstout/test.KC.svmdata.system', 't/sample/kc2bnstout/test.KC.bout');
 
     is $bout_data, read_from_file('t/sample/kc2bnstout/test.KC.bout.bnst_gold');
 }
