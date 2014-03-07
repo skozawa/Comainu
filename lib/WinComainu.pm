@@ -1805,43 +1805,44 @@ sub execute_analysis_data {
         if($comainu_method =~ /(plain|bccwj|kc)2bnstout/) {
             # BunSetsu Analysis
             sprintf(
-                "\"%s\" \"%s/script/comainu.pl\" %s \"%s\" \"%s\" \"%s\" \"%s\"",
+                "\"%s\" \"%s/script/comainu.pl\" %s \"%s\" --bnstmodel=\"%s\" \"%s\" \"%s\"",
                 $runcom, $comainu_home, $comainu_opts_str, $comainu_method,
-                $comainu_test, $comainu_bnst_model, $tmp_dir
+                $comainu_bnst_model, $comainu_test, $tmp_dir
             );
         } elsif($comainu_method =~ /(plain|bccwj|kc)2longbnstout/) {
             # Long & BunSetsu Analysis
             sprintf(
-                "\"%s\" \"%s/script/comainu.pl\" %s \"%s\" \"%s\" \"%s\" \"%s\" \"%s\"",
+                "\"%s\" \"%s/script/comainu.pl\" %s \"%s\" --luwmodel=\"%s\" --bnstmodel=\"%s\" \"%s\" \"%s\"",
                 $runcom, $comainu_home, $comainu_opts_str, $comainu_method,
-                $comainu_test, $comainu_long_model, $comainu_bnst_model, $tmp_dir
+                $comainu_long_model, $comainu_bnst_model, $comainu_test, $tmp_dir
             );
         } elsif($comainu_method =~ /(plain|bccwj|kc)2midout/) {
             # Mid Analysis
             sprintf(
-                "\"%s\" \"%s/script/comainu.pl\" %s \"%s\" \"%s\" \"%s\" \"%s\" \"%s\"",
+                "\"%s\" \"%s/script/comainu.pl\" %s \"%s\" --luwmodel=\"%s\" --muwmodel=\"%s\" \"%s\" \"%s\"",
                 $runcom, $comainu_home, $comainu_opts_str, $comainu_method,
-                $comainu_test, $comainu_long_model, $comainu_mid_model, $tmp_dir
+                $comainu_long_model, $comainu_mid_model, $comainu_test, $tmp_dir
             );
         } elsif($comainu_method =~ /(plain|bccwj|kc)2midbnstout/) {
             # Long & Mid Analysis % BunSetsu
             sprintf(
-                "\"%s\" \"%s/script/comainu.pl\" %s \"%s\" \"%s\" \"%s\" \"%s\" \"%s\" \"%s\"",
+                "\"%s\" \"%s/script/comainu.pl\" %s \"%s\" --luwmodel=\"%s\" --muwmodel=\"%s\" --bnstmodel=\"%s\" \"%s\" \"%s\"",
                 $runcom, $comainu_home, $comainu_opts_str, $comainu_method,
-                $comainu_test, $comainu_long_model, $comainu_mid_model, $comainu_bnst_model, $tmp_dir
+                $comainu_long_model, $comainu_mid_model, $comainu_bnst_model,
+                $comainu_test, $tmp_dir
             );
         } elsif($comainu_method =~ /(bccwjlong|kclong)2midout/) {
             # Mid Analysis
             sprintf(
-                "\"%s\" \"%s/script/comainu.pl\" %s \"%s\" \"%s\" \"%s\" \"%s\"",
+                "\"%s\" \"%s/script/comainu.pl\" %s \"%s\" --muwmodel=\"%s\" \"%s\" \"%s\"",
                 $runcom, $comainu_home, $comainu_opts_str, $comainu_method,
-                $comainu_test, $comainu_mid_model, $tmp_dir
+                $comainu_mid_model, $comainu_test, $tmp_dir
             );
         } else {
             sprintf(
-                "\"%s\" \"%s/script/comainu.pl\" %s \"%s\" \"%s\" \"%s\" \"%s\"",
+                "\"%s\" \"%s/script/comainu.pl\" %s \"%s\" --luwmodel=\"%s\" \"%s\" \"%s\"",
                 $runcom, $comainu_home, $comainu_opts_str, $comainu_method,
-                $comainu_test, $comainu_long_model, $tmp_dir
+                $comainu_long_model, $comainu_test, $tmp_dir
             );
         }
     };
