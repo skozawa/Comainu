@@ -19,7 +19,7 @@ sub new {
     bless { %$DEFAULT_VALUES, %args }, $class;
 }
 
-# CRF++用のテンプレート作成
+# create template file for CRF++
 sub create_crf_template {
     my ($self, $template_file, $feature_num) = @_;
 
@@ -76,7 +76,7 @@ sub create_crf_template {
     undef $buff;
 }
 
-## テンプレート(後処理用)の作成
+# create template file for BI (CRF++)
 sub create_crf_BI_template {
     my ($self, $template_file, $feature_num, $num) = @_;
 
@@ -98,7 +98,7 @@ sub create_crf_BI_template {
     undef $buff;
 }
 
-# yamchaのMakefileを作成
+# create Makefile for yamcha
 sub create_yamcha_makefile {
     my ($self, $model_dir, $basename) = @_;
 

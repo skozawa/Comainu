@@ -1,5 +1,5 @@
 # -*- mode: perl; coding: utf-8; -*-
-# BIのみから成る長単位を処理する
+# Analyze pos, cForm and cType of long-unit-word labeled with only B and I
 package Comainu::BIProcessor;
 
 use strict;
@@ -44,7 +44,7 @@ sub new {
     bless { %$DEFAULT_VALUES, %args }, $class;
 }
 
-## 学習用KCファイルから学習データを取得
+# create train data from KC file
 sub create_train_data {
     my ($self, $kc_file, $svmin_file, $train_dir, $basename) = @_;
 
@@ -59,7 +59,7 @@ sub create_train_data {
     undef $BI_units;
 }
 
-
+# Analyze pos, cForm and cType of long-unit-word labeled with only B and I
 sub analyze {
     my ($self, $kc2_file, $lout_file, $args) = @_;
 
@@ -85,8 +85,8 @@ sub analyze {
     undef $long_units;
     undef $BI_units;
 
-    # CRF++では*Bが境界とみなされない(kc2longout, boundary=word)
-    # *BがEOS扱いとされるのでEOS削除
+    # delete EOS
+    # CRF++ can't recognize B* and B* -> EOS (kc2longout, boundary=word)
     $res =~ s/^EOS.*?\nB/B/mg if $self->{boundary} eq "word";
 
     unlink $kc2_file if !$self->{debug} && -f $kc2_file;
@@ -95,8 +95,10 @@ sub analyze {
 }
 
 
-# 学習時:   kc_file, svmin_file
-# テスト時: kc2_file, lout_file
+# Create array of long-unit-words and
+# array of indices of long-unit-word labeled with only B and I
+# train:   kc_file, svmin_file
+# test : kc2_file, lout_file
 sub create_long_BI_units {
     my ($self, $kc_file, $labeled_file, $is_test) = @_;
 
@@ -115,15 +117,15 @@ sub create_long_BI_units {
 
         if ( $kc eq '' || $kc eq '*B' || $kc eq 'EOS' ) {
             if ( $is_test ) {
-                # BI_unitsのindexがおかしくならないように, EOSの代わりに追加
+                # append this instead of EOS for BI_units index
                 push @$long_units, [("* * * * * * * * * * * * * * * * * * * *")];
-                # CRF++, Yamchaのため最後は空行が2つある
-                # EOSが重複しないようにlastする
+                # do last to avoid duplicate EOS line
+                # there are two blank lines for CRF++, Yamcha
                 last unless $line;
             } elsif ( $line eq "" || $line eq 'EOS' ) {
                 $line = decode_utf8 <$fh_label>;
                 $line =~ s/\r?\n//mg;
-                # BI_unitsのindexがおかしくならないように, EOSの代わりに追加
+                # append this instead of EOS for BI_units index
                 push @$long_units, [("* * * * * * * * * * * * * * * * * * * *")];
             }
             next;
@@ -157,6 +159,7 @@ sub create_long_BI_units {
     return ($long_units, $BI_units);
 }
 
+# create feature for training and testing
 sub create_BI_data {
     my ($self, $long_units, $BI_units, $args) = @_;
 
@@ -171,7 +174,7 @@ sub create_BI_data {
     my $comp = {};
     if ( $is_test ) {
         my %pos_label  = reverse %{$self->{pos_label}};
-        # 助詞・助動詞の除去
+        # delete particle and auxiliary
         delete $pos_label{$_} for (@{$self->{aux_labels}}, @{$self->{part_labels}});
         $label_text = join " ", keys %pos_label;
         $comp = $self->load_comp_file;
@@ -180,14 +183,14 @@ sub create_BI_data {
     foreach my $i ( @$BI_units ) {
         my $long_unit = $long_units->[$i];
 
-        ## 長単位の先頭の短単位
+        # first short-unit-word of long-unit-word
         my @first = split / /, $long_unit->[0];
         my $long_lemma = $first[17 + $is_test];
         my $feature = $long_lemma;
 
         $feature .= $self->create_feature($long_units, $i, $is_test);
 
-        # 長単位の品詞、活用型、活用形
+        # pos, cType, cForm of long-unit-word
         my $f_pos   = $first[13 + $is_test];
         my $f_cType = $first[14 + $is_test];
         my $f_cForm = $first[15 + $is_test];
@@ -277,20 +280,20 @@ sub short2feature {
     my $feature = "";
     my @short = split / /, $short_unit;
 
-    ## 見出し、読み、語彙素
+    # orthToken, reading, lemma
     $feature .= " " . $short[$_ + $is_test] for ( 0 .. 2 );
 
-    ## 品詞
+    # pos
     $feature .= " " . $short[3 + $is_test];
     my @pos = split /\-/, $short[3 + $is_test];
     $feature .= " " . ($pos[$_+1] ? join("-", @pos[0..$_]) : '*') for ( 0 .. 2 );
 
-    ## 活用型
+    # cType
     $feature .= " " . $short[4 + $is_test];
     my @cType = split /\-/, $short[4 + $is_test];
     $feature .= " " . ($cType[$_+1] ? join("-", @cType[0..$_]) : '*') for ( 0 .. 1 );
 
-    ## 活用形
+    # cForm
     $feature .= " " . $short[5 + $is_test];
     my @cForm = split /\-/, $short[5 + $is_test];
     $feature .= " " . ($cForm[$_+1] ? join("-", @cForm[0..$_]) : '*') for ( 0 .. 1 );
@@ -300,6 +303,7 @@ sub short2feature {
 }
 
 
+# train models
 sub train {
     my ($self, $name, $model_dir) = @_;
 

@@ -6,8 +6,7 @@ use utf8;
 
 use File::Temp qw(tempfile);
 
-# *.KC と *.out (システムの出力)を比較し、精度を求める
-# segmentaion と POS information (発音を除くすべて)
+# Evaluate the model comparing *.KC and *.out
 sub eval_long {
     my ($class, $gld_file, $sys_file, $is_middle, $eval_level) = @_;
 

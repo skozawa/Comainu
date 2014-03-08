@@ -23,7 +23,7 @@ sub create_longout_feature {
     return $buff;
 }
 
-# 行頭または行末のカラムとして追加する。
+# create feature for longmodel
 # pivot
 #    Ba  長単位先頭     品詞一致
 #    B   長単位先頭     品詞不一致
@@ -55,15 +55,16 @@ sub create_longmodel_feature {
         my $long_pos  = join " ", @$items[13..15];
 
         if ( $long_pos =~ /^\*/ ) {
-            $pivot = "I";
+            $pivot = "I"; # not first short-unit-word
         } else {
-            $pivot = "B";
+            $pivot = "B"; # first short-unit-word
             $curr_long_pos = $long_pos;
         }
 
         if ( $short_pos eq $curr_long_pos ) {
             if ( $i < $#{$line_in_list} ) {
                 my $next_items = [ split / /, $line_in_list->[$i+1] ];
+                # only the end of short-unit-word
                 if ( $next_items->[0] eq '*B' || $next_items->[0] eq 'EOS' ||
                          ($next_items->[13] && $next_items->[13] ne "*") ) {
                     $pivot .= "a";
@@ -88,17 +89,17 @@ sub _long_feature_from_line {
     return $line unless $#items > 8;
     my @features = @items[0 .. 5, 10 .. 12];
 
-    ## 品詞を分割して素性に追加
+    # pos
     my @hinsi = split(/\-/,$features[3]);
     for my $j ( 0 .. 2 ) {
         push @features, $hinsi[$j+1] ? join("-", @hinsi[0..$j]) : '*';
     }
-    ## 活用型を分割して素性に追加
+    # cType
     my @katuyou1 = split(/\-/,$features[4]);
     for my $j ( 0 .. 1 ) {
         push @features, $katuyou1[$j+1] ? join("-", @katuyou1[0..$j]) : '*';
     }
-    ## 活用形を分割して素性に追加
+    # cForm
     my @katuyou2 = split(/\-/,$features[5]);
     for my $j ( 0 .. 1 ) {
         push @features, $katuyou2[$j+1] ? join("-", @katuyou2[0..$j]) : '*';
@@ -107,7 +108,7 @@ sub _long_feature_from_line {
     return join " ", @features;
 }
 
-# 前処理（partial chunkingの入力フォーマットへの変換）
+# preprocess (translate into input format for partial chunking)
 sub pp_partial {
     my ($class, $data, $args) = @_;
     my $res = "";
@@ -207,17 +208,17 @@ sub _bnst_feature_from_line {
     my @items = split /[ \t]/, $line;
     my @features = @items[0..5];
 
-    ## 品詞を分割して素性に追加
+    # pos
     my @pos = split(/\-/,$items[3]);
     for my $j ( 0 .. 2 ) {
         push @features, $pos[$j+1] ? join("-", @pos[0..$j]) : '*';
     }
-    ## 活用型を分割して素性に追加
+    # cType
     my @cType = split(/\-/,$items[4]);
     for my $j ( 0 .. 1 ) {
         push @features, $cType[$j+1] ? join("-", @cType[0..$j]) : '*';
     }
-    ## 活用形を分割して素性に追加
+    # cForm
     my @cForm = split(/\-/,$items[5]);
     for my $j ( 0 .. 1 ) {
         push @features, $cForm[$j+1] ? join("-", @cForm[0..$j]) : '*';
@@ -238,7 +239,7 @@ sub _bnst_feature_from_line {
     return join " ", @features;
 }
 
-# 前処理（partial chunkingの入力フォーマットへの変換）
+# preprocess (translate into input format for partial chunking)
 sub pp_partial_bnst_with_luw {
     my ($class, $data, $svmout_file) = @_;
     my $res = "";
@@ -320,7 +321,7 @@ sub create_mst_feature {
     return $buff;
 }
 
-# 中単位解析用の素性を生成
+# create feature for middle-unit-word analysis
 sub _mst_feature {
     my ($class, $short_terms, $pos) = @_;
     my $res = "";

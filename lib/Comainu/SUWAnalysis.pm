@@ -59,7 +59,7 @@ sub plain2kc_file {
     $self->mecab2kc_file($mecab_file, $kc_file);
 }
 
-# 形態素解析
+# morphological analysis
 sub plain2mecab_file {
     my ($self, $test_file, $mecab_file) = @_;
 
@@ -90,13 +90,13 @@ sub plain2mecab_file {
     undef $out_buff;
 }
 
-# extcorput.plを利用して付加情報を付与
+# add form, formBase, formOrthBase, formOrth by using extcorpus.pl
 sub mecab2kc_file {
     my ($self, $mecab_file, $kc_file) = @_;
     my $mecab_ext_file = $mecab_file."_ext";
     my $ext_def_file   = $self->{"comainu-temp"}."/mecab_ext.def";
 
-    # unidic dbがない場合の対処
+    # No found unidic db
     unless ( -f $self->{"unidic-db"} ) {
         printf STDERR "***********************************************\n";
         printf STDERR "***** WARN: NO UNIDIC DB                  *****\n";

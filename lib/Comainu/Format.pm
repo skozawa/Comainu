@@ -7,7 +7,7 @@ use Encode;
 
 use Comainu::Util qw(read_from_file write_to_file check_file);
 
-# 入力用のフォーマットに変換
+# format input data
 sub format_inputdata {
     my ($class, $args) = @_;
 
@@ -17,7 +17,7 @@ sub format_inputdata {
     undef $buff;
 }
 
-# 入力形式を内部形式に変換
+# translate input data into internal format data
 sub trans_dataformat {
     my ($class, $input_data, $args) = @_;
 
@@ -84,7 +84,7 @@ sub trans_dataformat {
 }
 
 
-### kclong2midout
+## kclong2midout
 sub merge_kc_with_mstout {
     my ($class, $kc_file, $out_file) = @_;
     my $res = "";
@@ -133,7 +133,7 @@ sub merge_kc_with_mstout {
     return $res;
 }
 
-# 中単位境界を判定
+# recognize boundary of middle-unit-word
 sub create_middle {
     my ($class, $kc_long, $out_long, $ref_mid, $pos) = @_;
     my $res = "";
@@ -219,16 +219,7 @@ sub create_middle {
     return $res;
 }
 
-
-############################################################
-# 形式の変換
-############################################################
-# 動作：ホワイトスペースで区切られた１２カラム以上からなる行を１行ずつ読み、
-# 　　　次の順に並べなおして出力する。（数字は元のカラム位置。","は説明のために使用。
-# 　　　実際の区切りはスペース一つ）
-# 　　　（順番： 12, 1, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11）
-# 　　　元のレコードが１２カラムに満たない場合は、該当箇所のデータをブランクとして扱う。
-# 　　　ただし、１レコード以下の行は、その存在を無視する。
+# move last index to first
 sub move_future_front {
     my ($class, $data) = @_;
     my $res = "";
@@ -250,9 +241,9 @@ sub move_future_front {
 }
 
 ############################################################
-# フォーマットの変換
+# translate format
 ############################################################
-# BCCWJの形式をComainu長単位解析の入力形式に変換
+# translate BCCWJ into KC
 sub bccwj2kc_file {
     my ($class, $bccwj_file, $kc_file, $boundary) = @_;
     my $buff = read_from_file($bccwj_file);
@@ -269,7 +260,6 @@ sub bccwjlong2kc_file {
     undef $buff;
 }
 
-# BCCWJの形式をComainu長単位解析の入力形式に変換
 sub bccwj2kc {
     my ($class, $data, $type, $boundary) = @_;
     # my $cn = 17;
@@ -310,7 +300,7 @@ sub bccwj2kc {
     return $res;
 }
 
-### bccwj2mid*, plain2mid*
+# translate lout into kclong (bccwj2mid*, plain2mid*)
 sub lout2kc4mid_file {
     my ($class, $kc_lout_file, $kc_file) = @_;
 
@@ -333,8 +323,9 @@ sub lout2kc4mid_file {
 
 
 ############################################################
-# ファイルのマージ
+# Merge files
 ############################################################
+# merge bccwj and lout file
 sub merge_bccwj_with_kc_lout_file {
     my ($class, $bccwj_file, $kc_lout_file, $boundary, $lout_file) = @_;
     my $bccwj_data = read_from_file($bccwj_file);
@@ -349,7 +340,6 @@ sub merge_bccwj_with_kc_lout_file {
     undef $lout_data;
 }
 
-# bccwj形式のファイルに長単位解析結果をマージ
 sub merge_iof {
     my ($class, $bccwj_data, $lout_data, $boundary) = @_;
     my $res = "";
@@ -625,158 +615,6 @@ sub merge_kc_with_bout {
 
     return $res;
 }
-
-
-############################################################
-# 使ってない関数
-############################################################
-# 文節情報に基づいたカラムを追加して出力する
-# 付加条件：
-# 前の行に*Bや*Pがある場合は L
-# 後ろの行に*Bや*Pがある場合は R
-# 両方にある場合は B
-# どちらにも無い場合はN
-# ファイル終端行は R または B
-sub add_column {
-    my ($self, $data) = @_;
-    my $res = "";
-    my ($prev, $curr, $next) = (0, 1, 2);
-    my $buff_list = [undef, undef];
-
-    $data .= "*B\n";
-    foreach my $line ((split(/\r?\n/, $data), undef, undef)) {
-        push(@$buff_list, $line);
-        if ( defined $buff_list->[$curr] && $buff_list->[$curr] !~ /^EOS/ &&
-                 $buff_list->[$curr] !~ /^\*B/ ) {
-            my $mark = "";
-            if ( $buff_list->[$prev] =~ /^\*B/ && $buff_list->[$next] =~ /^\*B/) {
-                $mark = "B";
-            } elsif ( $buff_list->[$prev] =~ /^\*B/ ) {
-                $mark = "L";
-            } elsif ( $buff_list->[$next] =~ /^\*B/ ) {
-                $mark = "R";
-            } else {
-                $mark = "N";
-            }
-            $buff_list->[$curr] .= " ".$mark;
-        }
-        my $new_line = shift(@$buff_list);
-        if ( defined $new_line && $new_line !~ /^\*B/ ) {
-            $res .= $new_line."\n";
-        }
-    }
-    while ( my $new_line = shift(@$buff_list) ) {
-        if ( defined $new_line && $new_line !~ /^\*B/ ) {
-            $res .= $new_line."\n";
-        }
-    }
-
-    undef $data;
-    undef $buff_list;
-
-    return $res;
-}
-
-#
-# poscreateの代わりの関数
-# 長単位の品詞・活用型・活用形を生成
-#
-sub poscreate {
-    my ($self, $file) = @_;
-    my $res = "";
-
-    my @long;
-    open(IN, $file);
-    while ( my $line = <IN> ) {
-        $line = Encode::decode("utf-8", $line);
-        $line =~ s/\r?\n//;
-        next if $line eq "";
-        my @items = split(/[ \t]/, $line);
-
-        # $items[10] = "*";
-        # $items[11] = "*";
-        @items[10..15] = ("*","*","*","*","*","*");
-
-        if ( $self->{"luwmrph"} ne "without" ) {
-            if ( $items[0] eq "B" || $items[0] eq "Ba" ) {
-                map { $res .= join(" ",@$_)."\n" } @long;
-
-                @long = ();
-                @items[10..15] = @items[4..6,2,3,1];
-            } else {
-                my $first = $long[0];
-                $$first[13] .= $items[2];
-                $$first[14] .= $items[3];
-                $$first[15] .= $items[1];
-                if ( $items[0] eq "Ia" ) {
-                    @$first[10..12] = @items[4..6];
-                }
-            }
-        }
-        push @long, [@items[0..15]];
-    }
-    close(IN);
-    map { $res .= join(" ",@$_)."\n" } @long;
-
-    undef @long;
-
-    return $res;
-}
-
-# 後処理（「動詞」となる長単位の活用型、活用形）
-# アドホックな後処理-->書き換え規則を変更する方針
-sub pp_ctype {
-    my ($self, $data) = @_;
-    my $res = "";
-    my @lw;
-    foreach ( split(/\r?\n/, $data) ) {
-        if (/^B/) {
-            if ($#lw > -1) {
-                my @last = split(/[ \t]/, $lw[$#lw]);
-                if ($last[8] ne "*") {
-                    my @first = split(/[ \t]/, shift(@lw));
-                    if ($first[13] eq "*" && $first[12] =~ /^動詞/) {
-                        $first[13] = $last[7];
-                   }
-                    if ($first[14] eq "*" && $first[12] =~ /^動詞/) {
-                        $first[14] = $last[8];
-                    }
-                    unshift(@lw, join(" ", @first));
-                }
-                foreach (@lw) {
-                    # print "$_\n";
-                    $res .= "$_\n";
-                }
-                @lw = ();
-                push(@lw, $_);
-            } else {
-                push(@lw, $_);
-            }
-        } else {
-            push(@lw, $_);
-        }
-    }
-    undef $data;
-
-    if ($#lw > -1) {
-        my @last = split(/[ \t]/, $lw[$#lw]); # fixed by jkawai
-        if ($last[8] ne "*") {
-            my @first = split(/[ \t]/, $lw[0]);
-            if ($first[13] eq "*" && $first[12] =~ /^動詞/) {
-                $first[13] = $last[7];
-            }
-            if ($first[14] eq "*" && $first[12] =~ /^動詞/) {
-                $first[14] = $last[8];
-            }
-        }
-        foreach (@lw) {
-            # print "$_\n";
-            $res .= "$_\n";
-        }
-    }
-    return $res;
-}
-
 
 
 1;

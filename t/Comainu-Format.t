@@ -229,9 +229,4 @@ sub merge_kc_with_bout : Test(1) {
 };
 
 
-# sub add_column : Tests {};
-# sub poscreate : Tests {};
-# sub pp_ctype : Tests {};
-
-
 __PACKAGE__->runtests;
