@@ -11,18 +11,12 @@ use Comainu::SUWAnalysis;
 use Comainu::Method::Kc2longout;
 use Comainu::Method::Kclong2midout;
 
-# 平文からの中単位解析
+# Analyze middle-unit-word
 sub usage {
     my $self = shift;
-    printf("COMAINU-METHOD: plain2midout\n");
-    printf("  Usage: %s plain2midout <test-text> <out-dir>\n", $0);
-    printf("    This command analyzes <test-text> with Mecab and <long-model-file> and <mid-model-file>.\n");
-    printf("    The result is put into <out-dir>.\n");
-    printf("\n");
-    printf("  ex.)\n");
-    printf("  \$ perl ./script/comainu.pl plain2midout sample/plain/sample.txt out\n");
-    printf("    -> out/sample.txt.mout\n");
-    printf("\n");
+    while ( <DATA> ) {
+        print $_;
+    }
 }
 
 sub run {
@@ -72,3 +66,26 @@ sub analyze {
 
 
 1;
+
+
+__DATA__
+COMAINU-METHOD: plain2midout
+  Usage: ./script/comainu.pl plain2midout [options]
+    This command analyzes long-unit-word and middle-unit-word of <input>(file or STDIN) with <luwmodel> and <muwmodel>
+
+  option
+    --help                    show this message and exit
+    --input                   specify input file or directory
+    --output-dir              specify output directory
+    --luwmodel                specify the model of boundary of long-unit-word (default: train/CRF/train.KC.model)
+    --luwmodel-type           specify the type of the model for boundary of long-unit-word (default: CRF)
+                              (CRF or SVM)
+    --comainu-bi-model-dir    speficy the model directory for the category models
+    --muwmodel                specify the middle-unit-word model (default: trian/MST/train.KC.model)
+
+  ex.)
+  $ perl ./script/comainu.pl plain2midout
+  $ perl ./script/comainu.pl plain2midout --input=sample/plain/sample.txt --output-dir=out
+    -> out/sample.txt.mout
+  $ perl ./script/comainu.pl plain2midout --luwmodel-type=SVM --luwmodel=train/SVM/train.KC.model
+

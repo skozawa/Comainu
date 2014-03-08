@@ -77,7 +77,7 @@ COMAINU-METHOD: bccwj2bnstout [options]
 
   ex.)
   $ perl ./script/comainu.pl bccwj2bnstout
-  $ perl ./script/comainu.pl bccwj2longout --input=sample/sample.bccwj.txt --output-dir=out
+  $ perl ./script/comainu.pl bccwj2bnstout --input=sample/sample.bccwj.txt --output-dir=out
     -> out/sample.bccwj.txt.bout
-  $ perl ./script/comainu.pl bccwj2longout --bnstmodel=sample_train/sample.KC.model
+  $ perl ./script/comainu.pl bccwj2bnstout --bnstmodel=sample_train/sample.KC.model
 

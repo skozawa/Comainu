@@ -10,18 +10,12 @@ use Config;
 use Comainu::SUWAnalysis;
 use Comainu::Method::Kc2bnstout;
 
-# 平文からの文節境界解析
+# Analyze bunsetsu boundary
 sub usage {
     my $self = shift;
-    printf("COMAINU-METHOD: plain2bnstout\n");
-    printf("  Usage: %s plain2bnstout <test-text> <out-dir>\n", $0);
-    printf("    This command analyzes <test-text> with MeCab and <bnst-model-file>.\n");
-    printf("    The result is put into <out-dir>.\n");
-    printf("\n");
-    printf("  ex.)\n");
-    printf("  \$ perl ./script/comainu.pl plain2bnstout sample/plain/sample.txt out\n");
-    printf("    -> out/sample.txt.bout\n");
-    printf("\n");
+    while ( <DATA> ) {
+        print $_;
+    }
 }
 
 sub run {
@@ -63,3 +57,22 @@ sub analyze {
 
 
 1;
+
+
+__DATA__
+COMAINU-METHOD: plain2bnstout [options]
+  Usage: ./script/comainu.pl plain2bnstout
+    This command analyzes the bunsetsu boundary with <bnstmodel>.
+
+  option
+    --help                    show this message and exit
+    --input                   specify input file or directory
+    --output-dir              specify output directory
+    --bnstmodel               specify the bnst model (default: train/bnst.model)
+
+  ex.)
+  $ perl ./script/comainu.pl plain2bnstout
+  $ perl ./script/comainu.pl plain2bnstout --input=sample/plain/sample.txt --output-dir=out
+    -> out/sample.txt.bout
+  $ perl ./script/comainu.pl palin2bnstout --bnstmodel=sample_train/sample.KC.model
+

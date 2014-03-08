@@ -11,18 +11,12 @@ use Comainu::SUWAnalysis;
 use Comainu::Method::Kc2longout;
 use Comainu::Method::Kc2bnstout;
 
-# 平文からの長単位・文節解析
+# Analyze bunsetsu boundary and long-unit-word
 sub usage {
     my $self = shift;
-    printf("COMAINU-METHOD: plain2longbnstout\n");
-    printf("  Usage: %s plain2longbnstout <test-text> <out-dir>\n", $0);
-    printf("    This command analyzes <test-text> with Mecab and <long-model-file> and <bnst-model-file>.\n");
-    printf("    The result is put into <out-dir>.\n");
-    printf("\n");
-    printf("  ex.)\n");
-    printf("  \$ perl ./script/comainu.pl plain2longbnstout sample/plain/sample.txt out\n");
-    printf("    -> out/sample.txt.lbout\n");
-    printf("\n");
+    while ( <DATA> ) {
+        print $_;
+    }
 }
 
 sub run {
@@ -75,3 +69,26 @@ sub analyze {
 
 
 1;
+
+
+__DATA__
+COMAINU-METHOD: plain2longbnstout
+  Usage: ./script/comainu.pl plain2longbnstout [options]
+    This command analyzes bunsetsu boudnary and long-unit-word of <input>(file or STDIN) with <bnstmodel> and <luwmodel>
+
+  option
+    --help                    show this message and exit
+    --input                   specify input file or directory
+    --output-dir              specify output directory
+    --bnstmodel               specify the bnst model (default: train/bnst.model)
+    --luwmodel                specify the model of boundary of long-unit-word (default: train/CRF/train.KC.model)
+    --luwmodel-type           specify the type of the model for boundary of long-unit-word (default: CRF)
+                              (CRF or SVM)
+    --comainu-bi-model-dir    speficy the model directory for the category models
+
+  ex.)
+  $ perl ./script/comainu.pl plain2longbnstout
+  $ perl ./script/comainu.pl plain2longbnstout --input=sample/plain/sample.txt --output-dir=out
+    -> out/sample.txt.lbout
+  $ perl ./script/comainu.pl plain2longbnstout --luwmodel-type=SVM --luwmodel=train/SVM/train.KC.model
+
