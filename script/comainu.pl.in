@@ -4,6 +4,7 @@
 # Comainu Executable Script for Unix-Compatible Platforms.
 
 use strict;
+use warnings;
 
 our $Bin;
 my $VERSION = "@APP_VERSION@";
@@ -220,8 +221,8 @@ sub comainu {
 
     $ENV{"DBG"} = "ON";
 
-    unless ( scalar grep { $ARGV[0] eq $_ } @$comainu_method_names ) {
-        printf(STDERR "Not found method : %s\n", $ARGV[0]);
+    unless ( scalar grep { $ARGV[0] && $ARGV[0] eq $_ } @$comainu_method_names ) {
+        printf(STDERR "Not found method : %s\n", $ARGV[0] // '');
         printf(STDERR "Supported methods are:\n");
         foreach my $method_name ( @$comainu_method_names ) {
             printf("  %s\n", $method_name);
@@ -364,6 +365,7 @@ sub method_names {
 sub check_sub_tool_path {
     my ($method, $opts) = @_;
 
+    return 1 unless $method;
     if ( $method =~ /longmodel|bnstmodel/ ) {
         return 0 unless _check_tool_path($opts->{"yamcha-dir"}, 'yamcha');
         return 0 unless _check_tool_path($opts->{"svm-tool-dir"}, 'svm_learn');
