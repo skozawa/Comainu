@@ -10,22 +10,12 @@ use Config;
 use Comainu::Format;
 use Comainu::Method::Kc2longout;
 
-# 長単位解析 BCCWJ
-# 解析対象BCCWJファイル、モデルファイルの３つを用いて
-# 解析対象BCCWJファイルに長単位情報を付与する。
+# Analyze long-unit-word for BCCWJ
 sub usage {
     my $self = shift;
-    printf("COMAINU-METHOD: bccwj2longout\n");
-    printf("  Usage: %s bccwj2longout <test-bccwj> <out-dir>\n", $0);
-    printf("    This command analyzes <test-bccwj> with <long-model-file>.\n");
-    printf("    The result is put into <out-dir>.\n");
-    printf("\n");
-    printf("  ex.)\n");
-    printf("  \$ perl ./script/comainu.pl bccwj2longout sample/sample.bccwj.txt out\n");
-    printf("    -> out/sample.bccwj.txt.lout\n");
-    printf("  \$ perl ./script/comainu.pl bccwj2longout --luwmodel-type=SVM --luwmodel=train/SVM/train.KC.model sample/sample.bccwj.txt out\n");
-    printf("    -> out/sample.bccwj.txt.lout\n");
-    printf("\n");
+    while ( <DATA> ) {
+        print $_;
+    }
 }
 
 sub run {
@@ -34,7 +24,6 @@ sub run {
     $self->before_analyze({
         dir => $save_dir, luwmodel  => $self->{luwmodel}
     });
-
     $self->analyze_files($test_bccwj, $save_dir);
 
     return 0;
@@ -60,6 +49,7 @@ sub analyze {
     Comainu::Format->bccwj2kc_file($tmp_test_bccwj, $kc_file, $self->{boundary});
     my $kc2longout = Comainu::Method::Kc2longout->new(%$self);
     $kc2longout->analyze($kc_file, $tmp_dir);
+
     my $buff = Comainu::Format->merge_bccwj_with_kc_lout_file($tmp_test_bccwj, $kc_lout_file, $self->{boundary});
     $self->output_result($buff, $save_dir, $basename . ".lout");
     undef $buff;
@@ -73,3 +63,29 @@ sub analyze {
 
 
 1;
+
+
+__DATA__
+COMAINU-METHOD: bccwj2longout
+  Usage: ./script/comainu.pl bccwj2longout [options]
+    This command analyzes long-unit-word of <input>(file or STDIN) with <luwmodel>
+
+  option
+    --help                    show this message and exit
+    --input                   specify input file or directory
+    --output-dir              specify output directory
+    --luwmodel                specify the model of boundary of long-unit-word (default: train/CRF/train.KC.model)
+    --luwmodel-type           specify the type of the model for boundary of long-unit-word (default: CRF)
+                              (CRF or SVM)
+    --boundary                specify the type of boundary (default: sentence)
+                              (sentence or word)
+    --luwmrph                 whether to output morphology of long-unit-word (default: with)
+                              (with or without)
+    --comainu-bi-model-dir    speficy the model directory for the category models
+
+  ex.)
+  $ perl ./script/comainu.pl bccwj2longout
+  $ perl ./script/comainu.pl bccwj2longout --input=sample/sample.bccwj.txt --output-dir=out
+    -> out/sample.bccwj.txt.lout
+  $ perl ./script/comainu.pl bccwj2longout --luwmodel-type=SVM --luwmodel=train/SVM/train.KC.model
+

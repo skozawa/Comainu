@@ -10,18 +10,12 @@ use Config;
 use Comainu::Format;
 use Comainu::Method::Kc2bnstout;
 
-# 文節境界解析 BCCWJ
+# Analyze bunsetsu boundary for BCCWJ
 sub usage {
     my $self = shift;
-    printf("COMAINU-METHOD: bccwj2bnstout\n");
-    printf("  Usage: %s bccwj2bnstout <test-kc> <out-dir>\n", $0);
-    printf("    This command analyzes <test-kc> with <bnst-model-file>.\n");
-    printf("    The result is put into <out-dir>.\n");
-    printf("\n");
-    printf("  ex.)\n");
-    printf("  \$ perl ./script/comainu.pl bccwj2bnstout sample/sample.bccwj.txt out\n");
-    printf("    -> out/sample.bccwj.txt.bout\n");
-    printf("\n");
+    while ( <DATA> ) {
+        print $_;
+    }
 }
 
 sub run {
@@ -68,3 +62,22 @@ sub analyze {
 
 
 1;
+
+
+__DATA__
+COMAINU-METHOD: bccwj2bnstout [options]
+  Usage: ./script/comainu.pl bccwj2bnstout
+    This command analyzes the bunsetsu boundary with <bnstmodel>.
+
+  option
+    --help                    show this message and exit
+    --input                   specify input file or directory
+    --output-dir              specify output directory
+    --bnstmodel               specify the bnst model (default: train/bnst.model)
+
+  ex.)
+  $ perl ./script/comainu.pl bccwj2bnstout
+  $ perl ./script/comainu.pl bccwj2longout --input=sample/sample.bccwj.txt --output-dir=out
+    -> out/sample.bccwj.txt.bout
+  $ perl ./script/comainu.pl bccwj2longout --bnstmodel=sample_train/sample.KC.model
+

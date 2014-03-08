@@ -10,18 +10,12 @@ use Config;
 use Comainu::Format;
 use Comainu::Method::Kclong2midout;
 
-# 中単位解析 BCCWJ
+# Analyze middle-unit-word for BCCWJ with long-unit-word
 sub usage {
     my $self = shift;
-    printf("COMAINU-METHOD: bccwjlong2midout\n");
-    printf("  Usage: %s bccwjlong2midout <test-kc> <out-dir>\n", $0);
-    printf("    This command analyzes <test-kc> with <mid-model-file>.\n");
-    printf("    The result is put into <out-dir>.\n");
-    printf("\n");
-    printf("  ex.)\n");
-    printf("  \$ perl ./script/comainu.pl bccwjlong2midout sample/sample.bccwj.txt out\n");
-    printf("    -> out/sample.bccwj.txt.mout\n");
-    printf("\n");
+    while ( <DATA> ) {
+        print $_;
+    }
 }
 
 sub run {
@@ -55,6 +49,7 @@ sub analyze {
     Comainu::Format->bccwjlong2kc_file($tmp_test_bccwj, $kc_file, $self->{boundary});
     my $kclong2midout = Comainu::Method::Kclong2midout->new(%$self);
     $kclong2midout->analyze($kc_file, $tmp_dir);
+
     my $buff = Comainu::Format->merge_bccwj_with_kc_mout_file($tmp_test_bccwj, $kc_mout_file);
     $self->output_result($buff, $save_dir, $basename . ".mout");
     undef $buff;
@@ -68,3 +63,22 @@ sub analyze {
 
 
 1;
+
+
+__DATA__
+COMAINU-METHOD: bccwjlong2midout
+  Usage: ./script/comainu.pl bccwjlong2midout [options]
+    This command analyzes middle-unit-word of <input>(file or STDIN) with <muwmodel>
+
+  option
+    --help                    show this message and exit
+    --input                   specify input file or directory
+    --output-dir              specify output directory
+    --muwmodel                specify the middle-unit-word model (default: trian/MST/train.KC.model)
+
+  ex.)
+  $ perl ./script/comainu.pl bccwjlong2midout
+  $ perl ./script/comainu.pl bccwjlong2midout --input=sample/sample.bccwj.txt --output-dir=out
+    -> out/sample.bccwj.txt.mout
+  $ perl ./script/comainu.pl bccwjlong2midout --muwmodel=sample_train/sample_mid.KC.model
+
