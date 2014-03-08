@@ -10,11 +10,6 @@ use Config;
 use Comainu::Format;
 use Comainu::Method::Kc2longout;
 
-sub new {
-    my ($class, %args) = @_;
-    $class->SUPER::new( %args, args_num => 3 );
-}
-
 # 長単位解析 BCCWJ
 # 解析対象BCCWJファイル、モデルファイルの３つを用いて
 # 解析対象BCCWJファイルに長単位情報を付与する。
@@ -65,7 +60,7 @@ sub analyze {
 
     Comainu::Format->bccwj2kc_file($tmp_test_bccwj, $kc_file, $self->{boundary});
     my $kc2longout = Comainu::Method::Kc2longout->new(%$self);
-    $kc2longout->run($kc_file, $tmp_dir);
+    $kc2longout->analyze($kc_file, $tmp_dir);
     Comainu::Format->merge_bccwj_with_kc_lout_file($tmp_test_bccwj, $kc_lout_file, $bccwj_lout_file, $self->{boundary});
 
     unless ( $self->{debug} ) {

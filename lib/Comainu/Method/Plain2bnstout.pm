@@ -10,11 +10,6 @@ use Config;
 use Comainu::SUWAnalysis;
 use Comainu::Method::Kc2bnstout;
 
-sub new {
-    my ($class, %args) = @_;
-    $class->SUPER::new( %args, args_num => 3 );
-}
-
 # 平文からの文節境界解析
 sub usage {
     my $self = shift;
@@ -35,7 +30,6 @@ sub run {
     $self->before_analyze({
         dir => $save_dir, bnstmodel => $self->{bnstmodel}, args_num => scalar @_
     });
-
     $self->analyze_files($test_file, $save_dir);
 
     return 0;
@@ -55,7 +49,7 @@ sub analyze {
     $suwanalysis->plain2kc_file($test_file, $mecab_file, $kc_file);
 
     my $kc2bnstout = Comainu::Method::Kc2bnstout->new(%$self);
-    $kc2bnstout->run($kc_file, $tmp_dir);
+    $kc2bnstout->analyze($kc_file, $tmp_dir);
 
     Comainu::Format->merge_mecab_with_kc_bout_file($mecab_file, $kc_bout_file, $bout_file);
 

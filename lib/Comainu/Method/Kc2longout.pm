@@ -12,11 +12,6 @@ use Comainu::Format;
 use Comainu::Feature;
 use Comainu::BIProcessor;
 
-sub new {
-    my ($class, %args) = @_;
-    $class->SUPER::new( %args, args_num => 3 );
-}
-
 sub usage {
     my ($self) = @_;
     printf("COMAINU-METHOD: kc2longout\n");
@@ -38,7 +33,6 @@ sub run {
     $self->before_analyze({
         dir => $save_dir, luwmodel => $self->{luwmodel}, args_num => scalar @_,
     });
-
     $self->analyze_files($test_kc, $save_dir);
 
     return 0;

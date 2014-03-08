@@ -160,6 +160,7 @@ sub comainu {
         "boundary=s", "longeval-level=s",
         "luwmrph=s", "luwmodel=s", "luwmodel-type=s",
         "bnstmodel=s", "muwmodel=s",
+        "input=s",
     );
 
     if ( $Config{"osname"} =~ /MSWin32|cygwin|msys/i ) {
@@ -256,12 +257,81 @@ sub comainu {
                } @ARGV[1..$#ARGV]));
     }
 
-    my $ret_code = $module->run(@ARGV[1..$#ARGV]);
+    my $ret_code = do {
+        my $method = $module->{method};
+        if ( $method =~ /^plain.*out$/ ) {
+            _run_plain_out_method($module);
+        } elsif ( $method =~ /^kc.*out$/ ) {
+            _run_kc_out_method($module);
+        } elsif ( $method =~ /^bccwj.*out$/ ) {
+            _run_bccwj_out_method($module);
+        } else {
+            $module->run(@ARGV[1..$#ARGV]);
+        }
+    };
 
     print "\n";
     if ( $ret_code == 0 ) {
         print "Finish.\n";
     }
+}
+
+sub _run_kc_out_method {
+    my ($module) = @_;
+
+    return $module->run($module->{input}, @ARGV[1..$#ARGV]) if $module->{input};
+
+    $module->check_args_num(scalar @ARGV + 1);
+    my $input = "";
+    while ( <STDIN> ) {
+        $input .= $_;
+        if ( $_ =~ /^EOS$/ ) {
+            _run($module, $input, '.KC');
+            $input = "";
+        }
+    }
+    _run($module, $input, '.KC') if $input;
+}
+
+sub _run_bccwj_out_method {
+    my ($module) = @_;
+
+    return $module->run($module->{input}, @ARGV[1..$#ARGV]) if $module->{input};
+
+    $module->check_args_num(scalar @ARGV + 1);
+    my $input = "";
+    while ( <STDIN> ) {
+        my @items = split /\t/, $_;
+        if ( $items[3] eq "B" && $input ) {
+            _run($module, $input, '.txt');
+            $input = "";
+        }
+        $input .= $_;
+    }
+    _run($module, $input, '.txt') if $input;
+}
+
+sub _run_plain_out_method {
+    my ($module) = @_;
+
+    return $module->run($module->{input}, @ARGV[1..$#ARGV]) if $module->{input};
+
+    $module->check_args_num(scalar @ARGV + 1);
+    while ( <STDIN> ) {
+        _run($module, $_, '.txt');
+    }
+}
+
+sub _run {
+    my ($module, $input, $ext) = @_;
+    # TODO: output file nama
+    my $tmp_file = $module->{"comainu-temp"} . "/" . time . $ext;
+    open(OUT, ">", $tmp_file);
+    print OUT $input;
+    close(OUT);
+    my $ret_code = $module->run($tmp_file, @ARGV[1..$#ARGV]);
+    unlink $tmp_file;
+    return $ret_code;
 }
 
 sub method_names {

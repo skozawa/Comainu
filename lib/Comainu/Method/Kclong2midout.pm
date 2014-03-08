@@ -11,11 +11,6 @@ use Comainu::Util qw(read_from_file write_to_file);
 use Comainu::Format;
 use Comainu::Feature;
 
-sub new {
-    my ($class, %args) = @_;
-    $class->SUPER::new( %args, args_num => 3 );
-}
-
 # 中単位解析
 # 解析対象KCファイル、モデルファイルを用いて、
 # 解析対象KCファイルに中単位を付与する。
@@ -40,7 +35,6 @@ sub run {
     $self->before_analyze({
         dir => $save_dir, muwmodel => $self->{muwmodel}, args_num => scalar @_
     });
-
     $self->analyze_files($test_kc, $save_dir);
 
     return 0;

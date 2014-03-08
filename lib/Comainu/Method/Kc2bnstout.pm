@@ -13,11 +13,6 @@ use Comainu::Util qw(read_from_file write_to_file check_file proc_file2stdout);
 use Comainu::Feature;
 use Comainu::Format;
 
-sub new {
-    my ($class, %args) = @_;
-    $class->SUPER::new( %args, args_num => 3 );
-}
-
 sub usage {
     my $self = shift;
     printf("COMAINU-METHOD: kc2bnstout\n");
@@ -40,7 +35,6 @@ sub run {
     $self->before_analyze({
         dir => $save_dir, bnstmodel => $self->{bnstmodel}, args_num => scalar @_
     });
-
     $self->analyze_files($test_kc, $save_dir);
 
     return 0;

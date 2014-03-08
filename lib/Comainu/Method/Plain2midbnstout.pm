@@ -12,11 +12,6 @@ use Comainu::Method::Kc2longout;
 use Comainu::Method::Kc2bnstout;
 use Comainu::Method::Kclong2midout;
 
-sub new {
-    my ($class, %args) = @_;
-    $class->SUPER::new( %args, args_num => 3 );
-}
-
 # 平文からの中単位・文節解析
 sub usage {
     my $self = shift;
@@ -41,7 +36,6 @@ sub run {
         bnstmodel => $self->{bnstmodel},
         args_num  => scalar @_
     });
-
     $self->analyze_files($test_file, $save_dir);
 
     return 0;
@@ -66,14 +60,14 @@ sub analyze {
     $suwanalysis->plain2kc_file($test_file, $mecab_file, $kc_file);
 
     my $kc2longout = Comainu::Method::Kc2longout->new(%$self);
-    $kc2longout->run($kc_file, $tmp_dir);
+    $kc2longout->analyze($kc_file, $tmp_dir);
 
     my $kc2bnstout = Comainu::Method::Kc2bnstout->new(%$self);
-    $kc2bnstout->run($kc_file, $tmp_dir);
+    $kc2bnstout->analyze($kc_file, $tmp_dir);
     Comainu::Format->lout2kc4mid_file($kc_lout_file, $kc_file);
 
     my $kclong2midout = Comainu::Method::Kclong2midout->new(%$self);
-    $kclong2midout->run($kc_file, $tmp_dir);
+    $kclong2midout->analyze($kc_file, $tmp_dir);
 
     Comainu::Format->merge_mecab_with_kc_mout_file($mecab_file, $kc_mout_file, $mbout_file);
     Comainu::Format->merge_mecab_with_kc_bout_file($mbout_file, $kc_bout_file, $mbout_file);

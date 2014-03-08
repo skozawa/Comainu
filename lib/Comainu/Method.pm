@@ -8,6 +8,7 @@ use FindBin qw($Bin);
 use Comainu::Util qw(get_dir_files check_file);
 
 my $DEFAULT_VALUES = {
+    "args_num"                 => 3,
     "debug"                    => 0,
     "comainu-home"             => $Bin . "/..",
     "comainu-temp"             => $Bin . "/../tmp/temp",

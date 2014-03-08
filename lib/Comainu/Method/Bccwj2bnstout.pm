@@ -10,11 +10,6 @@ use Config;
 use Comainu::Format;
 use Comainu::Method::Kc2bnstout;
 
-sub new {
-    my ($class, %args) = @_;
-    $class->SUPER::new( %args, args_num => 3 );
-}
-
 # 文節境界解析 BCCWJ
 sub usage {
     my $self = shift;
@@ -35,7 +30,6 @@ sub run {
     $self->before_analyze({
         dir => $save_dir, bnstmodel => $self->{bnstmodel}, args_num => scalar @_
     });
-
     $self->analyze_files($test_bccwj, $save_dir);
 
     return 0;
@@ -61,7 +55,7 @@ sub analyze {
 
     Comainu::Format->bccwj2kc_file($tmp_test_bccwj, $kc_file, $self->{boundary});
     my $kc2bnstout = Comainu::Method::Kc2bnstout->new(%$self);
-    $kc2bnstout->run($kc_file, $tmp_dir);
+    $kc2bnstout->analyze($kc_file, $tmp_dir);
     Comainu::Format->merge_bccwj_with_kc_bout_file($tmp_test_bccwj, $kc_bout_file, $bccwj_bout_file);
 
     unless ( $self->{debug} ) {

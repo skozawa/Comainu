@@ -10,11 +10,6 @@ use Config;
 use Comainu::Format;
 use Comainu::Method::Kclong2midout;
 
-sub new {
-    my ($class, %args) = @_;
-    $class->SUPER::new( %args, args_num => 3 );
-}
-
 # 中単位解析 BCCWJ
 sub usage {
     my $self = shift;
@@ -61,7 +56,7 @@ sub analyze {
 
     Comainu::Format->bccwjlong2kc_file($tmp_test_bccwj, $kc_file, $self->{boundary});
     my $kclong2midout = Comainu::Method::Kclong2midout->new(%$self);
-    $kclong2midout->run($kc_file, $tmp_dir);
+    $kclong2midout->analyze($kc_file, $tmp_dir);
     Comainu::Format->merge_bccwj_with_kc_mout_file($tmp_test_bccwj, $kc_mout_file, $bccwj_mout_file);
 
     unless ( $self->{debug} ) {

@@ -11,11 +11,6 @@ use Comainu::Format;
 use Comainu::Method::Kc2longout;
 use Comainu::Method::Kc2bnstout;
 
-sub new {
-    my ($class, %args) = @_;
-    $class->SUPER::new( %args, args_num => 3 );
-}
-
 # 文節，長単位の同時出力
 sub usage {
     my $self = shift;
@@ -39,7 +34,6 @@ sub run {
         luwmodel  => $self->{luwmodel},
         args_num  => scalar @_
     });
-
     $self->analyze_files($test_bccwj, $save_dir);
 
     return 0;
@@ -68,9 +62,9 @@ sub analyze {
 
     Comainu::Format->bccwj2kc_file($tmp_test_bccwj, $kc_file, $self->{boundary});
     my $kc2longout = Comainu::Method::Kc2longout->new(%$self);
-    $kc2longout->run($kc_file, $tmp_dir);
+    $kc2longout->analyze($kc_file, $tmp_dir);
     my $kc2bnstout = Comainu::Method::Kc2bnstout->new(%$self);
-    $kc2bnstout->run($kc_file, $tmp_dir);
+    $kc2bnstout->analyze($kc_file, $tmp_dir);
     Comainu::Format->merge_bccwj_with_kc_lout_file($tmp_test_bccwj, $kc_lout_file, $bccwj_lbout_file, $self->{boundary});
     Comainu::Format->merge_bccwj_with_kc_bout_file($bccwj_lbout_file, $kc_bout_file, $bccwj_lbout_file);
 
