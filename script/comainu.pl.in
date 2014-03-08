@@ -53,9 +53,6 @@ my $DEFAULT_VALUES = {
     "bnstmodel"                => "train/bnst.model",
     "muwmodel"                 => "train/MST/train.KC.model",
     "longeval-level"           => "lemma",
-    # "luwmrphmodel"         => "SVM",
-    # "muwmodel"             => "MST",
-    # "bnstmodel"            => "SVM",
 };
 
 my $OPT_NAME_LIST = [
@@ -70,43 +67,18 @@ my $OPT_NAME_LIST = [
     "crf-dir",
     "mstparser-dir",
     "comainu-bi-model-dir",
-    "output-dir",
     "comainu-temp",
 ];
 
 sub comainu_usage {
     my ($curr) = @_;
     printf("Usage : %s [options] <COMAINU-METHOD>  [<arg> ...]\n", $0);
-    printf("  This script is front end of COMAINU.\n");
-    printf("\n");
-    printf("option:\n");
-    printf("    --help                           show this message and exit\n");
-    printf("    --debug          LEVEL           specify the debug level\n");
-    printf("                                       (curr: '%s')\n", $curr->{"debug"});
-    printf("    --version                        show version string\n");
-    printf("    --help-method                    show the help of COMAINU-METHOD\n");
-    printf("    --list-method                    show the list of COMAINU-METHOD\n");
-    printf("    --force                          ignore cheking path of sub tools\n");
-    printf("    --boundary       BOUNDARY        specify the type of boundary\n");
-    printf("                                       BOUNDARY:=sentence|word\n");
-    printf("                                       (curr: '%s')\n", $curr->{"boundary"});
-    printf("    --luwmrph        LUWMRPH         whether to output morphology of long-unit-word\n");
-    printf("                                       LUWMRPH:=with|without\n");
-    printf("                                       (curr: '%s')\n", $curr->{"luwmrph"});
-    printf("    --luwmodel       LUWMODEL        specify the model for boundary of long-unit-word\n");
-    printf("                                       (curr: '%s')\n", $curr->{"luwmodel"});
-    printf("    --luwmodel-type  LUWMODEL_TYPE   specify the type of the model for boundary of long-unit-word\n");
-    printf("                                       LUWMODEL_TYPE:=SVM|CRF\n");
-    printf("                                       (curr: '%s')\n", $curr->{"luwmodel-type"});
-    printf("    --bnstmodel      BNSTMODEL       specify the bnst model\n");
-    printf("                                       (curr: '%s')\n", $curr->{"bnstmodel"});
-    printf("    --muwmodel       MUWMODEL        specify the middle-unit-word model\n");
-    printf("                                       (curr: '%s')\n", $curr->{"muwmodel"});
+    while (<DATA>) { print $_; }
 
     foreach my $var_name (@$OPT_NAME_LIST) {
         my $var_name_env = uc($var_name);
         $var_name_env =~ s/\-/_/gs;
-        my $pad1 = " "x(32 - (length($var_name) + 6));
+        my $pad1 = " "x(30 - (length($var_name) + 6));
         my $pad2 = " "x(24 - length($var_name_env));
         printf("    --%s%s%s%sspecify %s\n",
                $var_name, $pad1, $var_name_env, $pad2, $var_name_env);
@@ -152,14 +124,12 @@ sub comainu {
         $opts, "help", "debug=i", "version",
         "help-method", "list-method", "force",
         "comainu-home=s", "perl=s", "java=s",
-        "yamcha-dir=s", "mecab-dir=s",
-        "mecab-dic-dir=s", "unidic-db=s",
-        "svm-tool-dir=s", "crf-dir=s",
+        "yamcha-dir=s", "svm-tool-dir=s", "crf-dir=s",
+        "mecab-dir=s", "mecab-dic-dir=s", "unidic-db=s",
         "mstparser-dir=s",
-        "comainu-bi-model-dir=s",
         "input=s", "output-dir=s", "comainu-temp=s",
-        "boundary=s", "longeval-level=s",
         "luwmrph=s", "luwmodel=s", "luwmodel-type=s",
+        "boundary=s", "longeval-level=s", "comainu-bi-model-dir=s",
         "bnstmodel=s", "muwmodel=s",
     );
 
@@ -221,6 +191,7 @@ sub comainu {
 
     $ENV{"DBG"} = "ON";
 
+    # check method name
     unless ( scalar grep { $ARGV[0] && $ARGV[0] eq $_ } @$comainu_method_names ) {
         printf(STDERR "Not found method : %s\n", $ARGV[0] // '');
         printf(STDERR "Supported methods are:\n");
@@ -234,8 +205,7 @@ sub comainu {
 
     $ENV{PRCCHARCODE} = "utf8";
 
-    if ( $ENV{COMAINU_TEMP} =~ /^tmp\// &&
-             ! -d $ENV{COMAINU_HOME} . "/tmp") {
+    if ( $ENV{COMAINU_TEMP} =~ /^tmp\// && ! -d $ENV{COMAINU_HOME} . "/tmp") {
         mkdir $ENV{COMAINU_HOME} . "/tmp";
     }
     mkdir $ENV{COMAINU_TEMP} unless -d $ENV{COMAINU_TEMP};
@@ -325,6 +295,7 @@ sub _run_bccwj_out_method {
     _run($module, $input, '.txt') if $input;
 }
 
+# get BOS index for BCCWJ from data_format.conf
 sub _bos_index {
     my ($conf) = @_;
     my $bos_index = 3;
@@ -355,6 +326,7 @@ sub _run {
     return $ret_code;
 }
 
+# get comainu method names
 sub method_names {
     my $method_names = [];
     opendir(DIR, METHOD_DIR);
@@ -385,12 +357,14 @@ sub check_sub_tool_path {
             return 0;
         }
 
+        # check crf++ dir
         if ( $opts->{"luwmodel-type"} eq 'CRF' ) {
             return 0 unless _check_tool_path($opts->{'crf-dir'}, 'crf_learn');
         }
     }
 
     if ( $method =~ /midmodel|midout|midbnstout/ ) {
+        # check mstparser dir
         unless ( -d $opts->{"mstparser-dir"} ) {
             printf(STDERR "# Error: Not found mstparser: '%s'\n",
                    $opts->{"mstparser-dir"});
@@ -400,6 +374,7 @@ sub check_sub_tool_path {
     }
 
     if ( $method =~ /longout|bnstout|longbnstout|midbnstout/ ) {
+        # check yamcha, svm-tool and crf++
         return 0 unless _check_tool_path($opts->{"yamcha-dir"}, 'yamcha');
         return 0 unless _check_tool_path($opts->{"svm-tool-dir"}, 'svm_classify');
         if ( $opts->{"luwmodel-type"} eq 'CRF' ) {
@@ -408,6 +383,7 @@ sub check_sub_tool_path {
     }
 
     if ( $method =~ /plain2/ ) {
+        # check mecab, mecab-dic, unidic-db
         return 0 unless _check_tool_path($opts->{'mecab-dir'}, 'mecab');
         return 0 unless _check_tool_dir($opts->{'mecab-dic-dir'}, 'mecab-dic');
         unless ( -f $opts->{'unidic-db'} ) {
@@ -448,4 +424,14 @@ sub _check_tool_dir {
 
 comainu();
 
-#################### end of file ####################
+
+__DATA__
+  This script is front end of COMAINU.
+
+  option
+    --help                           show this message and exit
+    --debug          LEVEL           specify the debug level (default: 0)
+    --version                        show version string
+    --help-method                    show the help of COMAINU-METHOD
+    --list-method                    show the list of COMAINU-METHOD
+    --force                          ignore cheking path of sub tools
