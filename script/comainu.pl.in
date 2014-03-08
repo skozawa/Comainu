@@ -40,7 +40,7 @@ my $DEFAULT_VALUES = {
     "model-name"               => "@MODEL_NAME@",
     "comainu-bi-model-dir"     => "",
     "comainu-bi-model-default" => "train/BI_model",
-    "comainu-output"           => "out",
+    "output-dir"               => "out",
     "comainu-temp"             => "tmp/temp",
     "boundary"                 => "sentence",
     "luwmrph"                  => "with",
@@ -67,7 +67,7 @@ my $OPT_NAME_LIST = [
     "crf-dir",
     "mstparser-dir",
     "comainu-bi-model-dir",
-    "comainu-output",
+    "output-dir",
     "comainu-temp",
 ];
 
@@ -156,11 +156,10 @@ sub comainu {
         "svm-tool-dir=s", "crf-dir=s",
         "mstparser-dir=s",
         "comainu-bi-model-dir=s",
-        "comainu-output=s", "comainu-temp=s",
+        "input=s", "output-dir=s", "comainu-temp=s",
         "boundary=s", "longeval-level=s",
         "luwmrph=s", "luwmodel=s", "luwmodel-type=s",
         "bnstmodel=s", "muwmodel=s",
-        "input=s",
     );
 
     if ( $Config{"osname"} =~ /MSWin32|cygwin|msys/i ) {

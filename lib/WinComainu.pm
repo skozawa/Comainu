@@ -1792,7 +1792,7 @@ sub execute_analysis_data {
         "crf-dir"              => $crf_dir,
         "java"                 => $java,
         "mstparser-dir"        => $mstparser_dir,
-        "comainu-output"       => $tmp_dir,
+        "output-dir"           => $tmp_dir,
         "comainu-temp"         => $tmp_dir."/temp",
         "comainu-bi-model-dir" => $comainu_bi_model_dir,
         "boundary"             => $comainu_boundary,
