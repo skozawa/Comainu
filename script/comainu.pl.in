@@ -22,6 +22,8 @@ use constant {
 
 use utf8;
 use Config;
+use Time::HiRes;
+use Encode;
 use Getopt::Long;
 use Module::Load;
 
@@ -304,10 +306,11 @@ sub _run_bccwj_out_method {
 
     return $module->run($module->{input}, $module->{"output-dir"}) if $module->{input};
 
+    my $bos_index = _bos_index($module->{"data_format"});
     my $input = "";
     while ( <STDIN> ) {
         my @items = split /\t/, $_;
-        if ( $items[3] eq "B" && $input ) {
+        if ( $items[$bos_index] eq "B" && $input ) {
             _run($module, $input, '.txt');
             $input = "";
         }
@@ -316,11 +319,29 @@ sub _run_bccwj_out_method {
     _run($module, $input, '.txt') if $input;
 }
 
+sub _bos_index {
+    my ($conf) = @_;
+    my $bos_index = 3;
+    open(IN, $conf) or return $bos_index;
+    while ( my $line = <IN> ) {
+        my ($type, $format) = split /\t/, decode_utf8 $line;
+        if ( $type eq 'input-bccwj' ) {
+            my @items = split /,/, $format;
+            for ( 0 .. $#items ) {
+                $bos_index = $_ if $items[$_] eq "BOS";
+            }
+            last;
+        }
+    }
+    close(IN);
+    return $bos_index;
+}
+
 sub _run {
     my ($module, $input, $ext) = @_;
-    # TODO: output file nama
-    my $tmp_file = $module->{"comainu-temp"} . "/" . time . $ext;
+    my $tmp_file = $module->{"comainu-temp"} . "/" . Time::HiRes::time . $ext;
     open(OUT, ">", $tmp_file);
+    binmode(OUT);
     print OUT $input;
     close(OUT);
     my $ret_code = $module->run($tmp_file, $module->{"output-dir"});
