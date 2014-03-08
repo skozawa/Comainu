@@ -32,7 +32,6 @@ sub run {
         dir       => $save_dir,
         bnstmodel => $self->{bnstmodel},
         luwmodel  => $self->{luwmodel},
-        args_num  => scalar @_
     });
     $self->analyze_files($test_bccwj, $save_dir);
 
@@ -53,10 +52,10 @@ sub analyze {
         data_format_file => $self->{data_format},
     });
 
-    my $kc_file          = $tmp_dir  . "/" . $basename . ".KC";
-    my $kc_lout_file     = $tmp_dir  . "/" . $basename . ".KC.lout";
-    my $kc_bout_file     = $tmp_dir  . "/" . $basename . ".KC.bout";
-    my $bccwj_lbout_file = $save_dir . "/" . $basename . ".lbout";
+    my $kc_file        = $tmp_dir . "/" . $basename . ".KC";
+    my $kc_lout_file   = $tmp_dir . "/" . $basename . ".KC.lout";
+    my $kc_bout_file   = $tmp_dir . "/" . $basename . ".KC.bout";
+    my $tmp_lbout_file = $tmp_dir . "/" . $basename . ".tmp.lbout";
 
     $self->{"bnst_process"} = "with_luw";
 
@@ -65,11 +64,14 @@ sub analyze {
     $kc2longout->analyze($kc_file, $tmp_dir);
     my $kc2bnstout = Comainu::Method::Kc2bnstout->new(%$self);
     $kc2bnstout->analyze($kc_file, $tmp_dir);
-    Comainu::Format->merge_bccwj_with_kc_lout_file($tmp_test_bccwj, $kc_lout_file, $bccwj_lbout_file, $self->{boundary});
-    Comainu::Format->merge_bccwj_with_kc_bout_file($bccwj_lbout_file, $kc_bout_file, $bccwj_lbout_file);
+    Comainu::Format->merge_bccwj_with_kc_lout_file($tmp_test_bccwj, $kc_lout_file, $self->{boundary}, $tmp_lbout_file);
+    my $buff = Comainu::Format->merge_bccwj_with_kc_bout_file($tmp_lbout_file, $kc_bout_file);
+    $self->output_result($buff, $save_dir, $basename . ".lbout");
+    undef $buff;
 
     unless ( $self->{debug} ) {
-        do { unlink $_ if -f $_; } for ($kc_lout_file, $kc_bout_file, $tmp_test_bccwj);
+        do { unlink $_ if -f $_; }
+            for ($kc_lout_file, $kc_bout_file, $tmp_test_bccwj, $tmp_lbout_file);
     }
 
     return 0;

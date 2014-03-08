@@ -32,7 +32,6 @@ sub run {
         dir       => $save_dir,
         luwmodel  => $self->{luwmodel},
         bnstmodel => $self->{bnstmodel},
-        args_num  => scalar @_
     });
     $self->analyze_files($test_file, $save_dir);
 
@@ -45,11 +44,11 @@ sub analyze {
     my $tmp_dir = $self->{"comainu-temp"};
     my $basename = basename($test_file);
 
-    my $mecab_file   = $tmp_dir  . "/" . $basename . ".mecab";
-    my $kc_file      = $tmp_dir  . "/" . $basename . ".KC";
-    my $kc_lout_file = $tmp_dir  . "/" . $basename . ".KC.lout";
-    my $kc_bout_file = $tmp_dir  . "/" . $basename . ".KC.bout";
-    my $lbout_file   = $save_dir . "/" . $basename . ".lbout";
+    my $mecab_file     = $tmp_dir . "/" . $basename . ".mecab";
+    my $kc_file        = $tmp_dir . "/" . $basename . ".KC";
+    my $kc_lout_file   = $tmp_dir . "/" . $basename . ".KC.lout";
+    my $kc_bout_file   = $tmp_dir . "/" . $basename . ".KC.bout";
+    my $tmp_lbout_file = $tmp_dir . "/" . $basename . ".KC.tmp.lbout";
 
     $self->{"bnst_process"} = "with_luw";
 
@@ -62,11 +61,13 @@ sub analyze {
     my $kc2bnstout = Comainu::Method::Kc2bnstout->new(%$self);
     $kc2bnstout->analyze($kc_file, $tmp_dir);
 
-    Comainu::Format->merge_mecab_with_kc_lout_file($mecab_file, $kc_lout_file, $lbout_file);
-    Comainu::Format->merge_mecab_with_kc_bout_file($lbout_file, $kc_bout_file, $lbout_file);
+    Comainu::Format->merge_mecab_with_kc_lout_file($mecab_file, $kc_lout_file, $tmp_lbout_file);
+    my $buff = Comainu::Format->merge_mecab_with_kc_bout_file($tmp_lbout_file, $kc_bout_file);
+    $self->output_result($buff, $save_dir, $basename . ".lbout");
+    undef $buff;
 
     unless ( $self->{debug} ) {
-        do { unlink $_ if -f $_; } for ($mecab_file, $kc_lout_file, $kc_bout_file);
+        do { unlink $_ if -f $_; } for ($mecab_file, $kc_lout_file, $kc_bout_file, $tmp_lbout_file);
     }
 
     return 0;

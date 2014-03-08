@@ -31,7 +31,7 @@ sub run {
     my ($self, $test_kc, $save_dir) = @_;
 
     $self->before_analyze({
-        dir => $save_dir, luwmodel => $self->{luwmodel}, args_num => scalar @_,
+        dir => $save_dir, luwmodel => $self->{luwmodel}
     });
     $self->analyze_files($test_kc, $save_dir);
 
@@ -51,17 +51,21 @@ sub analyze {
     });
 
     my $basename = basename($tmp_test_kc);
-    my $kc2_file    = $self->{"comainu-temp"} . "/" . basename($tmp_test_kc, ".KC") . ".KC2";
-    my $svmout_file = $self->{"comainu-temp"} . "/" . $basename . ".svmout";
-    my $lout_file   = $save_dir . "/" . $basename . ".lout";
+    my $kc2_file      = $self->{"comainu-temp"} . "/" . basename($tmp_test_kc, ".KC") . ".KC2";
+    my $svmout_file   = $self->{"comainu-temp"} . "/" . $basename . ".svmout";
+    my $tmp_lout_file = $self->{"comainu-temp"} . "/" . $basename . ".tmp.lout";
 
     $self->create_features($tmp_test_kc, $kc2_file);
     $self->chunk_luw($kc2_file, $svmout_file);
-    $self->merge_chunk_result($tmp_test_kc, $svmout_file, $lout_file);
-    $self->post_process($tmp_test_kc, $save_dir, $kc2_file);
+    $self->merge_chunk_result($tmp_test_kc, $svmout_file, $tmp_lout_file);
+    my $buff = $self->post_process($tmp_test_kc, $tmp_lout_file, $kc2_file);
+    $self->output_result($buff, $save_dir, $basename . ".lout");
+    undef $buff;
 
     unlink $tmp_test_kc if !$self->{debug} &&
         -f $tmp_test_kc && $self->{bnst_process} ne 'with_luw';
+
+    return 0;
 }
 
 
@@ -162,30 +166,24 @@ sub merge_chunk_result {
 
 # 後処理:BIのみのチャンクを再処理
 sub post_process {
-    my ($self, $tmp_test_kc, $save_dir, $kc2_file) = @_;
-    my $ret = 0;
+    my ($self, $tmp_test_kc, $tmp_lout_file, $kc2_file) = @_;
     print STDERR "# POST PROCESS\n";
 
     my $train_name = basename($self->{luwmodel}, ".model");
     my $test_name = basename($tmp_test_kc);
-    my $lout_file = $save_dir . "/" . $test_name . ".lout";
 
     $self->set_comainu_bi_model;
     my $bip_processor = Comainu::BIProcessor->new(
         model_type => 0,
         %$self,
     );
-    my $buff = $bip_processor->analyze($kc2_file, $lout_file, {
+    my $buff = $bip_processor->analyze($kc2_file, $tmp_lout_file, {
         train_name => $train_name,
         test_name  => $test_name,
     });
+    unlink $tmp_lout_file if !$self->{debug} && -f $tmp_lout_file;
 
-    $buff = $self->create_long_lemma($buff);
-
-    write_to_file($lout_file, $buff);
-    undef $buff;
-
-    return $ret;
+    return $self->create_long_lemma($buff);
 }
 
 # 後処理解析モデルを設定

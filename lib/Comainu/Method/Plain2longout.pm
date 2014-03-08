@@ -28,7 +28,7 @@ sub run {
     my ($self, $test_file, $save_dir) = @_;
 
     $self->before_analyze({
-        dir => $save_dir, luwmodel => $self->{luwmodel}, args_num => scalar @_
+        dir => $save_dir, luwmodel => $self->{luwmodel}
     });
     $self->analyze_files($test_file, $save_dir);
 
@@ -44,7 +44,6 @@ sub analyze {
     my $mecab_file      = $tmp_dir  . "/" . $basename . ".mecab";
     my $kc_file         = $tmp_dir  . "/" . $basename . ".KC";
     my $kc_lout_file    = $tmp_dir  . "/" . $basename . ".KC.lout";
-    my $mecab_lout_file = $save_dir . "/" . $basename . ".lout";
 
     my $suwanalysis = Comainu::SUWAnalysis->new(%$self);
     $suwanalysis->plain2kc_file($test_file, $mecab_file, $kc_file);
@@ -52,7 +51,9 @@ sub analyze {
     my $kc2longout = Comainu::Method::Kc2longout->new(%$self);
     $kc2longout->analyze($kc_file, $tmp_dir);
 
-    Comainu::Format->merge_mecab_with_kc_lout_file($mecab_file, $kc_lout_file, $mecab_lout_file);
+    my $buff = Comainu::Format->merge_mecab_with_kc_lout_file($mecab_file, $kc_lout_file);
+    $self->output_result($buff, $save_dir, $basename . ".lout");
+    undef $buff;
 
     unless ( $self->{debug} ) {
         do { unlink $_ if -f $_; } for ($mecab_file, $kc_lout_file);

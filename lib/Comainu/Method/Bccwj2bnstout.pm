@@ -28,7 +28,7 @@ sub run {
     my ($self, $test_bccwj, $save_dir) = @_;
 
     $self->before_analyze({
-        dir => $save_dir, bnstmodel => $self->{bnstmodel}, args_num => scalar @_
+        dir => $save_dir, bnstmodel => $self->{bnstmodel}
     });
     $self->analyze_files($test_bccwj, $save_dir);
 
@@ -51,12 +51,13 @@ sub analyze {
 
     my $kc_file = $tmp_dir . "/" . $basename . ".KC";
     my $kc_bout_file = $tmp_dir . "/" . $basename . ".KC.bout";
-    my $bccwj_bout_file = $save_dir . "/" . $basename . ".bout";
 
     Comainu::Format->bccwj2kc_file($tmp_test_bccwj, $kc_file, $self->{boundary});
     my $kc2bnstout = Comainu::Method::Kc2bnstout->new(%$self);
     $kc2bnstout->analyze($kc_file, $tmp_dir);
-    Comainu::Format->merge_bccwj_with_kc_bout_file($tmp_test_bccwj, $kc_bout_file, $bccwj_bout_file);
+    my $buff = Comainu::Format->merge_bccwj_with_kc_bout_file($tmp_test_bccwj, $kc_bout_file);
+    $self->output_result($buff, $save_dir, $basename . ".bout");
+    undef $buff;
 
     unless ( $self->{debug} ) {
         do { unlink $_ if -f $_; } for ($kc_bout_file, $tmp_test_bccwj);

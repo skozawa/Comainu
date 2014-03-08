@@ -34,7 +34,6 @@ sub run {
         luwmodel  => $self->{luwmodel},
         muwmodel  => $self->{muwmodel},
         bnstmodel => $self->{bnstmodel},
-        args_num  => scalar @_
     });
     $self->analyze_files($test_bccwj, $save_dir);
 
@@ -55,11 +54,11 @@ sub analyze {
         data_format_file => $self->{data_format},
     });
 
-    my $kc_file          = $tmp_dir  . "/" . $basename . ".KC";
-    my $kc_lout_file     = $tmp_dir  . "/" . $basename . ".KC.lout";
-    my $kc_mout_file     = $tmp_dir  . "/" . $basename . ".KC.mout";
-    my $kc_bout_file     = $tmp_dir  . "/" . $basename . ".KC.bout";
-    my $bccwj_mbout_file = $save_dir . "/" . $basename . ".mbout";
+    my $kc_file        = $tmp_dir . "/" . $basename . ".KC";
+    my $kc_lout_file   = $tmp_dir . "/" . $basename . ".KC.lout";
+    my $kc_mout_file   = $tmp_dir . "/" . $basename . ".KC.mout";
+    my $kc_bout_file   = $tmp_dir . "/" . $basename . ".KC.bout";
+    my $tmp_mbout_file = $tmp_dir . "/" . $basename . ".tmp.mbout";
 
     $self->{"bnst_process"} = "with_luw";
 
@@ -71,13 +70,15 @@ sub analyze {
     Comainu::Format->lout2kc4mid_file($kc_lout_file, $kc_file);
     my $kclong2midout = Comainu::Method::Kclong2midout->new(%$self);
     $kclong2midout->analyze($kc_file, $tmp_dir);
-    Comainu::Format->merge_bccwj_with_kc_lout_file($tmp_test_bccwj, $kc_lout_file, $bccwj_mbout_file, $self->{boundary});
-    Comainu::Format->merge_bccwj_with_kc_bout_file($bccwj_mbout_file, $kc_bout_file, $bccwj_mbout_file);
-    Comainu::Format->merge_bccwj_with_kc_mout_file($bccwj_mbout_file, $kc_mout_file, $bccwj_mbout_file);
+    Comainu::Format->merge_bccwj_with_kc_lout_file($tmp_test_bccwj, $kc_lout_file, $self->{boundary}, $tmp_mbout_file);
+    Comainu::Format->merge_bccwj_with_kc_bout_file($tmp_mbout_file, $kc_bout_file, $tmp_mbout_file);
+    my $buff = Comainu::Format->merge_bccwj_with_kc_mout_file($tmp_mbout_file, $kc_mout_file);
+    $self->output_result($buff, $save_dir, $basename . ".mbout");
+    undef $buff;
 
     unless ( $self->{debug} ) {
         do { unlink $_ if -f $_; }
-            for ($kc_lout_file, $kc_mout_file, $kc_bout_file, $tmp_test_bccwj);
+            for ($kc_lout_file, $kc_mout_file, $kc_bout_file, $tmp_test_bccwj, $tmp_mbout_file);
     }
 
     return 0;

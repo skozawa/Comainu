@@ -34,7 +34,6 @@ sub run {
         luwmodel  => $self->{luwmodel},
         muwmodel  => $self->{muwmodel},
         bnstmodel => $self->{bnstmodel},
-        args_num  => scalar @_
     });
     $self->analyze_files($test_file, $save_dir);
 
@@ -47,12 +46,12 @@ sub analyze {
     my $tmp_dir = $self->{"comainu-temp"};
     my $basename = basename($test_file);
 
-    my $mecab_file   = $tmp_dir  . "/" . $basename . ".mecab";
-    my $kc_file      = $tmp_dir  . "/" . $basename . ".KC";
-    my $kc_lout_file = $tmp_dir  . "/" . $basename . ".KC.lout";
-    my $kc_mout_file = $tmp_dir  . "/" . $basename . ".KC.mout";
-    my $kc_bout_file = $tmp_dir  . "/" . $basename . ".KC.bout";
-    my $mbout_file   = $save_dir . "/" . $basename . ".mbout";
+    my $mecab_file     = $tmp_dir . "/" . $basename . ".mecab";
+    my $kc_file        = $tmp_dir . "/" . $basename . ".KC";
+    my $kc_lout_file   = $tmp_dir . "/" . $basename . ".KC.lout";
+    my $kc_mout_file   = $tmp_dir . "/" . $basename . ".KC.mout";
+    my $kc_bout_file   = $tmp_dir . "/" . $basename . ".KC.bout";
+    my $tmp_mbout_file = $tmp_dir . "/" . $basename . ".tmp.mbout";
 
     $self->{"bnst_process"} = "with_luw";
 
@@ -69,12 +68,14 @@ sub analyze {
     my $kclong2midout = Comainu::Method::Kclong2midout->new(%$self);
     $kclong2midout->analyze($kc_file, $tmp_dir);
 
-    Comainu::Format->merge_mecab_with_kc_mout_file($mecab_file, $kc_mout_file, $mbout_file);
-    Comainu::Format->merge_mecab_with_kc_bout_file($mbout_file, $kc_bout_file, $mbout_file);
+    Comainu::Format->merge_mecab_with_kc_mout_file($mecab_file, $kc_mout_file, $tmp_mbout_file);
+    my $buff = Comainu::Format->merge_mecab_with_kc_bout_file($tmp_mbout_file, $kc_bout_file);
+    $self->output_result($buff, $save_dir, $basename . ".mbout");
+    undef $buff;
 
     unless ( $self->{debug} ) {
         do { unlink $_ if -f $_; }
-            for ($mecab_file, $kc_lout_file, $kc_mout_file, $kc_bout_file);
+            for ($mecab_file, $kc_lout_file, $kc_mout_file, $kc_bout_file, $tmp_mbout_file);
     }
 
     return 0;

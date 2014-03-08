@@ -28,9 +28,8 @@ sub run {
     my ($self, $test_bccwj, $save_dir) = @_;
 
     $self->before_analyze({
-        dir => $save_dir, muwmodel => $self->{muwmodel}, args_num => scalar @_
+        dir => $save_dir, muwmodel => $self->{muwmodel}
     });
-
     $self->analyze_files($test_bccwj, $save_dir);
 
     return 0;
@@ -52,12 +51,13 @@ sub analyze {
 
     my $kc_file         = $tmp_dir  . "/" . $basename . ".KC";
     my $kc_mout_file    = $tmp_dir  . "/" . $basename . ".KC.mout";
-    my $bccwj_mout_file = $save_dir . "/" . $basename . ".mout";
 
     Comainu::Format->bccwjlong2kc_file($tmp_test_bccwj, $kc_file, $self->{boundary});
     my $kclong2midout = Comainu::Method::Kclong2midout->new(%$self);
     $kclong2midout->analyze($kc_file, $tmp_dir);
-    Comainu::Format->merge_bccwj_with_kc_mout_file($tmp_test_bccwj, $kc_mout_file, $bccwj_mout_file);
+    my $buff = Comainu::Format->merge_bccwj_with_kc_mout_file($tmp_test_bccwj, $kc_mout_file);
+    $self->output_result($buff, $save_dir, $basename . ".mout");
+    undef $buff;
 
     unless ( $self->{debug} ) {
         do { unlink $_ if -f $_; } for ($kc_mout_file, $tmp_test_bccwj);

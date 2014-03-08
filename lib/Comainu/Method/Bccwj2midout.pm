@@ -32,7 +32,6 @@ sub run {
         dir       => $save_dir,
         luwmodel  => $self->{luwmodel},
         muwmodel  => $self->{muwmodel},
-        args_num  => scalar @_
     });
     $self->analyze_files($test_bccwj, $save_dir);
 
@@ -53,10 +52,10 @@ sub analyze {
         data_format_file => $self->{data_format},
     });
 
-    my $kc_file         = $tmp_dir  . "/" . $basename . ".KC";
-    my $kc_lout_file    = $tmp_dir  . "/" . $basename . ".KC.lout";
-    my $kc_mout_file    = $tmp_dir  . "/" . $basename . ".KC.mout";
-    my $bccwj_mout_file = $save_dir . "/" . $basename . ".mout";
+    my $kc_file       = $tmp_dir . "/" . $basename . ".KC";
+    my $kc_lout_file  = $tmp_dir . "/" . $basename . ".KC.lout";
+    my $kc_mout_file  = $tmp_dir . "/" . $basename . ".KC.mout";
+    my $tmp_mout_file = $tmp_dir . "/" . $basename . ".tmp.mout";
 
     Comainu::Format->bccwj2kc_file($tmp_test_bccwj, $kc_file, $self->{boundary});
     my $kc2longout = Comainu::Method::Kc2longout->new(%$self);
@@ -64,11 +63,14 @@ sub analyze {
     Comainu::Format->lout2kc4mid_file($kc_lout_file, $kc_file);
     my $kclong2midout = Comainu::Method::Kclong2midout->new(%$self);
     $kclong2midout->analyze($kc_file, $tmp_dir);
-    Comainu::Format->merge_bccwj_with_kc_lout_file($tmp_test_bccwj, $kc_lout_file, $bccwj_mout_file, $self->{boundary});
-    Comainu::Format->merge_bccwj_with_kc_mout_file($bccwj_mout_file, $kc_mout_file, $bccwj_mout_file);
+    Comainu::Format->merge_bccwj_with_kc_lout_file($tmp_test_bccwj, $kc_lout_file, $self->{boundary}, $tmp_mout_file);
+    my $buff = Comainu::Format->merge_bccwj_with_kc_mout_file($tmp_mout_file, $kc_mout_file);
+    $self->output_result($buff, $save_dir, $basename . ".mout");
+    undef $buff;
 
     unless ( $self->{debug} ) {
-        do { unlink $_ if -f $_; } for ($kc_lout_file, $kc_mout_file, $tmp_test_bccwj);
+        do { unlink $_ if -f $_; }
+            for ($kc_lout_file, $kc_mout_file, $tmp_test_bccwj, $tmp_mout_file);
     }
 
     return 0;

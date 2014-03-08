@@ -28,7 +28,7 @@ sub run {
     my ($self, $test_file, $save_dir) = @_;
 
     $self->before_analyze({
-        dir => $save_dir, bnstmodel => $self->{bnstmodel}, args_num => scalar @_
+        dir => $save_dir, bnstmodel => $self->{bnstmodel}
     });
     $self->analyze_files($test_file, $save_dir);
 
@@ -43,7 +43,6 @@ sub analyze {
     my $mecab_file   = $tmp_dir  . "/" . $basename . ".mecab";
     my $kc_file      = $tmp_dir  . "/" . $basename . ".KC";
     my $kc_bout_file = $tmp_dir  . "/" . $basename . ".KC.bout";
-    my $bout_file    = $save_dir . "/" . $basename . ".bout";
 
     my $suwanalysis = Comainu::SUWAnalysis->new(%$self);
     $suwanalysis->plain2kc_file($test_file, $mecab_file, $kc_file);
@@ -51,7 +50,9 @@ sub analyze {
     my $kc2bnstout = Comainu::Method::Kc2bnstout->new(%$self);
     $kc2bnstout->analyze($kc_file, $tmp_dir);
 
-    Comainu::Format->merge_mecab_with_kc_bout_file($mecab_file, $kc_bout_file, $bout_file);
+    my $buff = Comainu::Format->merge_mecab_with_kc_bout_file($mecab_file, $kc_bout_file);
+    $self->output_result($buff, $save_dir, $basename . ".bout");
+    undef $buff;
 
     unless ( $self->{debug} ) {
         do { unlink $_ if -f $_; } for ($mecab_file, $kc_bout_file);

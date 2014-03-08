@@ -33,7 +33,7 @@ sub run {
     my ($self, $test_kc, $save_dir) = @_;
 
     $self->before_analyze({
-        dir => $save_dir, muwmodel => $self->{muwmodel}, args_num => scalar @_
+        dir => $save_dir, muwmodel => $self->{muwmodel}
     });
     $self->analyze_files($test_kc, $save_dir);
 
@@ -55,13 +55,17 @@ sub analyze {
     my $basename = basename($tmp_test_kc, ".KC");
     my $mstin_file  = $self->{"comainu-temp"} . "/" . $basename . ".mstin";
     my $mstout_file = $self->{"comainu-temp"} . "/" . $basename . ".mstout";
-    my $mout_file   = $save_dir . "/" . basename($test_kc) . ".mout";
 
     $self->create_mstin($tmp_test_kc, $mstin_file);
     $self->parse_muw($mstin_file, $mstout_file);
-    $self->merge_mst_result($tmp_test_kc, $mstout_file, $mout_file);
+    my $buff = Comainu::Format->merge_kc_with_mstout($test_kc, $mstout_file);
+    $self->output_result($buff, $save_dir, basename($test_kc) . ".mout");
+    undef $buff;
 
     unlink $tmp_test_kc if !$self->{debug} && -f $tmp_test_kc;
+    unlink $mstout_file if !$self->{debug} && -f $mstout_file;
+
+    return 0;
 }
 
 # 中単位解析(MST)用のデータを作成
@@ -109,20 +113,5 @@ sub parse_muw {
 
     return 0;
 }
-
-sub merge_mst_result {
-    my ($self, $test_kc, $mstout_file, $mout_file) = @_;
-    print STDERR "# MERGE RESULT\n";
-    my $ret = 0;
-
-    my $buff = Comainu::Format->merge_kc_with_mstout($test_kc, $mstout_file);
-    write_to_file($mout_file, $buff);
-    undef $buff;
-
-    unlink $mstout_file if !$self->{debug} && -f $mstout_file;
-
-    return $ret;
-}
-
 
 1;

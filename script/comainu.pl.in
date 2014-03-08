@@ -40,7 +40,7 @@ my $DEFAULT_VALUES = {
     "model-name"               => "@MODEL_NAME@",
     "comainu-bi-model-dir"     => "",
     "comainu-bi-model-default" => "train/BI_model",
-    "output-dir"               => "out",
+    "output-dir"               => "",
     "comainu-temp"             => "tmp/temp",
     "boundary"                 => "sentence",
     "luwmrph"                  => "with",
@@ -140,8 +140,6 @@ sub comainu {
     # ---------- Default Environments ----------
 
     my $COMAINU_TEMP_DEFAULT = $DEFAULT_VALUES->{"comainu-temp"};
-
-    print "\n";
 
     my $opts = {
         %$DEFAULT_VALUES,
@@ -269,18 +267,27 @@ sub comainu {
         }
     };
 
-    print "\n";
+    print STDERR "\n";
     if ( $ret_code == 0 ) {
-        print "Finish.\n";
+        print STDERR "Finish.\n";
+    }
+}
+
+sub _run_plain_out_method {
+    my ($module) = @_;
+
+    return $module->run($module->{input}, $module->{"output-dir"}) if $module->{input};
+
+    while ( <STDIN> ) {
+        _run($module, $_, '.txt');
     }
 }
 
 sub _run_kc_out_method {
     my ($module) = @_;
 
-    return $module->run($module->{input}, @ARGV[1..$#ARGV]) if $module->{input};
+    return $module->run($module->{input}, $module->{"output-dir"}) if $module->{input};
 
-    $module->check_args_num(scalar @ARGV + 1);
     my $input = "";
     while ( <STDIN> ) {
         $input .= $_;
@@ -295,9 +302,8 @@ sub _run_kc_out_method {
 sub _run_bccwj_out_method {
     my ($module) = @_;
 
-    return $module->run($module->{input}, @ARGV[1..$#ARGV]) if $module->{input};
+    return $module->run($module->{input}, $module->{"output-dir"}) if $module->{input};
 
-    $module->check_args_num(scalar @ARGV + 1);
     my $input = "";
     while ( <STDIN> ) {
         my @items = split /\t/, $_;
@@ -310,17 +316,6 @@ sub _run_bccwj_out_method {
     _run($module, $input, '.txt') if $input;
 }
 
-sub _run_plain_out_method {
-    my ($module) = @_;
-
-    return $module->run($module->{input}, @ARGV[1..$#ARGV]) if $module->{input};
-
-    $module->check_args_num(scalar @ARGV + 1);
-    while ( <STDIN> ) {
-        _run($module, $_, '.txt');
-    }
-}
-
 sub _run {
     my ($module, $input, $ext) = @_;
     # TODO: output file nama
@@ -328,7 +323,7 @@ sub _run {
     open(OUT, ">", $tmp_file);
     print OUT $input;
     close(OUT);
-    my $ret_code = $module->run($tmp_file, @ARGV[1..$#ARGV]);
+    my $ret_code = $module->run($tmp_file, $module->{"output-dir"});
     unlink $tmp_file;
     return $ret_code;
 }

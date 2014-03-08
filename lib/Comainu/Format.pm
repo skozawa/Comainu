@@ -336,12 +336,14 @@ sub lout2kc4mid_file {
 # ファイルのマージ
 ############################################################
 sub merge_bccwj_with_kc_lout_file {
-    my ($class, $bccwj_file, $kc_lout_file, $lout_file, $boundary) = @_;
+    my ($class, $bccwj_file, $kc_lout_file, $boundary, $lout_file) = @_;
     my $bccwj_data = read_from_file($bccwj_file);
     my $kc_lout_data = read_from_file($kc_lout_file);
     my $lout_data = $class->merge_iof($bccwj_data, $kc_lout_data, $boundary);
     undef $bccwj_data;
     undef $kc_lout_data;
+
+    return $lout_data unless $lout_file;
 
     write_to_file($lout_file, $lout_data);
     undef $lout_data;
@@ -435,6 +437,8 @@ sub merge_bccwj_with_kc_bout_file {
     }
     undef $bccwj_data;
 
+    return $bout_data unless $bout_file;
+
     write_to_file($bout_file, $bout_data);
     undef $bout_data;
 }
@@ -458,6 +462,8 @@ sub merge_bccwj_with_kc_mout_file {
         $mout_data .= join("\t", @item_list) . "\n";
     }
     undef $bccwj_data;
+
+    return $mout_data unless $mout_file;
 
     write_to_file($mout_file, $mout_data);
     undef $mout_data;
@@ -486,6 +492,8 @@ sub merge_mecab_with_kc_lout_file {
     undef $mecab_data;
     undef $kc_lout_data_list;
 
+    return $lout_data unless $lout_file;
+
     write_to_file($lout_file, $lout_data);
     undef $lout_data;
 }
@@ -505,6 +513,8 @@ sub merge_mecab_with_kc_bout_file {
     }
     undef $mecab_data;
     undef $kc_bout_data_list;
+
+    return $bout_data unless $bout_file;
 
     write_to_file($bout_file, $bout_data);
     undef $bout_data;
@@ -532,6 +542,8 @@ sub merge_mecab_with_kc_mout_file {
     }
     undef $mecab_data;
     undef $kc_mout_data_list;
+
+    return $mout_data unless $mout_file;
 
     write_to_file($mout_file, $mout_data);
     undef $mout_data;

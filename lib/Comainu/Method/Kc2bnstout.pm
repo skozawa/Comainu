@@ -33,7 +33,7 @@ sub run {
     my ($self, $test_kc, $save_dir) = @_;
 
     $self->before_analyze({
-        dir => $save_dir, bnstmodel => $self->{bnstmodel}, args_num => scalar @_
+        dir => $save_dir, bnstmodel => $self->{bnstmodel}
     });
     $self->analyze_files($test_kc, $save_dir);
 
@@ -53,14 +53,20 @@ sub analyze {
     });
 
     my $basename = basename($tmp_test_kc);
-    my $svmdata_file = $self->{"comainu-temp"} . "/" . $basename . ".svmdata";
-    my $bout_file    = $save_dir . "/" . $basename . ".bout";
+    my $svmdata_file  = $self->{"comainu-temp"} . "/" . $basename . ".svmdata";
+    my $tmp_bout_file = $self->{"comainu-temp"} . "/" . $basename . ".tmp.bout";
 
     $self->format_bnstdata($tmp_test_kc, $svmdata_file);
-    $self->chunk_bnst($svmdata_file, $bout_file);
-    $self->merge_chunk_result($tmp_test_kc, $bout_file);
+    $self->chunk_bnst($svmdata_file, $tmp_bout_file);
+    my $buff = Comainu::Format->merge_kc_with_bout($tmp_test_kc, $tmp_bout_file);
 
-    unlink $tmp_test_kc if !$self->{debug} && -f $tmp_test_kc;
+    $self->output_result($buff, $save_dir, $basename . ".bout");
+    undef $buff;
+
+    unlink $tmp_test_kc   if !$self->{debug} && -f $tmp_test_kc;
+    unlink $tmp_bout_file if !$self->{debug} && -f $tmp_bout_file;
+
+    return 0;
 }
 
 
@@ -130,19 +136,6 @@ sub chunk_bnst {
     unlink $bout_file unless -s $bout_file;
 
     unlink $svmdata_file if !$self->{debug} && -f $svmdata_file;
-}
-
-sub merge_chunk_result {
-    my ($self, $tmp_test_kc, $bout_file) = @_;
-
-    my $buff = Comainu::Format->merge_kc_with_bout($tmp_test_kc, $bout_file);
-    write_to_file($bout_file, $buff);
-    undef $buff;
-
-    # 不十分な中間ファイルならば、削除しておく
-    unlink $bout_file unless -s $bout_file;
-
-    return 0;
 }
 
 1;

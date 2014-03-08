@@ -4,11 +4,11 @@ use strict;
 use warnings;
 use utf8;
 use FindBin qw($Bin);
+use Encode;
 
-use Comainu::Util qw(get_dir_files check_file);
+use Comainu::Util qw(get_dir_files check_file write_to_file);
 
 my $DEFAULT_VALUES = {
-    "args_num"                 => 3,
     "debug"                    => 0,
     "comainu-home"             => $Bin . "/..",
     "comainu-temp"             => $Bin . "/../tmp/temp",
@@ -66,7 +66,7 @@ sub check_args_num {
 
 sub before_analyze {
     my ($self, $args) = @_;
-    $self->check_args_num($args->{args_num});
+    $self->check_args_num($args->{args_num}) if $args->{args_num};
     mkdir $args->{dir} if $args->{dir} && !-d $args->{dir};
     $self->check_luwmodel($args->{luwmodel}) if $args->{luwmodel};
     foreach ( qw(bnstmodel muwmodel) ) {
@@ -96,6 +96,17 @@ sub analyze_files {
     foreach my $file ( @{get_dir_files($test_file, $ext)} ) {
         $self->analyze($file, @args);
     }
+}
+
+sub output_result {
+    my ($self, $result, $save_dir, $filename) = @_;
+    if ( $save_dir ) {
+        my $out_file = $save_dir . "/" . $filename;
+        write_to_file($out_file, $result);
+    } else {
+        print encode_utf8 $result;
+    }
+    undef $result;
 }
 
 sub evaluate_files {
