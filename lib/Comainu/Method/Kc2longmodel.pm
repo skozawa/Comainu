@@ -18,18 +18,12 @@ sub new {
     $class->SUPER::new( %args, args_num => 3 );
 }
 
-# 訓練対象KCファイルからモデルを訓練する。
-# 長単位解析モデルを学習する
+# Train the model for analyzing long-unid-word with KC fiel
 sub usage {
     my $self = shift;
-    printf("COMAINU-METHOD: kc2longmodel\n");
-    printf("  Usage: %s kc2longmodel <train-kc> <long-model-dir>\n", $0);
-    printf("    This command trains model from <train-kc> into <long-model-dir>.\n");
-    printf("\n");
-    printf("  ex.)\n");
-    printf("  \$ perl ./script/comainu.pl kc2longmodel sample/sample.KC train\n");
-    printf("    -> train/sample.KC.model\n");
-    printf("\n");
+    while ( <DATA> ) {
+        print $_;
+    }
 }
 
 sub run {
@@ -110,7 +104,7 @@ sub train_luwmodel_crf {
     my $crf_learn = $self->{"crf-dir"} . "/crf_learn";
     my $crf_template = $model_dir . "/" . $basename . ".template";
 
-    ## 素性数を取得
+    # get the number of the feature for training
     open(my $fh_svmin, $svmin_file);
     my $line = <$fh_svmin>;
     $line = decode_utf8 $line;
@@ -129,7 +123,7 @@ sub train_luwmodel_crf {
     return 0;
 }
 
-## BIのみに関する処理（後処理用）
+# train BI model (analyzing pos, cForm and cType categories)
 sub train_bi_model {
     my ($self, $train_kc, $model_dir) = @_;
     print STDERR "# TRAIN BI MODEL\n";
@@ -143,3 +137,20 @@ sub train_bi_model {
 
 
 1;
+
+
+__DATA__
+COMAINU-METHOD: kc2longmodel
+  Usage: ./script/comainu.pl kc2longmodel <train-kc> <long-model-dir>
+    This command trains the model for analyzing long-unit-word with <train-kc>.
+    The model is put into <long-model-dir>
+
+  option
+    --help                    show this message and exit
+    --luwmodel-type           specify the type of the model for boundary of long-unit-word (default: CRF)
+                              (CRF or SVM)
+
+  ex.)
+  $ perl ./script/comainu.pl kc2longmodel sample/sample.KC sample_train
+    -> sample_train/sample.KC.model
+

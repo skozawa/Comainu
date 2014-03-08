@@ -13,20 +13,12 @@ use Comainu::Util qw(read_from_file write_to_file check_file proc_file2stdout);
 use Comainu::Feature;
 use Comainu::Format;
 
+# Analyze bunsetsu boudanry
 sub usage {
     my $self = shift;
-    printf("COMAINU-METHOD: kc2bnstout\n");
-    printf("  Usage: %s kc2bnstout (--bnstmodel=<bnst-model-file>) <test-kc> <out-dir>\n", $0);
-    printf("    This command analyzes <test-kc> with <bnst-model-file>.\n");
-    printf("    The result is put into <out-dir>.\n");
-    printf("\n");
-    printf("  ex.)\n");
-    printf("  \$ perl ./script/comainu.pl kc2bnstout sample/sample.KC out\n");
-    printf("    -> out/sample.KC.bout\n");
-    printf("  ex.) specify the bnst model \n");
-    printf("  \$ perl ./script/comainu.pl kc2bnstout --bnstmodel=train/bnst.model sample/sample.KC out\n");
-    printf("    -> out/sample.KC.bout\n");
-    printf("\n");
+    while ( <DATA> ) {
+        print $_;
+    }
 }
 
 sub run {
@@ -138,4 +130,24 @@ sub chunk_bnst {
     unlink $svmdata_file if !$self->{debug} && -f $svmdata_file;
 }
 
+
 1;
+
+
+__DATA__
+COMAINU-METHOD: kc2bnstout [options]
+  Usage: ./script/comainu.pl kc2bnstout
+    This command analyzes the bunsetsu boundary with <bnstmodel>.
+
+  option
+    --help                    show this message and exit
+    --input                   specify input file or directory
+    --output-dir              specify output directory
+    --bnstmodel               specify the bnst model (default: train/bnst.model)
+
+  ex.)
+  $ perl ./script/comainu.pl kc2bnstout
+  $ perl ./script/comainu.pl kc2longout --input=sample/sample.KC --output-dir=out
+    -> out/sample.KC.bout
+  $ perl ./script/comainu.pl kc2longout --bnstmodel=sample_train/sample.KC.model
+

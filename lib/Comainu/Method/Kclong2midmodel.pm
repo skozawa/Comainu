@@ -16,17 +16,12 @@ sub new {
     $class->SUPER::new( %args, args_num => 3 );
 }
 
-# 中単位解析モデルの学習
+# Train the model for analyzing middle-unit-word
 sub usage {
     my $self = shift;
-    printf("COMAINU-METHOD: kclong2midmodel\n");
-    printf("  Usage: %s kclong2midmodel <train-kc> <mid-model-dir>\n", $0);
-    printf("    This command trains model from <train-kc> into <mid-model-dir>.\n");
-    printf("\n");
-    printf("  ex.)\n");
-    printf("  \$ perl ./script/comainu.pl kclong2midmodel sample/sample.KC train\n");
-    printf("    -> train/sample.KC.model\n");
-    printf("\n");
+    while ( <DATA> ) {
+        print $_;
+    }
 }
 
 sub run {
@@ -54,7 +49,7 @@ sub run {
     return 0;
 }
 
-## 中単位解析モデル学習用データの作成
+# create data for training the model for analyzing middle-unit-word
 sub create_mid_traindata {
     my ($self, $train_kc, $mstin_file) = @_;
     print STDERR "# CREATE MUW TRAINDATA\n";
@@ -66,7 +61,7 @@ sub create_mid_traindata {
     return 0;
 }
 
-## 中単位解析モデルの学習
+# train middle-unit-word model
 sub train_midmodel {
     my ($self, $mstin_file, $model_file) = @_;
     print STDERR "# TRAIN MUW MODEL\n";
@@ -95,3 +90,18 @@ sub train_midmodel {
 
 
 1;
+
+
+__DATA__
+COMAINU-METHOD: kclong2midmodel
+  Usage: ./script/comainu.pl kclong2midmodel <train-kc> <mid-model-dir>
+    This command trains the model for analyzing middle-unit-word with <train-kc>.
+    The model is put into <mid-model-dir>
+
+  option
+    --help                    show this message and exit
+
+  ex.)
+  $ perl ./script/comainu.pl kclong2midmodel sample/sample_mid.KC sample_train
+    -> sample_train/sample_mid.KC.model
+

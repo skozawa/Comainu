@@ -16,35 +16,12 @@ sub new {
     $class->SUPER::new( %args, args_num => 4 );
 }
 
-############################################################
-# 解析モデルの評価
-############################################################
-# 正解の情報が付与されたKCファイルと、長単位解析結果のKCファイルを比較し、
-# diff結果と精度を出力する。
-# 動作
-# 第１引数をよび第２引数の種類によって解析対象を変える。
-# ・どちらもファイルの場合
-#   それぞれのファイルを使って処理し、解析結果KCファイル名の拡張子を".eval",
-#   ".eval.long"を付けた名前で、第３引数のパスに保存する。
-# ・どちらもディレクトリの場合
-#   第一引数のディレクトリ内に有る"*.KC"ファイル全てを対象として処理を行う。
-#   ".lout"ファイルは、第二引数で与えられたディレクトリ内のファイルで、".KC"ファイル
-#   とペアとなる".lout"ファイルを順次適用する。無ければエラーとする。
-#   処理結果は、".KC"ファイル名から拡張子を除いた文字列に".eval",
-#   ".eval.long"を付けた名前で、第３引数のパスに保存する。
-# ・上記２つの場合に該当しない組合せはエラーとする。
-#
+# Evalution for the model for analyzing long-unit-word
 sub usage {
     my $self = shift;
-    printf("COMAINU-METHOD: kc2longeval\n");
-    printf("  Usage: %s kc2longeval <ref-kc> <kc-lout> <out-dir>\n", $0);
-    printf("    This command make a evaluation for <kc-lout> with <ref-kc>.\n");
-    printf("    The result is put into <out-dir>.\n");
-    printf("\n");
-    printf("  ex.)\n");
-    printf("  perl ./script/comainu.pl kc2longeval sample/sample.KC out/sample.KC.lout out\n");
-    printf("    -> out/sample.eval.long\n");
-    printf("\n");
+    while ( <DATA> ) {
+        print $_;
+    }
 }
 
 sub run {
@@ -62,17 +39,16 @@ sub evaluate {
     $self->compare($correct_kc, $result_kc_lout, $save_dir);
 }
 
-# 正解KCファイルと長単位解析結果KCファイルを受け取り、
-# 処理して".eval.long"ファイルを出力する。
+# Compare .KC file and .lout file
+# Output the reuslt ".eval.long" file
 sub compare {
     my ($self, $kc_file, $lout_file, $save_dir) = @_;
     print STDERR "_compare\n";
     my $res = "";
 
-    # 中間ファイル
+    # KC file
     my $tmp1_file = $self->{"comainu-temp"} . "/" . basename($kc_file, ".KC").".long";
-
-    # すでに中間ファイルが出来ていれば処理しない
+    # don't recreate if already exist
     if ( -s $tmp1_file ) {
         print STDERR "Use Cache \'$tmp1_file\'.\n";
     } else {
@@ -96,7 +72,7 @@ sub compare {
         return $res;
     }
 
-    # 中間ファイル
+    # lout file
     my $tmp2_file = $self->{"comainu-temp"} . "/" .
         basename($lout_file, ".lout") . ".svmout_create.long";
     my $buff = read_from_file($lout_file);
@@ -137,5 +113,19 @@ sub short2long {
 }
 
 
-
 1;
+
+
+__DATA__
+COMAINU-METHOD: kc2longeval
+  Usage: ./script/comainu.pl kc2longeval <ref-kc> <kc-lout> <out-dir>
+    This command makes a evaluation for <kc-lout> with <ref-kc>.
+    The result is put into <out-dir>
+
+  option
+    --help                    show this message and exit
+
+  ex.)
+  $ perl ./script/comainu.pl kc2longeval sample/sample.KC out/sample.KC.lout out
+    -> out/sample.eval.long
+

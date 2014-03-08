@@ -12,19 +12,12 @@ use Comainu::Format;
 use Comainu::Feature;
 use Comainu::BIProcessor;
 
+# Analyze long-unit-word
 sub usage {
     my ($self) = @_;
-    printf("COMAINU-METHOD: kc2longout\n");
-    printf("  Usage: %s kc2longout (--luwmodel=<long-model-file>) <test-kc> <out-dir>\n", $0);
-    printf("    This command analyzes <test-kc> with <long-model-file>.\n");
-    printf("    The result is put into <out-dir>.\n");
-    printf("\n");
-    printf("  ex.)\n");
-    printf("  \$ perl ./script/comainu.pl kc2longout sample/sample.KC out\n");
-    printf("    -> out/sample.lout\n");
-    printf("  \$ perl ./script/comainu.pl kc2longout --luwmodel-type=SVM --luwmodel=train/SVM/train.KC.model sample/sample.KC out\n");
-    printf("    -> out/sample.KC.lout\n");
-    printf("\n");
+    while (<DATA>) {
+        print $_;
+    }
 }
 
 sub run {
@@ -69,36 +62,35 @@ sub analyze {
 }
 
 
-# 解析用KC２ファイルへ素性追加
+# create test data for analyzing long-unit-word
 sub create_features {
     my ($self, $tmp_test_kc, $kc2_file) = @_;
     print STDERR "# CREATE FEATURE DATA\n";
 
-    # すでに同じ名前の中間ファイルがあれば削除
+    # delte kc2_file if already exist
     unlink $kc2_file if -s $kc2_file;
 
     my $buff = Comainu::Feature->create_longout_feature($tmp_test_kc, $self->{boundary});
-    # SVMの場合はpartial parsing
+    # Use partial parsing if the luwmodel-type is SVM
     $buff = Comainu::Feature->pp_partial($buff, { boundary => $self->{boundary} })
         if $self->{"luwmodel-type"} eq 'SVM';
     if ( $self->{"luwmodel-type"} eq 'CRF' ) {
         $buff =~ s/^EOS.*?//mg;
-        # CRFでは*Bが境界とみなされないため、削除
+        # delete B* (CRF++ can't recognize boundary)
         $buff =~ s/^\*B.*?//mg if $self->{boundary} eq "word";
     }
-    # yamchaやCRF++のために、明示的に最終行に改行を付与
+    # add line break at last for Yamcha and CRF++
     $buff .= "\n";
 
     write_to_file($kc2_file, $buff);
     undef $buff;
 
-    # 不十分な中間ファイルならば、削除しておく
     unlink $kc2_file unless -s $kc2_file;
 
     return 0;
 }
 
-# 解析用KC２ファイルをチャンキングモデル(yamcha, crf++)で解析
+# chunk kc2 file using Yamcha or CRF++
 sub chunk_luw {
     my ($self, $kc2_file, $svmout_file) = @_;
     print STDERR "# CHUNK LUW\n";
@@ -127,7 +119,6 @@ sub chunk_luw {
     }
     printf(STDERR "# COM: %s\n", $com) if $self->{debug};
 
-    # すでに同じ名前の中間ファイルがあれば削除
     unlink $svmout_file if -s $svmout_file;
     check_file($kc2_file);
 
@@ -138,13 +129,12 @@ sub chunk_luw {
     write_to_file($svmout_file, $buff);
     undef $buff;
 
-    # 不十分な中間ファイルならば、削除しておく
     unlink $svmout_file unless -s $svmout_file;
 
     return 0;
 }
 
-# チャンクの結果をマージして出力ディレクトリへ結果を保存
+
 sub merge_chunk_result {
     my ($self, $tmp_test_kc, $svmout_file, $lout_file) = @_;
     print STDERR "# MERGE CHUNK RESULT\n";
@@ -155,7 +145,6 @@ sub merge_chunk_result {
     write_to_file($lout_file, $buff);
     undef $buff;
 
-    # 不十分な中間ファイルならば、削除しておく
     unlink $lout_file unless -s $lout_file;
 
     unlink $svmout_file if !$self->{debug} && -f $svmout_file &&
@@ -164,7 +153,8 @@ sub merge_chunk_result {
     return 0;
 }
 
-# 後処理:BIのみのチャンクを再処理
+# analyze the pos, cForm, cType
+# target: the long-unit-word labeled with only B and I
 sub post_process {
     my ($self, $tmp_test_kc, $tmp_lout_file, $kc2_file) = @_;
     print STDERR "# POST PROCESS\n";
@@ -186,9 +176,9 @@ sub post_process {
     return $self->create_long_lemma($buff);
 }
 
-# 後処理解析モデルを設定
+# set comainu-bi-model-dir
 # 1. comainu-bi-model-dir
-# 2. 長単位解析モデルと同じ階層にあるpos, cForm, cTypeのモデル
+# 2. pos, cForm, cType models in luwmodel directory
 sub set_comainu_bi_model {
     my ($self) = @_;
     return if $self->{"comainu-bi-model-dir"};
@@ -204,7 +194,7 @@ sub set_comainu_bi_model {
     $self->{"comainu-bi-model-dir"} = $train_dir;
 }
 
-# 語彙素・語彙素読みを生成
+# create long-word lemma and reading
 sub create_long_lemma {
     my ($self, $data) = @_;
 
@@ -216,7 +206,7 @@ sub create_long_lemma {
     	$comp{$items[0]."_".$items[1]."_".$items[2]} = $items[3]."_".$items[4];
     }
 
-    # 長単位の配列を生成
+    # create array of long-unit-word
     my @luws;
     my $luw_id = 0;
     foreach my $line (split(/\r?\n/,$data)) {
@@ -230,7 +220,7 @@ sub create_long_lemma {
         } else {
             @items[17..19] = ("*","*","*");
         }
-        # form,formBase,formOrthBase,formOrth (unidic-dbを利用していない場合など) がない場合
+        # Don't have form,formBase,formOrthBase,formOrth (ex. don't use unidic-db)
         if ( $items[7] eq "*" && $items[8] eq "*" &&
                  $items[9] eq "*" && $items[10] eq "*") {
             @items[7..10] = @items[2,2,3,3];
@@ -250,10 +240,12 @@ sub create_long_lemma {
             $res .= "EOS\n";
             next;
         }
-        # 1短単位から構成される助詞、助動詞はそのまま(何もしない)
+        # long-unit-word composed of one short-unit-word
+        # pos is 助詞 or 助動詞
         if ( $first->[14] =~ /助詞|助動詞/ && $#{$luw} == 0 ) {
+            # no operation
         }
-        # 特定の品詞の場合は、長単位語彙素、語彙素読みを空文字にする
+        # lemma and reading set empty
         elsif ( any { $first->[14] eq $_ } ("英単語", "URL", "言いよどみ", "漢文", "web誤脱", "ローマ字文") ) {
             @$first[17,18] = ("", "");
         }
@@ -264,7 +256,7 @@ sub create_long_lemma {
         }
         else {
             @$first[17,18] = ("", "");
-            my $parential = 0; # 括弧があるか
+            my $parential = 0; # has bracket
             for my $j ( 0 .. $#{$luw} - 1 ) {
                 $self->generate_long_lemma($luw, $j);
                 my $suw = $luw->[$j];
@@ -278,8 +270,8 @@ sub create_long_lemma {
                 $parential++;
             }
 
-            # 括弧がある複数短単位から構成される長単位の場合は、
-            # 語彙素、語彙素読みを作り直す
+            # regenerate lemma and reading if long-unit-word
+            # which is composed of multiple short-unit-word and contains bracket
             if ( $parential && $#{$luw} > 1 ) {
                 @$first[17,18] = ("","");
                 $self->generate_long_lemma($luw, 0);
@@ -288,8 +280,8 @@ sub create_long_lemma {
                 for ($j =1; $j <= $#{$luw}-2; $j++) {
                     my $suw  = $luw->[$j];
                     my $suw2 = $luw->[$j+2];
-                    # 括弧の前後の短単位の語形が同じ場合は
-                    # 語彙素、語彙素読みには追加しないので、スキップする
+                    # Don't add short-unit-word lemma and reading to long-unit-word
+                    # if the word form of short-unit-word is same to short-unit-word in brackets.
                     # ex. 萎縮(いしゅく)する
                     if ( $suw->[4] eq "補助記号-括弧開" && $suw2->[4] eq "補助記号-括弧閉" ) {
                         my $pre_suw  = $luw->[$j-1];
@@ -307,7 +299,7 @@ sub create_long_lemma {
                 $self->generate_long_lemma($luw, $#{$luw});
             }
 
-            # 複合辞
+            # Composition
             my $pos_lemma_reading = join("_", @$first[14,17,18]);
             if ( defined $comp{$pos_lemma_reading} ) {
                 my ($reading, $lemma) = split(/\_/, $comp{$pos_lemma_reading});
@@ -340,28 +332,54 @@ sub generate_long_lemma {
     my $suw   = $luw->[$index];
     if( $suw->[4] eq "補助記号-括弧開" || $suw->[4] eq "補助記号-括弧閉" ) {
         if ( $#{$luw} == 0) {
-            $first->[17] .= $suw->[8]; ## fromBase
-            $first->[18] .= $suw->[9]; ## formOrthBase
+            $first->[17] .= $suw->[8];  # fromBase
+            $first->[18] .= $suw->[9];  # formOrthBase
         }
     } elsif ( $suw->[4] =~ /名詞-固有名詞-人名|名詞-固有名詞-地名/ ) {
-        $first->[17] .= $suw->[7]; ## form
-        $first->[18] .= $suw->[1]; ## orthToken
+        $first->[17] .= $suw->[7];      # form
+        $first->[18] .= $suw->[1];      # orthToken
     } elsif ( $suw->[3] eq "○" && $#{$luw} > 1 ) {
-        $first->[17] .= $suw->[3]; ## lemma
-        $first->[18] .= $suw->[9]; ## formOrthBase
+        $first->[17] .= $suw->[3];      # lemma
+        $first->[18] .= $suw->[9];      # formOrthBase
     } elsif ( $suw->[5] eq "*" || $suw->[5] eq "" ) {
-        $first->[17] .= $suw->[7]; ## form
-        $first->[18] .= $suw->[9]; ## formOrthBase
+        $first->[17] .= $suw->[7];      # form
+        $first->[18] .= $suw->[9];      # formOrthBase
     } else {
         if ( $#{$luw} != $index ) { # not last suw
-            $first->[17] .= $suw->[7];  ## form
-            $first->[18] .= $suw->[10]; ## formOrth
+            $first->[17] .= $suw->[7];  # form
+            $first->[18] .= $suw->[10]; # formOrth
         } else {
-            $first->[17] .= $suw->[8]; ## fromBase
-            $first->[18] .= $suw->[9]; ## formOrthBase
+            $first->[17] .= $suw->[8];  # fromBase
+            $first->[18] .= $suw->[9];  # formOrthBase
         }
     }
 }
 
 
 1;
+
+
+__DATA__
+COMAINU-METHOD: kc2longout
+  Usage: ./script/comainu.pl kc2longout [options]
+    This command analyzes long-unit-word of <input>(file or STDIN) with <luwmodel>
+
+  option
+    --help                    show this message and exit
+    --input                   specify input file or directory
+    --output-dir              specify output directory
+    --luwmodel                specify the model of boundary of long-unit-word (default: train/CRF/train.KC.model)
+    --luwmodel-type           specify the type of the model for boundary of long-unit-word (default: CRF)
+                              (CRF or SVM)
+    --boundary                specify the type of boundary (default: sentence)
+                              (sentence or word)
+    --luwmrph                 whether to output morphology of long-unit-word (default: with)
+                              (with or without)
+    --comainu-bi-model-dir    speficy the model directory for the category models
+
+  ex.)
+  $ perl ./script/comainu.pl kc2longout
+  $ perl ./script/comainu.pl kc2longout --input=sample/sample.KC --output-dir=out
+    -> out/sample.KC.lout
+  $ perl ./script/comainu.pl kc2longout --luwmodel-type=SVM --luwmodel=train/SVM/train.KC.model
+

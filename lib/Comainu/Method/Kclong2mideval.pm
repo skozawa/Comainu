@@ -10,23 +10,17 @@ use Config;
 use Comainu::Util qw(read_from_file write_to_file);
 use Comainu::Evaluate;
 
+# Evalution for the middle-word-unit model
 sub new {
     my ($class, %args) = @_;
     $class->SUPER::new( %args, args_num => 4 );
 }
 
-# 中単位解析モデルの評価
 sub usage {
     my $self = shift;
-    printf("COMAINU-METHOD: kclong2mideval\n");
-    printf("  Usage: %s kclong2mideval <ref-kc> <kc-mout> <out-dir>\n", $0);
-    printf("    This command make a evaluation for <kc-mout> with <ref-kc>.\n");
-    printf("    The result is put into <out-dir>.\n");
-    printf("\n");
-    printf("  ex.)\n");
-    printf("  perl ./script/comainu.pl kclong2mideval sample/sample.KC out/sample.KC.mout out\n");
-    printf("    -> out/sample.eval.mid\n");
-    printf("\n");
+    while ( <DATA> ) {
+        print $_;
+    }
 }
 
 sub run {
@@ -115,3 +109,18 @@ sub short2middle {
 
 
 1;
+
+
+__DATA__
+COMAINU-METHOD: kclong2mideval
+  Usage: ./script/comainu.pl kclong2mideval <ref-kc> <kc-mout> <out-dir>
+    This command makes a evaluation for <kc-mout> with <ref-kc>.
+    The result is put into <out-dir>
+
+  option
+    --help                    show this message and exit
+
+  ex.)
+  $ perl ./script/comainu.pl kclong2mideval sample/sample_mid.KC out/sample_mid.KC.mout out
+    -> out/sample.eval.mid
+

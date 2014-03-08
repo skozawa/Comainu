@@ -179,7 +179,7 @@ sub comainu {
         $ENV{$var_name_env} = $opts->{$var_name};
     }
 
-    if ( defined $opts->{help} ) {
+    if ( !$ARGV[0] && defined $opts->{help} ) {
         comainu_usage($opts);
         exit 0;
     }
@@ -247,6 +247,11 @@ sub comainu {
     my $comainu_module = "Comainu::Method::" . ucfirst( lc $opts->{method} );
     load $comainu_module;
     my $module = $comainu_module->new(%$opts);
+
+    if ( defined $opts->{help} ) {
+        $module->usage;
+        exit 0;
+    }
 
     if ( $opts->{debug} ) {
         printf(STDERR "# method: %s->run(%s)\n", $comainu_module,

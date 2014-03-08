@@ -15,18 +15,12 @@ sub new {
     $class->SUPER::new( %args, args_num => 4 );
 }
 
-# 文節境界モデルの評価
+# Evalution for the model for analyzing bunsetsu boudnary
 sub usage {
     my $self = shift;
-    printf("COMAINU-METHOD: kc2bnsteval\n");
-    printf("  Usage: %s kc2bnsteval <ref-kc> <kc-lout> <out-dir>\n", $0);
-    printf("    This command make a evaluation for <kc-lout> with <ref-kc>.\n");
-    printf("    The result is put into <out-dir>.\n");
-    printf("\n");
-    printf("  ex.)\n");
-    printf("  perl ./script/comainu.pl kc2bnsteval sample/sample.KC out/sample.KC.bout out\n");
-    printf("    -> out/sample.eval.bnst\n");
-    printf("\n");
+    while ( <DATA> ) {
+        print $_;
+    }
 }
 
 sub run {
@@ -49,7 +43,6 @@ sub compare {
     print STDERR "_compare\n";
     my $res = "";
 
-    # 中間ファイル
     my $tmp1_file = $self->{"comainu-temp"} . "/" . basename($kc_file, ".KC") . ".bnst";
 
     if ( -s $tmp1_file ) {
@@ -70,15 +63,13 @@ sub compare {
         return $res;
     }
 
-    # 中間ファイル
     my $tmp2_file = $self->{"comainu-temp"} . "/" . basename($bout_file, ".bout") . ".svmout_create.bnst";
     my $buff = read_from_file($bout_file);
     $buff = $self->short2bnst($buff);
     write_to_file($tmp2_file, $buff);
     undef $buff;
 
-    my $output_file = $save_dir . "/" .
-        basename($bout_file, ".bout") . ".eval.bnst";
+    my $output_file = $save_dir . "/" . basename($bout_file, ".bout") . ".eval.bnst";
 
     $res = Comainu::Evaluate->eval_long($tmp1_file, $tmp2_file, 1);
     write_to_file($output_file, $res);
@@ -114,3 +105,18 @@ sub short2bnst {
 
 
 1;
+
+
+__DATA__
+COMAINU-METHOD: kc2bnsteval
+  Usage: ./script/comainu.pl kc2bnsteval <ref-kc> <kc-bout> <out-dir>
+    This command makes a evaluation for <kc-bout> with <ref-kc>.
+    The result is put into <out-dir>
+
+  option
+    --help                    show this message and exit
+
+  ex.)
+  $ perl ./script/comainu.pl kc2bnsteval sample/sample.KC out/sample.KC.bout out
+    -> out/sample.eval.bnst
+

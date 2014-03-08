@@ -11,22 +11,12 @@ use Comainu::Util qw(read_from_file write_to_file);
 use Comainu::Format;
 use Comainu::Feature;
 
-# 中単位解析
-# 解析対象KCファイル、モデルファイルを用いて、
-# 解析対象KCファイルに中単位を付与する。
+# Analyze middle-unit-word
 sub usage {
     my $self = shift;
-    printf("COMAINU-METHOD: kclong2midout\n");
-    printf("  Usage: %s kclong2midout (--muwmodel=<mid-model-file>) <test-kc> <out-dir>\n", $0);
-    printf("    This command analyzes <test-kc> with <mid-model-file>.\n");
-    printf("    The result is put into <out-dir>.\n");
-    printf("\n");
-    printf("  ex.)\n");
-    printf("  \$ perl ./script/comainu.pl kclong2midout sample/sample.KC out\n");
-    printf("    -> out/sample.KC.mout\n");
-    printf("  \$ perl ./script/comainu.pl kclong2midout --muwmodel=train/MST/train.KC.model sample/sample.KC out\n");
-    printf("    -> out/sample.KC.mout\n");
-    printf("\n");
+    while ( <DATA> ) {
+        print $_;
+    }
 }
 
 sub run {
@@ -68,7 +58,7 @@ sub analyze {
     return 0;
 }
 
-# 中単位解析(MST)用のデータを作成
+# create test data for MST Parser
 sub create_mstin {
     my ($self, $test_kc, $mstin_file) = @_;
     print STDERR "# CREATE MSTIN\n";
@@ -80,7 +70,7 @@ sub create_mstin {
     return 0;
 }
 
-# mstparserを利用して中単位解析
+# analyze middle-unit-word using MST Parser
 sub parse_muw {
     my ($self, $mstin_file, $mstout_file) = @_;
     print STDERR "# PARSE MUW\n";
@@ -99,7 +89,7 @@ sub parse_muw {
         $mstin_file  =~ s/^[a-zA-Z]\://;
         $mstout_file =~ s/^[a-zA-Z]\://;
     }
-    ## 入力ファイルが空だった場合
+    # input file is empty
     if ( -z $mstin_file ) {
     	write_to_file($mstout_file, "");
     	return 0;
@@ -114,4 +104,23 @@ sub parse_muw {
     return 0;
 }
 
+
 1;
+
+
+__DATA__
+COMAINU-METHOD: kclong2midout
+  Usage: ./script/comainu.pl kclong2midout [options]
+    This command analyzes middle-unit-word of <input>(file or STDIN) with <muwmodel>
+
+  option
+    --help                    show this message and exit
+    --input                   specify input file or directory
+    --output-dir              specify output directory
+    --muwmodel                specify the middle-unit-word model (default: train/MST/train.KC.model)
+
+  ex.)
+  $ perl ./script/comainu.pl kclong2midout
+  $ perl ./script/comainu.pl kclong2midout --input=sample/sample_mid.KC --output-dir=out
+    -> out/sample_mid.KC.mout
+

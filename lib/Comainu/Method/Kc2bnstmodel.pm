@@ -17,17 +17,12 @@ sub new {
     $class->SUPER::new( %args, args_num => 3 );
 }
 
-# 文節境界解析モデルの学習
+# Train the model for analyzing bunsetsu boundary
 sub usage {
     my $self = shift;
-    printf("COMAINU-METHOD: kc2bnstmodel\n");
-    printf("  Usage: %s kc2bnstmodel <train-kc> <bnst-model-dir>\n", $0);
-    printf("    This command trains model from <train-kc> into <bnst-model-dir>.\n");
-    printf("\n");
-    printf("  ex.)\n");
-    printf("  \$ perl ./script/comainu.pl kc2bnstmodel sample/sample.KC train\n");
-    printf("    -> train/sample.KC.model\n");
-    printf("\n");
+    while ( <DATA> ) {
+        print $_;
+    }
 }
 
 sub run {
@@ -76,4 +71,20 @@ sub train {
     system($com);
 }
 
+
 1;
+
+
+__DATA__
+COMAINU-METHOD: kc2bnstmodel
+  Usage: ./script/comainu.pl kc2bnstmodel <train-kc> <bnst-model-dir>
+    This command trains the model for analyzing bunsetsu boundary with <train-kc>.
+    The model is put into <bnst-model-dir>
+
+  option
+    --help                    show this message and exit
+
+  ex.)
+  $ perl ./script/comainu.pl kc2bnstmodel sample/sample.KC sample_train
+    -> sample_train/sample.KC.model
+
