@@ -24,16 +24,16 @@ if [ -z $NO_CRF ]; then
     CRF=${PREFIX}/bin
     if [ ! -x ${PREFIX}/bin/crf_test ]; then
         echo "*** GET CRF++ ***"
-        wget https://crfpp.googlecode.com/files/CRF%2B%2B-0.58.tar.gz
+        wget "https://crfpp.googlecode.com/files/CRF%2B%2B-0.58.tar.gz" -O CRF++.tar.gz
         echo "*** INSTALL CRF++ ***"
-        tar -xzf CRF++-0.58.tar.gz
+        tar -xzf CRF++.tar.gz
         cd CRF++-0.58
         ./configure --prefix=${PREFIX}
         make
         make install
         cd ..
         rm -rf CRF++-0.58
-        rm -f CRF++-0.58.tar.gz
+        rm -f CRF++.tar.gz
         echo "*** INSTALL DONE CRF++ ***"
     fi
 fi
@@ -43,16 +43,16 @@ if [ -z $NO_SVM_TOOL ]; then
     SVM_TOOL=${PREFIX}/bin
     if [ ! -x ${PREFIX}/bin/svm_classify ]; then
         echo "*** GET TinySVM ***"
-        wget http://chasen.org/~taku/software/TinySVM/src/TinySVM-0.09.tar.gz
+        wget "http://chasen.org/~taku/software/TinySVM/src/TinySVM-0.09.tar.gz" -O TinySVM.tar.gz
         echo "*** INSTALL TinySVM ***"
-        tar -xzf TinySVM-0.09.tar.gz
+        tar -xzf TinySVM.tar.gz
         cd TinySVM-0.09
         ./configure --prefix=${PREFIX}
         make
         make install
         cd ..
         rm -rf TinySVM-0.09
-        rm -f TinySVM-0.09.tar.gz
+        rm -f TinySVM.tar.gz
         echo "*** INSTALL DONE TinySVM ***"
     fi
 fi
@@ -62,9 +62,9 @@ if [ -z $NO_YAMCHA ]; then
     YAMCHA=${PREFIX}/bin
     if [ ! -x ${PREFIX}/bin/yamcha ]; then
         echo "*** GET yamcha ***"
-        wget http://chasen.org/~taku/software/yamcha/src/yamcha-0.33.tar.gz
+        wget "http://chasen.org/~taku/software/yamcha/src/yamcha-0.33.tar.gz" -O yamcha.tar.gz
         echo "*** INSTALL yamcha ***"
-        tar -xzf yamcha-0.33.tar.gz
+        tar -xzf yamcha.tar.gz
         cd yamcha-0.33
         ./configure --prefix=${PREFIX} --with-svm-learn=${PREFIX}
         make
@@ -82,7 +82,7 @@ if [ -z $NO_YAMCHA ]; then
             rm yamcha.patch
         fi
         rm -rf yamcha-0.33
-        rm -f yamcha-0.33.tar.gz
+        rm -f yamcha.tar.gz
         echo "*** INSTALL DONE yamcha ***"
     fi
 fi
@@ -92,16 +92,16 @@ if [ -z $NO_MECAB ]; then
     MECAB=${PREFIX}/bin
     if [ ! -x ${PREFIX}/bin/mecab ]; then
         echo "*** GET MeCab ***"
-        wget https://mecab.googlecode.com/files/mecab-0.996.tar.gz
+        wget "https://mecab.googlecode.com/files/mecab-0.996.tar.gz" -O mecab.tar.gz
         echo "*** INSTALL MeCab ***"
-        tar -xzf mecab-0.996.tar.gz
+        tar -xzf mecab.tar.gz
         cd mecab-0.996
         ./configure --prefix=${PREFIX}
         make
         make install
         cd ..
         rm -rf mecab-0.996
-        rm -f mecab-0.996.tar.gz
+        rm -f mecab.tar.gz
         echo "*** INSTALL DONE MeCab ***"
     fi
 fi
@@ -111,16 +111,16 @@ if [ -z $NO_MECAB_DIC ]; then
     MECAB_DIC=${PREFIX}/lib/mecab/dic
     if [ ! -d ${PREFIX}/lib/mecab/dic ]; then
         echo "*** GET MeCab-UniDic ***"
-        wget "http://sourceforge.jp/frs/redir.php?m=jaist&f=%2Funidic%2F58338%2Funidic-mecab-2.1.2_src.zip"
+        wget "http://sourceforge.jp/frs/redir.php?m=jaist&f=%2Funidic%2F58338%2Funidic-mecab-2.1.2_src.zip" -O unidic-mecab.zip
         echo "*** INSTALL MeCab-UniDic ***"
-        unzip unidic-mecab-2.1.2_src.zip
+        unzip unidic-mecab.zip
         cd unidic-mecab-2.1.2_src
         MECAB_CONFIG=${PREFIX}/bin/mecab-config ./configure --prefix=${PREFIX}
         make
         make install
         cd ..
         rm -rf unidic-mecab-2.1.2_src
-        rm -f unidic-mecab-2.1.2_src.zip
+        rm -f unidic-mecab.zip
         echo "*** INSTALL DONE MeCab-Unidic ***"
     fi
 fi
@@ -129,15 +129,15 @@ fi
 if [ -z $NO_SQLITE ]; then
     if [ ! -x ${PREFIX}/bin/sqlite3 ]; then
         echo "*** GET SQLITE3 ***"
-        wget "http://www.sqlite.org/2014/sqlite-autoconf-3080301.tar.gz"
-        tar -xzf sqlite-autoconf-3080301.tar.gz
+        wget "http://www.sqlite.org/2014/sqlite-autoconf-3080301.tar.gz" -O sqlite.tar.gz
+        tar -xzf sqlite.tar.gz
         cd sqlite-autoconf-3080301
         ./configure --prefix=${PREFIX}
         make
         make install
         cd ..
         rm -rf sqlite-autoconf-3080301
-        rm -f sqlite-autoconf-3080301.tar.gz
+        rm -f sqlite.tar.gz
     fi
 fi
 
