@@ -97,7 +97,7 @@ sub parse_muw {
     my $cmd = sprintf("\"%s\" -classpath \"%s\" %s mstparser.DependencyParser test model-name:\"%s\" test-file:\"%s\" output-file:\"%s\" order:1",
                       $java, $mst_classpath, $memory, $muwmodel, $mstin_file, $mstout_file);
     print STDERR $cmd,"\n" if $self->{debug};
-    system($cmd);
+    `$cmd`; # system($cmd);
 
     unlink $mstin_file if !$self->{debug} && -f $mstin_file;
 
