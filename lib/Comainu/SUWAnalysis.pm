@@ -120,6 +120,7 @@ sub mecab2kc_file {
 
     my $com = sprintf("\"%s\" \"%s/script/extcorpus.pl\" -C \"%s\"",
                       $self->{perl}, $self->{"comainu-home"}, $ext_def_file);
+    print STDERR "# COM: ", $com if $self->{debug};
     proc_file2file($com, $mecab_file, $mecab_ext_file);
 
     my $buff = read_from_file($mecab_ext_file);
