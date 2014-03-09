@@ -10,7 +10,7 @@ fi
 
 ## Default Path
 PERL=$(which perl)
-JAVA=$(which java)
+JAVA=/usr/bin/java
 CRF=/usr/local/bin
 YAMCHA=/usr/local/bin
 MECAB=/usr/local/bin
@@ -175,6 +175,6 @@ if [ -z $NO_PERL ]; then
     ${PREFIX}/opt/perl-${PERL_VERSION}/bin/cpanm install DBI DBD::SQLite
 fi
 
-./configure --perl ${PERL} --java ${JAVA} --crf-dir ${CRF} \
-    --svm-tool-dir ${SVM_TOOL} --yamcha-dir ${YAMCHA} \
-    --mecab-dir ${MECAB} --mecab-dic-dir ${MECAB_DIC} --unidic-db ${UNIDIC_DB}
+./configure --svm-tool-dir ${SVM_TOOL} --yamcha-dir ${YAMCHA} --crf-dir ${CRF} \
+    --mecab-dir ${MECAB} --mecab-dic-dir ${MECAB_DIC} --unidic-db ${UNIDIC_DB} \
+    --java ${JAVA} --perl ${PERL}
