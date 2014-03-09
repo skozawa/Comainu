@@ -174,6 +174,7 @@ if [ -z $NO_PERL ]; then
         curl -L http://cpanmin.us | ${PREFIX}/opt/perl-${PERL_VERSION}/bin/perl - App::cpanminus
         echo "*** INSTALL PERL MODULE ***"
         ${PREFIX}/opt/perl-${PERL_VERSION}/bin/cpanm install DBI DBD::SQLite
+        # ${PREFIX}/opt/perl-${PERL_VERSION}/bin/cpanm install Tkx Tkx::Scrolled
     fi
 fi
 
