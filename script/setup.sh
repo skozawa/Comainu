@@ -175,6 +175,6 @@ if [ -z $NO_PERL ]; then
     ${PREFIX}/opt/perl-${PERL_VERSION}/bin/cpanm install DBI DBD::SQLite
 fi
 
-./configure --perl=${PERL} --java=${JAVA} --crf-dir=${CRF} \
-    --svm-tool-dir=${SVM_TOOL} --yamcha-dir=${YAMCHA} \
-    --mecab-dir=${MECAB} --mecab-dic-dir=${MECAB_DIC} --unidic-db=${UNIDIC_DB}
+./configure --perl ${PERL} --java ${JAVA} --crf-dir ${CRF} \
+    --svm-tool-dir ${SVM_TOOL} --yamcha-dir ${YAMCHA} \
+    --mecab-dir ${MECAB} --mecab-dic-dir ${MECAB_DIC} --unidic-db ${UNIDIC_DB}
