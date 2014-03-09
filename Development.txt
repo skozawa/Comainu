@@ -29,7 +29,7 @@
 
 (2) Configuration and make
   From terminal of Linux/MinGW/Cygwin, Type "./configure" command.
-  See "Readme_commandline.txt".
+  See "README_CUI.txt".
 
 (3) How to make distributions
   Type next commands from terminal to build distributions.

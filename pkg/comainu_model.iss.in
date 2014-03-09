@@ -42,7 +42,7 @@ Name: user;  Description: "現在のユーザ (&U)"; GroupDescription: "インストールユ
 
 [Files]
 Source: "*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs;
-; Source: "Readme.txt"; DestDir: "{app}"; Flags: isreadme;
+; Source: "README_GUI.txt"; DestDir: "{app}"; Flags: isreadme;
 ; Source: "License.txt"; DestDir: "{app}";
 ; NOTE: Don't use "Flags: ignoreversion" on any shared system files
 

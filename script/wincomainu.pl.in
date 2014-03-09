@@ -48,7 +48,7 @@ my $DEFAULT_VALUES =
     "conf-org-file" => $APP_CONF_ORG_FILE,
     "conf-geometry" => "600x400",
     "msg-file"      => "$Bin/../msg/ja.txt",
-    "help-file"     => "$Bin/../Readme.txt",
+    "help-file"     => "$Bin/../README_GUI.txt",
 };
 
 sub usage {

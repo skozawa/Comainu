@@ -26,7 +26,7 @@ my $DEFAULT_VALUES = {
     "conf-org-file" => "$Bin/../conf_org.conf",
     "conf-geometry" => "600x400",
     "msg-file" => "$Bin/../msg/en.txt",
-    "help-file" => "$Bin/../Readme.txt",
+    "help-file" => "$Bin/../README_GUI.txt",
 };
 
 sub initialize {

@@ -52,7 +52,7 @@ Type: files; Name: "{code:DefAppDataFolder}\@APP_NAME@\wincomainu.conf";
 [Files]
 Source: "sample/*"; DestDir: "{code:DefAppDataFolder}\@APP_NAME@\sample"; Flags: recursesubdirs;
 Source: "*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs;
-Source: "Readme.txt"; DestDir: "{app}"; Flags: isreadme;
+Source: "README_GUI.txt"; DestDir: "{app}"; Flags: isreadme;
 Source: "License.txt"; DestDir: "{app}";
 ; NOTE: Don't use "Flags: ignoreversion" on any shared system files
 

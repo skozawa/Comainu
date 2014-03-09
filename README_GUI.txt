@@ -221,7 +221,7 @@ UNIX:
   コマンドラインから実行することでモデル作成、評価ができます。
   MS-Windows上で実行する場合は、MSYS/MinGWまたはCygwin環境が必要です。
   モデル作成にはTinySVM、評価にはdiffコマンドが必要です。
-  詳細はReadme_commandline.txtを参照ください。
+  詳細はREADME_CUI.txtを参照ください。
 
     長単位モデル作成
     COMAINU-METHOD: kc2longmodel
