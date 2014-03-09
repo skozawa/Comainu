@@ -124,6 +124,8 @@ COMAINU-METHOD: kc2longeval
 
   option
     --help                    show this message and exit
+    --longeval-level          specify the evaluation level (default: lemma)
+                              (lemma or pos or boundary)
 
   ex.)
   $ perl ./script/comainu.pl kc2longeval sample/sample.KC out/sample.KC.lout out
