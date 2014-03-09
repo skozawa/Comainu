@@ -167,12 +167,14 @@ fi
 if [ -z $NO_PERL ]; then
     PERL_VERSION=5.18.2
     PERL=${PREFIX}/opt/perl-${PERL_VERSION}/bin/perl
-    echo "*** INSTALL PERL ***"
-    curl https://raw.github.com/tokuhirom/Perl-Build/master/perl-build | perl - ${PERL_VERSION} ${PREFIX}/opt/perl-${PERL_VERSION}/
-    echo "*** INSTALL CPANM ***"
-    curl -L http://cpanmin.us | ${PREFIX}/opt/perl-${PERL_VERSION}/bin/perl - App::cpanminus
-    echo "*** INSTALL PERL MODULE ***"
-    ${PREFIX}/opt/perl-${PERL_VERSION}/bin/cpanm install DBI DBD::SQLite
+    if [ ! -f ${PERL} ]; then
+        echo "*** INSTALL PERL ***"
+        curl https://raw.github.com/tokuhirom/Perl-Build/master/perl-build | perl - ${PERL_VERSION} ${PREFIX}/opt/perl-${PERL_VERSION}/
+        echo "*** INSTALL CPANM ***"
+        curl -L http://cpanmin.us | ${PREFIX}/opt/perl-${PERL_VERSION}/bin/perl - App::cpanminus
+        echo "*** INSTALL PERL MODULE ***"
+        ${PREFIX}/opt/perl-${PERL_VERSION}/bin/cpanm install DBI DBD::SQLite
+    fi
 fi
 
 ./configure --svm-tool-dir ${SVM_TOOL} --yamcha-dir ${YAMCHA} --crf-dir ${CRF} \
