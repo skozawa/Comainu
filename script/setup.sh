@@ -72,7 +72,7 @@ if [ -z $NO_YAMCHA ]; then
         cd ..
         if [ ! -x ${PREFIX}/bin/yamcha ]; then
             echo "*** APPLY Yamcha Patch for INSTALL Error ***"
-            wget http://unicus.jp/pub/yamcha.patch
+            wget "https://gist.githubusercontent.com/skozawa/89024693963fd0adfa6d/raw/00ffa28de5ef11b902b4f35cbf3f3217bc62de3e/yamcha.patch"
             patch -p0 < yamcha.patch
             cd yamcha-0.33
             ./configure --prefix=${PREFIX} --with-svm-learn=${PREFIX}
@@ -151,8 +151,8 @@ if [ -z $NO_UNIDIC_DB ]; then
 # wget unidic-xml
 # unzip unidic-xml.zip
 # mv unidic-xml xml
-# wget unidic-tool.patch
-# patch -u configure < unidic-tool.patch
+# wget "https://gist.githubusercontent.com/skozawa/6a54a16cdeb8baf6a282/raw/4b8dfd508bb62307092b5932eee32a74a8d0189f/unidic-tools.patch"
+# patch -u configure < unidic-tools.patch
 ## ${PREFIX}/bin/sqlite3 ./configure --with-dbfile= --with-deffile=config/core.def --prefix=${PREFIX}
 # ./configure --with-dbfile=${PREFIX}/share/unidic.db --with-deffile=config/core.def --prefix=${PREFIX}
 # sed -i "s/xmldir=\/usr\/local\/unidic2/xmldir=\/root\/Comainu\/unidic-tools/" config/core.def
