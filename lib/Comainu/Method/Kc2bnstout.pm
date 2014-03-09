@@ -65,7 +65,7 @@ sub analyze {
 # 文節解析用の形式に変換
 sub format_bnstdata {
     my ($self, $tmp_test_kc, $svmdata_file) = @_;
-    print STDERR "# FORMAT FOR BNSTDATA\n";
+    print STDERR "# FORMAT FOR BNSTDATA\n" if $self->{debug};
 
     # すでに同じ名前の中間ファイルがあれば削除
     unlink $svmdata_file if -s $svmdata_file;
@@ -97,7 +97,7 @@ sub format_bnstdata {
 # yamchaを利用して文節境界解析
 sub chunk_bnst {
     my ($self, $svmdata_file, $bout_file) = @_;
-    print STDERR "# CHUNK BNST\n";
+    print STDERR "# CHUNK BNST\n" if $self->{debug};
     my $yamcha_opt = "";
     if ($self->{"boundary"} eq "sentence" || $self->{"boundary"} eq "word") {
         # sentence/word boundary

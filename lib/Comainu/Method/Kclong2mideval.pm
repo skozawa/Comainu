@@ -40,7 +40,7 @@ sub evaluate {
 
 sub compare {
     my ($self, $kc_file, $mout_file, $save_dir) = @_;
-    print STDERR "_compare\n";
+    print STDERR "# Ccompare\n";
     my $res = "";
 
     # 中間ファイル

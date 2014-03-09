@@ -43,7 +43,7 @@ sub evaluate {
 # Output the reuslt ".eval.long" file
 sub compare {
     my ($self, $kc_file, $lout_file, $save_dir) = @_;
-    print STDERR "_compare\n";
+    print STDERR "# Compare\n";
     my $res = "";
 
     # KC file

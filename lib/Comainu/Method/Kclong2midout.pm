@@ -61,7 +61,7 @@ sub analyze {
 # create test data for MST Parser
 sub create_mstin {
     my ($self, $test_kc, $mstin_file) = @_;
-    print STDERR "# CREATE MSTIN\n";
+    print STDERR "# CREATE MSTIN\n" if $self->{debug};
 
     my $buff = Comainu::Feature->create_mst_feature($test_kc);
     write_to_file($mstin_file, $buff);
@@ -73,7 +73,7 @@ sub create_mstin {
 # analyze middle-unit-word using MST Parser
 sub parse_muw {
     my ($self, $mstin_file, $mstout_file) = @_;
-    print STDERR "# PARSE MUW\n";
+    print STDERR "# PARSE MUW\n" if $self->{debug};
 
     my $java = $self->{"java"};
     my $mstparser_dir = $self->{"mstparser-dir"};

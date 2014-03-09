@@ -65,7 +65,7 @@ sub analyze {
 # create test data for analyzing long-unit-word
 sub create_features {
     my ($self, $tmp_test_kc, $kc2_file) = @_;
-    print STDERR "# CREATE FEATURE DATA\n";
+    print STDERR "# CREATE FEATURE DATA\n" if $self->{debug};
 
     # delte kc2_file if already exist
     unlink $kc2_file if -s $kc2_file;
@@ -93,7 +93,7 @@ sub create_features {
 # chunk kc2 file using Yamcha or CRF++
 sub chunk_luw {
     my ($self, $kc2_file, $svmout_file) = @_;
-    print STDERR "# CHUNK LUW\n";
+    print STDERR "# CHUNK LUW\n" if $self->{debug};
 
     my $tool_cmd;
     my $opt = "";
@@ -137,7 +137,7 @@ sub chunk_luw {
 
 sub merge_chunk_result {
     my ($self, $tmp_test_kc, $svmout_file, $lout_file) = @_;
-    print STDERR "# MERGE CHUNK RESULT\n";
+    print STDERR "# MERGE CHUNK RESULT\n" if $self->{debug};
 
     check_file($svmout_file);
 
@@ -157,7 +157,7 @@ sub merge_chunk_result {
 # target: the long-unit-word labeled with only B and I
 sub post_process {
     my ($self, $tmp_test_kc, $tmp_lout_file, $kc2_file) = @_;
-    print STDERR "# POST PROCESS\n";
+    print STDERR "# POST PROCESS\n" if $self->{debug};
 
     my $train_name = basename($self->{luwmodel}, ".model");
     my $test_name = basename($tmp_test_kc);

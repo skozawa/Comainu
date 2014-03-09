@@ -40,7 +40,7 @@ sub evaluate {
 
 sub compare {
     my ($self, $kc_file, $bout_file, $save_dir) = @_;
-    print STDERR "_compare\n";
+    print STDERR "# Compare\n";
     my $res = "";
 
     my $tmp1_file = $self->{"comainu-temp"} . "/" . basename($kc_file, ".KC") . ".bnst";

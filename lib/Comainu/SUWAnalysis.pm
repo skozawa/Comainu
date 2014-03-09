@@ -71,7 +71,7 @@ sub plain2mecab_file {
                       $mecab_dir, UNIDIC_MECAB_TYPE, $mecabdic, $self->{mecab_rcfile});
     $com =~ s/\//\\/g if $Config{osname} eq "MSWin32";
 
-    print STDERR "# COM: ".$com."\n";
+    print STDERR "# COM: ".$com."\n" if $self->{debug};
     my $in_buff = read_from_file($test_file);
     my $out_buffs = [];
     $in_buff =~ s/\r?\n$//s;

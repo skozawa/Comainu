@@ -80,8 +80,7 @@ sub check_luwmodel {
    if ( $self->{"luwmodel-type"} eq "SVM" || $self->{"luwmodel-type"} eq "CRF" ) {
        check_file($luwmodel);
    } else {
-       printf(STDERR "ERROR: '%s' not found model type name.\n",
-              $self->{"luwmodel-type"});
+       printf(STDERR "ERROR: '%s' not found model type name.\n", $self->{"luwmodel-type"});
        die;
    }
 }
