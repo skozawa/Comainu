@@ -143,22 +143,23 @@ fi
 
 ## Unidic DB (Unidic2)
 if [ -z $NO_UNIDIC_DB ]; then
-    UNIDIC_DB=${PREFIX}
-#    if [ ! -f ${PREFIX}/share/unidic.db ]; then
-# wget unidic-tool
-# unzip unidic-tool.zip
-# cd unidic-tool
-# wget unidic-xml
-# unzip unidic-xml.zip
-# mv unidic-xml xml
-# wget "https://gist.githubusercontent.com/skozawa/6a54a16cdeb8baf6a282/raw/4b8dfd508bb62307092b5932eee32a74a8d0189f/unidic-tools.patch"
-# patch -u configure < unidic-tools.patch
-## ${PREFIX}/bin/sqlite3 ./configure --with-dbfile= --with-deffile=config/core.def --prefix=${PREFIX}
-# ./configure --with-dbfile=${PREFIX}/share/unidic.db --with-deffile=config/core.def --prefix=${PREFIX}
-# sed -i "s/xmldir=\/usr\/local\/unidic2/xmldir=\/root\/Comainu\/unidic-tools/" config/core.def
-# C_INCLUDE_PATH=${PREFIX}/include make
-# make install
-#    fi
+    UNIDIC_DB=${PREFIX}/share/unidic.db
+    if [ ! -f ${PREFIX}/share/unidic.db ]; then
+        # wget unidic-tool
+        unzip unidic-tool.zip
+        cd unidic-tool
+        # wget unidic-xml
+        mv ../unidic-xml.zip .
+        unzip unidic-xml.zip
+        mv unidic-xml xml
+        wget "https://gist.githubusercontent.com/skozawa/6a54a16cdeb8baf6a282/raw/4b8dfd508bb62307092b5932eee32a74a8d0189f/unidic-tools.patch"
+        patch -u configure < unidic-tools.patch
+        sed -i "s/xmldir=\/usr\/local\/unidic2/xmldir=\/root\/Comainu\/unidic-tools/" config/core.def
+        ./configure --with-dbfile=${PREFIX}/share/unidic.db --with-deffile=config/core.def --prefix=${PREFIX}
+        C_INCLUDE_PATH=${PREFIX}/include make
+        make install
+        cd ..
+    fi
 fi
 
 
