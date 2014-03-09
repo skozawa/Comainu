@@ -4,12 +4,12 @@
 0. Requirements
   Common:
     GCC:          3.4.4 or later (optional: to built, Cygwin/MinGW on MS-Windows)
-    Perl:         5.10.0 or later (recomended Active Perl on MS-Windows)
+    Perl:         5.10.1 or later (recomended Active Perl on MS-Windows)
     Java:         1.6.0 or later (optional: for mid analysis)
     YamCha:       0.33 or lator
     UniDic2:      2.1.0 or later (optional)
     MeCab:        0.98 or lator  (optional)
-    UniDic-MeCab: 2.1.1 or lator (optional)
+    UniDic-MeCab: 2.1.2 or lator (optional)
     TinySVM:      0.09 or lator  (optional: to make model)
     CRF++         0.58 or lator  (optional)
     MSTParser:    0.50 or lator  (bundled)
@@ -79,36 +79,25 @@ $ ./script/comainu.pl --help
 Usage : ./script/comainu.pl [options] <COMAINU-METHOD>  [<arg> ...]
   This script is front end of COMAINU.
 
-option:
+  option
     --help                           show this message and exit
-    --debug          LEVEL           specify the debug level
-                                       (curr: '0')
+    --debug          LEVEL           specify the debug level (default: 0)
     --version                        show version string
     --help-method                    show the help of COMAINU-METHOD
     --list-method                    show the list of COMAINU-METHOD
     --force                          ignore cheking path of sub tools
-    --boundary       BOUNDARY        specify the type of boundary
-                                       BOUNDARY:=sentence|word
-                                       (curr: 'sentence')
-    --luwmrph        LUWMRPH         whether to output morphology of long-unit-word
-                                       LUWMRPH:=with|without
-                                       (curr: 'with')
-    --luwmodel-type  LUWMODEL_TYPE   specify the type of the model for boundary of long-unit-word
-                                       LUWMODEL_TYPE:=SVM|CRF
-                                       (curr: 'CRF')
-    --perl                      PERL                    specify PERL
-    --java                      JAVA                    specify JAVA
-    --comainu-home              COMAINU_HOME            specify COMAINU_HOME
-    --yamcha-dir                YAMCHA_DIR              specify YAMCHA_DIR
-    --mecab-dir                 MECAB_DIR               specify MECAB_DIR
-    --mecab-dic-dir             MECAB_DIC_DIR           specify MECAB_DIC_DIR
-    --unidic-db                 UNIDIC_DB               specify UNIDIC_DB
-    --svm-tool-dir              SVM_TOOL_DIR            specify SVM_TOOL_DIR
-    --crf-dir                   CRF_DIR                 specify CRF_DIR
-    --mstparser-dir             MSTPARSER_DIR           specify MSTPARSER_DIR
-    --comainu-bi-model-dir      COMAINU_BI_MODEL_DIR    specify COMAINU_BI_MODEL_DIR
-    --comainu-output            COMAINU_OUTPUT          specify COMAINU_OUTPUT
-    --comainu-temp              COMAINU_TEMP            specify COMAINU_TEMP
+    --perl                    PERL                    specify PERL
+    --java                    JAVA                    specify JAVA
+    --comainu-home            COMAINU_HOME            specify COMAINU_HOME
+    --yamcha-dir              YAMCHA_DIR              specify YAMCHA_DIR
+    --mecab-dir               MECAB_DIR               specify MECAB_DIR
+    --mecab-dic-dir           MECAB_DIC_DIR           specify MECAB_DIC_DIR
+    --unidic-db               UNIDIC_DB               specify UNIDIC_DB
+    --svm-tool-dir            SVM_TOOL_DIR            specify SVM_TOOL_DIR
+    --crf-dir                 CRF_DIR                 specify CRF_DIR
+    --mstparser-dir           MSTPARSER_DIR           specify MSTPARSER_DIR
+    --comainu-bi-model-dir    COMAINU_BI_MODEL_DIR    specify COMAINU_BI_MODEL_DIR
+    --comainu-temp            COMAINU_TEMP            specify COMAINU_TEMP
 
 Preset Environments :
   PERL=/usr/bin/perl
@@ -131,186 +120,353 @@ ex.)
 $ ./script/comainu.pl --help-method
 ------------------------------------------------------------
 
-COMAINU-METHOD: bccwj2bnstout
-  Usage: ./script/comainu.pl bccwj2bnstout <test-kc> <bnst-model-file> <out-dir>
-    This command analyzes <test-kc> with <bnst-model-file>.
-    The result is put into <out-dir>.
+COMAINU-METHOD: bccwj2bnstout [options]
+  Usage: ./script/comainu.pl bccwj2bnstout
+    This command analyzes the bunsetsu boundary with <bnstmodel>.
+
+  option
+    --help                    show this message and exit
+    --input                   specify input file or directory
+    --output-dir              specify output directory
+    --bnstmodel               specify the bnst model (default: train/bnst.model)
 
   ex.)
-  $ perl ./script/comainu.pl bccwj2bnstout sample/sample.bccwj.txt train/bnst.model out
+  $ perl ./script/comainu.pl bccwj2bnstout
+  $ perl ./script/comainu.pl bccwj2bnstout --input=sample/sample.bccwj.txt --output-dir=out
     -> out/sample.bccwj.txt.bout
+  $ perl ./script/comainu.pl bccwj2bnstout --bnstmodel=sample_train/sample.KC.model
 
 COMAINU-METHOD: bccwj2longbnstout
-  Usage: ./script/comainu.pl bccwj2longbnstout <test-bccwj> <long-model-file> <bnst-model-file> <out-dir>
-    This command analyzes <test-bccwj> with <long-model-file> and <bnst-model-file>.
-    The result is put into <out-dir>.
+  Usage: ./script/comainu.pl bccwj2longbnstout [options]
+    This command analyzes bunsetsu boudnary and long-unit-word of <input>(file or STDIN) with <bnstmodel> and <luwmodel>
+
+  option
+    --help                    show this message and exit
+    --input                   specify input file or directory
+    --output-dir              specify output directory
+    --bnstmodel               specify the bnst model (default: train/bnst.model)
+    --luwmodel                specify the model of boundary of long-unit-word (default: train/CRF/train.KC.model)
+    --luwmodel-type           specify the type of the model for boundary of long-unit-word (default: CRF)
+                              (CRF or SVM)
+    --boundary                specify the type of boundary (default: sentence)
+                              (sentence or word)
+    --luwmrph                 whether to output morphology of long-unit-word (default: with)
+                              (with or without)
+    --comainu-bi-model-dir    speficy the model directory for the category models
 
   ex.)
-  $ perl ./script/comainu.pl bccwj2longbnstout sample/sample.bccwj.txt train/CRF/train.KC.model train/bnst.model out
+  $ perl ./script/comainu.pl bccwj2longbnstout
+  $ perl ./script/comainu.pl bccwj2longbnstout --input=sample/sample.bccwj.txt --output-dir=out
     -> out/sample.bccwj.txt.lbout
+  $ perl ./script/comainu.pl bccwj2longbnstout --luwmodel-type=SVM --luwmodel=train/SVM/train.KC.model
 
 COMAINU-METHOD: bccwj2longout
-  Usage: ./script/comainu.pl bccwj2longout <test-bccwj> <long-model-file> <out-dir>
-    This command analyzes <test-bccwj> with <long-model-file>.
-    The result is put into <out-dir>.
+  Usage: ./script/comainu.pl bccwj2longout [options]
+    This command analyzes long-unit-word of <input>(file or STDIN) with <luwmodel>
+
+  option
+    --help                    show this message and exit
+    --input                   specify input file or directory
+    --output-dir              specify output directory
+    --luwmodel                specify the model of boundary of long-unit-word (default: train/CRF/train.KC.model)
+    --luwmodel-type           specify the type of the model for boundary of long-unit-word (default: CRF)
+                              (CRF or SVM)
+    --boundary                specify the type of boundary (default: sentence)
+                              (sentence or word)
+    --luwmrph                 whether to output morphology of long-unit-word (default: with)
+                              (with or without)
+    --comainu-bi-model-dir    speficy the model directory for the category models
 
   ex.)
-  $ perl ./script/comainu.pl bccwj2longout sample/sample.bccwj.txt train/CRF/sample.KC.model out
+  $ perl ./script/comainu.pl bccwj2longout
+  $ perl ./script/comainu.pl bccwj2longout --input=sample/sample.bccwj.txt --output-dir=out
     -> out/sample.bccwj.txt.lout
-  $ perl ./script/comainu.pl bccwj2longout --luwmodel-type=SVM sample/sample.bccwj.txt train/SVM/sample.KC.model out
-    -> out/sample.bccwj.txt.lout
+  $ perl ./script/comainu.pl bccwj2longout --luwmodel-type=SVM --luwmodel=train/SVM/train.KC.model
 
 COMAINU-METHOD: bccwj2midbnstout
-  Usage: ./script/comainu.pl bccwj2midbnstout <test-kc> <long-model-file> <mid-model-file> <bnst-model-file> <out-dir>
-    This command analyzes <test-kc> with <long-model-file>, <mid-model-file> and <bnst-model-file>.
-    The result is put into <out-dir>.
+  Usage: ./script/comainu.pl bccwj2midbnstout [options]
+    This command analyzes bunsetsu boudnary, long-unit-word and middle-unit-word of <input>(file or STDIN) with <bnstmodel>, <luwmodel> and <muwmodel>
+
+  option
+    --help                    show this message and exit
+    --input                   specify input file or directory
+    --output-dir              specify output directory
+    --bnstmodel               specify the bnst model (default: train/bnst.model)
+    --luwmodel                specify the model of boundary of long-unit-word (default: train/CRF/train.KC.model)
+    --luwmodel-type           specify the type of the model for boundary of long-unit-word (default: CRF)
+                              (CRF or SVM)
+    --boundary                specify the type of boundary (default: sentence)
+                              (sentence or word)
+    --comainu-bi-model-dir    speficy the model directory for the category models
+    --muwmodel                specify the middle-unit-word model (default: trian/MST/train.KC.model)
 
   ex.)
-  $ perl ./script/comainu.pl bccwj2midbnstout sample/sample.bccwj.txt trian/SVM/train.KC.model train/MST/train.KC.model train/bnst.model out
+  $ perl ./script/comainu.pl bccwj2midbnstout
+  $ perl ./script/comainu.pl bccwj2midbnstout --input=sample/sample.bccwj.txt --output-dir=out
     -> out/sample.bccwj.txt.mbout
+  $ perl ./script/comainu.pl bccwj2midbnstout --luwmodel-type=SVM --luwmodel=train/SVM/train.KC.model
 
 COMAINU-METHOD: bccwj2midout
-  Usage: ./script/comainu.pl bccwj2midout <test-kc> <long-model-file> <mid-model-file> <out-dir>
-    This command analyzes <test-kc> with <long-model-file> and <mid-model-file>.
-    The result is put into <out-dir>.
+  Usage: ./script/comainu.pl bccwj2midout [options]
+    This command analyzes long-unit-word and middle-unit-word of <input>(file or STDIN) with <luwmodel> and <muwmodel>
+
+  option
+    --help                    show this message and exit
+    --input                   specify input file or directory
+    --output-dir              specify output directory
+    --luwmodel                specify the model of boundary of long-unit-word (default: train/CRF/train.KC.model)
+    --luwmodel-type           specify the type of the model for boundary of long-unit-word (default: CRF)
+                              (CRF or SVM)
+    --boundary                specify the type of boundary (default: sentence)
+                              (sentence or word)
+    --comainu-bi-model-dir    speficy the model directory for the category models
+    --muwmodel                specify the middle-unit-word model (default: trian/MST/train.KC.model)
 
   ex.)
-  $ perl ./script/comainu.pl bccwj2midout sample/sample.bccwj.txt trian/SVM/train.KC.model train/MST/train.KC.model out
+  $ perl ./script/comainu.pl bccwj2midout
+  $ perl ./script/comainu.pl bccwj2midout --input=sample/sample.bccwj.txt --output-dir=out
     -> out/sample.bccwj.txt.mout
+  $ perl ./script/comainu.pl bccwj2midout --luwmodel-type=SVM --luwmodel=train/SVM/train.KC.model
 
 COMAINU-METHOD: bccwjlong2midout
-  Usage: ./script/comainu.pl bccwjlong2midout <test-kc> <mid-model-file> <out-dir>
-    This command analyzes <test-kc> with <mid-model-file>.
-    The result is put into <out-dir>.
+  Usage: ./script/comainu.pl bccwjlong2midout [options]
+    This command analyzes middle-unit-word of <input>(file or STDIN) with <muwmodel>
+
+  option
+    --help                    show this message and exit
+    --input                   specify input file or directory
+    --output-dir              specify output directory
+    --muwmodel                specify the middle-unit-word model (default: trian/MST/train.KC.model)
 
   ex.)
-  $ perl ./script/comainu.pl bccwjlong2midout sample/sample.bccwj.txt train/MST/train.KC.model out
+  $ perl ./script/comainu.pl bccwjlong2midout
+  $ perl ./script/comainu.pl bccwjlong2midout --input=sample/sample.bccwj.txt --output-dir=out
     -> out/sample.bccwj.txt.mout
+  $ perl ./script/comainu.pl bccwjlong2midout --muwmodel=sample_train/sample_mid.KC.model
 
 COMAINU-METHOD: kc2bnsteval
-  Usage: ./script/comainu.pl kc2bnsteval <ref-kc> <kc-lout> <out-dir>
-    This command make a evaluation for <kc-lout> with <ref-kc>.
-    The result is put into <out-dir>.
+  Usage: ./script/comainu.pl kc2bnsteval <ref-kc> <kc-bout> <out-dir>
+    This command makes a evaluation for <kc-bout> with <ref-kc>.
+    The result is put into <out-dir>
+
+  option
+    --help                    show this message and exit
 
   ex.)
-  perl ./script/comainu.pl kc2bnsteval sample/sample.KC out/sample.KC.bout out
+  $ perl ./script/comainu.pl kc2bnsteval sample/sample.KC out/sample.KC.bout out
     -> out/sample.eval.bnst
 
 COMAINU-METHOD: kc2bnstmodel
   Usage: ./script/comainu.pl kc2bnstmodel <train-kc> <bnst-model-dir>
-    This command trains model from <train-kc> into <bnst-model-dir>.
+    This command trains the model for analyzing bunsetsu boundary with <train-kc>.
+    The model is put into <bnst-model-dir>
+
+  option
+    --help                    show this message and exit
 
   ex.)
-  $ perl ./script/comainu.pl kc2bnstmodel sample/sample.KC train
-    -> train/sample.KC.model
+  $ perl ./script/comainu.pl kc2bnstmodel sample/sample.KC sample_train
+    -> sample_train/sample.KC.model
 
-COMAINU-METHOD: kc2bnstout
-  Usage: ./script/comainu.pl kc2bnstout <test-kc> <bnst-model-file> <out-dir>
-    This command analyzes <test-kc> with <bnst-model-file>.
-    The result is put into <out-dir>.
+COMAINU-METHOD: kc2bnstout [options]
+  Usage: ./script/comainu.pl kc2bnstout
+    This command analyzes the bunsetsu boundary with <bnstmodel>.
+
+  option
+    --help                    show this message and exit
+    --input                   specify input file or directory
+    --output-dir              specify output directory
+    --bnstmodel               specify the bnst model (default: train/bnst.model)
 
   ex.)
-  $ perl ./script/comainu.pl kc2bnstout sample/sample.KC train/bnst.model out
+  $ perl ./script/comainu.pl kc2bnstout
+  $ perl ./script/comainu.pl kc2longout --input=sample/sample.KC --output-dir=out
     -> out/sample.KC.bout
+  $ perl ./script/comainu.pl kc2longout --bnstmodel=sample_train/sample.KC.model
 
 COMAINU-METHOD: kc2longeval
   Usage: ./script/comainu.pl kc2longeval <ref-kc> <kc-lout> <out-dir>
-    This command make a evaluation for <kc-lout> with <ref-kc>.
-    The result is put into <out-dir>.
+    This command makes a evaluation for <kc-lout> with <ref-kc>.
+    The result is put into <out-dir>
+
+  option
+    --help                    show this message and exit
 
   ex.)
-  perl ./script/comainu.pl kc2longeval sample/sample.KC out/sample.KC.lout out
+  $ perl ./script/comainu.pl kc2longeval sample/sample.KC out/sample.KC.lout out
     -> out/sample.eval.long
 
 COMAINU-METHOD: kc2longmodel
   Usage: ./script/comainu.pl kc2longmodel <train-kc> <long-model-dir>
-    This command trains model from <train-kc> into <long-model-dir>.
+    This command trains the model for analyzing long-unit-word with <train-kc>.
+    The model is put into <long-model-dir>
+
+  option
+    --help                    show this message and exit
+    --luwmodel-type           specify the type of the model for boundary of long-unit-word (default: CRF)
+                              (CRF or SVM)
 
   ex.)
-  $ perl ./script/comainu.pl kc2longmodel sample/sample.KC train
-    -> train/sample.KC.model
+  $ perl ./script/comainu.pl kc2longmodel sample/sample.KC sample_train
+    -> sample_train/sample.KC.model
 
 COMAINU-METHOD: kc2longout
-  Usage: ./script/comainu.pl kc2longout <test-kc> <long-model-file> <out-dir>
-    This command analyzes <test-kc> with <long-model-file>.
-    The result is put into <out-dir>.
+  Usage: ./script/comainu.pl kc2longout [options]
+    This command analyzes long-unit-word of <input>(file or STDIN) with <luwmodel>
+
+  option
+    --help                    show this message and exit
+    --input                   specify input file or directory
+    --output-dir              specify output directory
+    --luwmodel                specify the model of boundary of long-unit-word (default: train/CRF/train.KC.model)
+    --luwmodel-type           specify the type of the model for boundary of long-unit-word (default: CRF)
+                              (CRF or SVM)
+    --boundary                specify the type of boundary (default: sentence)
+                              (sentence or word)
+    --luwmrph                 whether to output morphology of long-unit-word (default: with)
+                              (with or without)
+    --comainu-bi-model-dir    speficy the model directory for the category models
 
   ex.)
-  $ perl ./script/comainu.pl kc2longout sample/sample.KC train/CRF/train.KC.model out
-    -> out/sample.lout
-  $ perl ./script/comainu.pl kc2longout --luwmodel-type=SVM sample/sample.KC sample/SVM/train.KC.model out
+  $ perl ./script/comainu.pl kc2longout
+  $ perl ./script/comainu.pl kc2longout --input=sample/sample.KC --output-dir=out
     -> out/sample.KC.lout
+  $ perl ./script/comainu.pl kc2longout --luwmodel-type=SVM --luwmodel=train/SVM/train.KC.model
 
 COMAINU-METHOD: kclong2mideval
   Usage: ./script/comainu.pl kclong2mideval <ref-kc> <kc-mout> <out-dir>
-    This command make a evaluation for <kc-mout> with <ref-kc>.
-    The result is put into <out-dir>.
+    This command makes a evaluation for <kc-mout> with <ref-kc>.
+    The result is put into <out-dir>
+
+  option
+    --help                    show this message and exit
 
   ex.)
-  perl ./script/comainu.pl kclong2mideval sample/sample.KC out/sample.KC.mout out
+  $ perl ./script/comainu.pl kclong2mideval sample/sample_mid.KC out/sample_mid.KC.mout out
     -> out/sample.eval.mid
 
 COMAINU-METHOD: kclong2midmodel
   Usage: ./script/comainu.pl kclong2midmodel <train-kc> <mid-model-dir>
-    This command trains model from <train-kc> into <mid-model-dir>.
+    This command trains the model for analyzing middle-unit-word with <train-kc>.
+    The model is put into <mid-model-dir>
+
+  option
+    --help                    show this message and exit
 
   ex.)
-  $ perl ./script/comainu.pl kclong2midmodel sample/sample.KC train
-    -> train/sample.KC.model
+  $ perl ./script/comainu.pl kclong2midmodel sample/sample_mid.KC sample_train
+    -> sample_train/sample_mid.KC.model
 
 COMAINU-METHOD: kclong2midout
-  Usage: ./script/comainu.pl kclong2midout <test-kc> <mid-model-file> <out-dir>
-    This command analyzes <test-kc> with <mid-model-file>.
-    The result is put into <out-dir>.
+  Usage: ./script/comainu.pl kclong2midout [options]
+    This command analyzes middle-unit-word of <input>(file or STDIN) with <muwmodel>
+
+  option
+    --help                    show this message and exit
+    --input                   specify input file or directory
+    --output-dir              specify output directory
+    --muwmodel                specify the middle-unit-word model (default: train/MST/train.KC.model)
 
   ex.)
-  $ perl ./script/comainu.pl kclong2midout sample/sample.KC train/MST/train.KC.model out
-    -> out/sample.KC.mout
+  $ perl ./script/comainu.pl kclong2midout
+  $ perl ./script/comainu.pl kclong2midout --input=sample/sample_mid.KC --output-dir=out
+    -> out/sample_mid.KC.mout
 
-COMAINU-METHOD: plain2bnstout
-  Usage: ./script/comainu.pl plain2bnstout <test-text> <bnst-model-file> <out-dir>
-    This command analyzes <test-text> with MeCab and <bnst-model-file>.
-    The result is put into <out-dir>.
+COMAINU-METHOD: plain2bnstout [options]
+  Usage: ./script/comainu.pl plain2bnstout
+    This command analyzes the bunsetsu boundary with <bnstmodel>.
+
+  option
+    --help                    show this message and exit
+    --input                   specify input file or directory
+    --output-dir              specify output directory
+    --bnstmodel               specify the bnst model (default: train/bnst.model)
 
   ex.)
-  $ perl ./script/comainu.pl plain2bnstout sample/plain/sample.txt train/bnst.model out
+  $ perl ./script/comainu.pl plain2bnstout
+  $ perl ./script/comainu.pl plain2bnstout --input=sample/plain/sample.txt --output-dir=out
     -> out/sample.txt.bout
+  $ perl ./script/comainu.pl palin2bnstout --bnstmodel=sample_train/sample.KC.model
 
 COMAINU-METHOD: plain2longbnstout
-  Usage: ./script/comainu.pl plain2longbnstout <test-text> <long-model-file> <bnst-model-file> <out-dir>
-    This command analyzes <test-text> with Mecab and <long-model-file> and <bnst-model-file>.
-    The result is put into <out-dir>.
+  Usage: ./script/comainu.pl plain2longbnstout [options]
+    This command analyzes bunsetsu boudnary and long-unit-word of <input>(file or STDIN) with <bnstmodel> and <luwmodel>
+
+  option
+    --help                    show this message and exit
+    --input                   specify input file or directory
+    --output-dir              specify output directory
+    --bnstmodel               specify the bnst model (default: train/bnst.model)
+    --luwmodel                specify the model of boundary of long-unit-word (default: train/CRF/train.KC.model)
+    --luwmodel-type           specify the type of the model for boundary of long-unit-word (default: CRF)
+                              (CRF or SVM)
+    --comainu-bi-model-dir    speficy the model directory for the category models
 
   ex.)
-  $ perl ./script/comainu.pl plain2longbnstout sample/plain/sample.txt train/CRF/train.KC.model train/bnst.model out
+  $ perl ./script/comainu.pl plain2longbnstout
+  $ perl ./script/comainu.pl plain2longbnstout --input=sample/plain/sample.txt --output-dir=out
     -> out/sample.txt.lbout
+  $ perl ./script/comainu.pl plain2longbnstout --luwmodel-type=SVM --luwmodel=train/SVM/train.KC.model
 
 COMAINU-METHOD: plain2longout
-  Usage: ./script/comainu.pl plain2longout <test-text> <long-model-file> <out-dir>
-    This command analyzes <test-text> with MeCab and <long-model-file>.
-    The result is put into <out-dir>.
+  Usage: ./script/comainu.pl plain2longout [options]
+    This command analyzes long-unit-word of <input>(file or STDIN) with <luwmodel>
+
+  option
+    --help                    show this message and exit
+    --input                   specify input file or directory
+    --output-dir              specify output directory
+    --luwmodel                specify the model of boundary of long-unit-word (default: train/CRF/train.KC.model)
+    --luwmodel-type           specify the type of the model for boundary of long-unit-word (default: CRF)
+                              (CRF or SVM)
+    --comainu-bi-model-dir    speficy the model directory for the category models
 
   ex.)
-  $ perl ./script/comainu.pl plain2longout sample/plain/sample.txt train/CRF/train.KC.model out
+  $ perl ./script/comainu.pl plain2longout
+  $ perl ./script/comainu.pl plain2longout --input=sample/plain/sample.txt --output-dir=out
     -> out/sample.txt.lout
+  $ perl ./script/comainu.pl plain2longout --luwmodel-type=SVM --luwmodel=train/SVM/train.KC.model
 
 COMAINU-METHOD: plain2midbnstout
-  Usage: ./script/comainu.pl plain2midbnstout <test-text> <long-model-file> <mid-model-file> <bnst-model-file> <out-dir>
-    This command analyzes <test-text> with Mecab and <long-model-file>, <mid-model-file> and <bnst-model-file>.
-    The result is put into <out-dir>.
+  Usage: ./script/comainu.pl plain2midbnstout [options]
+    This command analyzes bunsetsu boudnary, long-unit-word and middle-unit-word of <input>(file or STDIN) with <bnstmodel>, <luwmodel> and <muwmodel>
+
+  option
+    --help                    show this message and exit
+    --input                   specify input file or directory
+    --output-dir              specify output directory
+    --bnstmodel               specify the bnst model (default: train/bnst.model)
+    --luwmodel                specify the model of boundary of long-unit-word (default: train/CRF/train.KC.model)
+    --luwmodel-type           specify the type of the model for boundary of long-unit-word (default: CRF)
+                              (CRF or SVM)
+    --comainu-bi-model-dir    speficy the model directory for the category models
+    --muwmodel                specify the middle-unit-word model (default: trian/MST/train.KC.model)
 
   ex.)
-  $ perl ./script/comainu.pl plain2midbnstout sample/plain/sample.txt train/CRF/train.KC.model train/MST/train.KC.model train/bnst.model out
+  $ perl ./script/comainu.pl plain2midbnstout
+  $ perl ./script/comainu.pl plain2midbnstout --input=sample/plain/sample.txt --output-dir=out
     -> out/sample.txt.mbout
+  $ perl ./script/comainu.pl plain2midbnstout --luwmodel-type=SVM --luwmodel=train/SVM/train.KC.model
 
 COMAINU-METHOD: plain2midout
-  Usage: ./script/comainu.pl plain2midout <test-text> <long-model-file> <mid-model-file> <out-dir>
-    This command analyzes <test-text> with Mecab and <long-model-file> and <mid-model-file>.
-    The result is put into <out-dir>.
+  Usage: ./script/comainu.pl plain2midout [options]
+    This command analyzes long-unit-word and middle-unit-word of <input>(file or STDIN) with <luwmodel> and <muwmodel>
+
+  option
+    --help                    show this message and exit
+    --input                   specify input file or directory
+    --output-dir              specify output directory
+    --luwmodel                specify the model of boundary of long-unit-word (default: train/CRF/train.KC.model)
+    --luwmodel-type           specify the type of the model for boundary of long-unit-word (default: CRF)
+                              (CRF or SVM)
+    --comainu-bi-model-dir    speficy the model directory for the category models
+    --muwmodel                specify the middle-unit-word model (default: trian/MST/train.KC.model)
 
   ex.)
-  $ perl ./script/comainu.pl plain2midout sample/plain/sample.txt train/CRF/train.KC.model train/MST/train.KC.model out
+  $ perl ./script/comainu.pl plain2midout
+  $ perl ./script/comainu.pl plain2midout --input=sample/plain/sample.txt --output-dir=out
     -> out/sample.txt.mout
+  $ perl ./script/comainu.pl plain2midout --luwmodel-type=SVM --luwmodel=train/SVM/train.KC.model
 
 ------------------------------------------------------------
 

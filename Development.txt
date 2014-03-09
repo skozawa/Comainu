@@ -8,27 +8,27 @@
         MSYS/MinGW
         Cygwin(optional)
     Packager: Inno Setup 5.0 or lator
-    Active Perl: 5.10.0 or lator
+    Active Perl: 5.10.1 or lator
       Perl/Tk: 804.028 or lator
       Win32::Exe, PAR, PAR::Packer: 0.982 or lator
 
   UNIX:
     OS: Linux
-    Perl: 5.10.0 or lator
-    Perl/Tk: 804.028 or lator
+    Perl: 5.10.1 or lator
+    Perl/Tk: 804.028 or lator(optional)
 
   Common:
-    ChaSen: 2.4.0 or lator
-    Mecab:  0.96 or lator
-    UniDic: 1.3.12 or lator
+    Mecab:  0.98 or lator
+    UniDic-MeCab: 2.1.2 or lator
     UniDic2: 2.1.0 or lator
     YamCha: 0.33 or lator
     TinySVM: 0.09 or lator
     CRF++: 0.58 or lator
+    perl-DBI
+    perl-DBD-SQLite
 
 (2) Configuration and make
   From terminal of Linux/MinGW/Cygwin, Type "./configure" command.
-  And type "make".
   See "Readme_commandline.txt".
 
 (3) How to make distributions

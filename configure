@@ -74,8 +74,6 @@ UNIDIC_DB_DEFAULT="/usr/local/unidic2/share/unidic.db"
 SVM_TOOL_DIR_DEFAULT="/usr/local/bin"
 CRF_DIR_DEFAULT="/usr/local/bin"
 MSTPARSER_DIR_DEFAULT="mstparser"
-# MODEL_NAME_DEFAULT="LUW090605b_all"
-# MODEL_NAME_DEFAULT="sample"
 MODEL_NAME_DEFAULT="train"
 
 APP_NAME_HELP="specify the application name"

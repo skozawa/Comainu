@@ -7,8 +7,8 @@ MS-Windows:
 
 UNIX:
   OS: Linux
-  Perl: 5.10.0 以上
-  Perl/Tk: 804.028 以上
+  Perl: 5.10.1 以上
+  Perl/Tk: 804.028 以上 (optional)
 
 共通:
   YamCha: 0.33 以上
@@ -21,7 +21,7 @@ UNIX:
     mecab-0.98 以上
 
   UniDic-MeCab:
-    unidic-mecab-2.1.1 以上
+    unidic-mecab-2.1.2 以上
 
   Unidic2:
     unidic-2.1.0 以上
@@ -57,13 +57,12 @@ UNIX:
 
     $ ./configure
 
-
 ２．起動方法
 Windows:
   スタートメニュー
     ->すべてのプログラム
-      ->WinComainu X.XX
-        ->WinComainu X.XX
+      ->Comainu X.XX
+        ->Comainu X.XX
 
   または、コマンドプロンプトからインストール先フォルダで次を実行。
 
@@ -218,11 +217,6 @@ UNIX:
     その他設定
 
 
-３．３．ドラッグ＆ドロップ
-  入力ファイル、出力ファイル、および設定ダイアログのパス指定の際に、
-  ファイルやディレクトリをドラッグ＆ドロップできます。（MS-Windowsのみ）
-
-
 ４．モデル作成、評価
   コマンドラインから実行することでモデル作成、評価ができます。
   MS-Windows上で実行する場合は、MSYS/MinGWまたはCygwin環境が必要です。
@@ -232,7 +226,7 @@ UNIX:
     長単位モデル作成
     COMAINU-METHOD: kc2longmodel
       Usage: ./script/comainu.pl kc2longmodel <train-kc> <long-model-dir>
-        This command trains model from <train-kc> into <long-model-dir>.
+      This command trains model from <train-kc> into <long-model-dir>.
     
       ex.)
       $ perl ./script/comainu.pl kc2longmodel sample/sample.KC train
