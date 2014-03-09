@@ -1,7 +1,7 @@
 #!/bin/sh
 
-if [ ! -d tools ]; then
-    mkdir tools
+if [ ! -d local ]; then
+    mkdir local
 fi
 
 # The tools are not installed if you use the following variables
@@ -17,7 +17,7 @@ MECAB=/usr/local/bin
 MECAB_DIC=/usr/local/lib/mecab/dic
 UNIDIC_DB=/usr/local/unidic2/share/unidic.db
 
-PREFIX=$(pwd)/tools
+PREFIX=$(pwd)/local
 
 ## CRF++
 if [ -z $NO_CRF ]; then
