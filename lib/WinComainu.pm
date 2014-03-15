@@ -920,8 +920,8 @@ sub limit_combobox {
         $name = $list->[0];
         $self->_data->{"_comainu_" . $type . "_name"} = $name;
         $current = $self->get_comainu_type_by_name($type, $name);
-        $self->_data->{"app-conf"}->set("comainu-" . $type, $current);
     }
+    $self->_data->{"app-conf"}->set("comainu-" . $type, $current);
     $self->_data->{"_comainu_" . $type . "_name_list"} = $list;
     $self->_data->{"_comainu_" . $type . "_combobox"}->m_configure(
         -values => $list
