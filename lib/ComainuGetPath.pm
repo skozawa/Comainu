@@ -159,7 +159,7 @@ sub get_crf_dir_auto {
             $path = 'C:/CRF++-' . $_;
             last if -d $path;
         }
-        $path = 'C:/Program Files (x86)/CRF++-0.58' if -d $path;
+        $path = 'C:/Program Files (x86)/CRF++-0.58' unless -d $path;
     }
     return $path;
 }
@@ -172,10 +172,10 @@ sub get_java_auto {
         if (!-f $path) {
             ($path) = (
                 glob("C:/jdk*/bin/java.exe"),
-                glob("C:/Program Files/Java/jdk*/bin/java.exe"),
-                glob("C:/Program Files/Java/jre*/bin/java.exe"),
-                glob("C:/Program Files (x86)/Java/jdk*/bin/java.exe"),
-                glob("C:/Program Files (x86)/Java/jre*/bin/java.exe"),
+                glob("C:/Program\\ Files/Java/jdk*/bin/java.exe"),
+                glob("C:/Program\\ Files/Java/jre*/bin/java.exe"),
+                glob("C:/Program\\ Files\\ (x86)/Java/jdk*/bin/java.exe"),
+                glob("C:/Program\\ Files\\ (x86)/Java/jre*/bin/java.exe"),
             );
         }
     }
