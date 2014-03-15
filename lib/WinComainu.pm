@@ -777,6 +777,7 @@ sub get_comainu_type_list {
         my $input_type = $self->get_comainu_type_by_name("input-type", $self->_data->{"_comainu_input-type_name"});
         return ["bnst", "long"] if $input_type eq "kc";
         return ["mid"] if $input_type eq "bccwjlong" || $input_type eq "kclong";
+        return ["bnst", "long", "longbnst", "mid", "midbnst"] if $input_type eq "plain";
         return ["bnst", "long_only_boundary", "long", "longbnst", "mid", "midbnst"];
     }
 
