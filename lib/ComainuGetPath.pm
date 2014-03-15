@@ -103,10 +103,12 @@ sub get_mecab_dic_dir_auto {
                 }
             }
         }
-        $path = "C:\\Program Files\\unidic\\dic"       if !-d $path;
-        $path = "C:\\Program Files (x86)\\unidic\\dic" if !-d $path;
-        $path = "C:\\Program Files\\MeCab\\dic"        if !-d $path;
-        $path = "C:\\Program Files (x86)\\MeCab\\dic"  if !-d $path;
+        for ( (
+            "C:\\Program Files\\MeCab\\dic",  "C:\\Program Files (x86)\\MeCab\\dic",
+            "C:\\Program Files\\unidic\\dic", "C:\\Program Files (x86)\\unidic\\dic",
+           ) ) {
+            $path = $_ unless $path && $path . "\\unidic";
+        }
 
         $path =~ s/\\/\//gs;
     }
