@@ -96,12 +96,8 @@ sub mecab2kc_file {
     my $mecab_ext_file = $mecab_file."_ext";
     my $ext_def_file   = $self->{"comainu-temp"}."/mecab_ext.def";
 
-    # No found unidic db
+    # Not found unidic db
     unless ( -f $self->{"unidic-db"} ) {
-        printf STDERR "***********************************************\n";
-        printf STDERR "***** WARN: NO UNIDIC DB                  *****\n";
-        printf STDERR "***** Maybe long-word lemma is incorrect  *****\n";
-        printf STDERR "***********************************************\n";
         my $buff = read_from_file($mecab_file);
         $buff = $self->mecab2kc($buff);
         write_to_file($kc_file, $buff);

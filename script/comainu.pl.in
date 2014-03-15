@@ -389,6 +389,12 @@ sub check_sub_tool_path {
         unless ( -f $opts->{'unidic-db'} ) {
             printf(STDERR "# Warn: Not found Unidic database: '%s'\n", $opts->{"unidic-db"});
             printf(STDERR "#   You might set wrong path or it was installed.\n");
+            if ( $method =~ /2long|2mid/ ) {
+                printf STDERR "***********************************************\n";
+                printf STDERR "***** WARN: NO UNIDIC DB                  *****\n";
+                printf STDERR "***** Maybe long-word lemma is incorrect  *****\n";
+                printf STDERR "***********************************************\n";
+            }
         }
     }
 
