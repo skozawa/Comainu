@@ -456,7 +456,7 @@ sub make_toolbar {
         my $label = $combo_frame->new_label(-text => $self->_data->{msg}{STR_COMAINU_OUTPUT});
         $label->g_pack(-side => "left");
         my $combobox = $self->make_comainu_type_selector(
-            "output-type", $combo_frame, -width => 16,
+            "output-type", $combo_frame, -width => 20,
         );
         $self->_data->{"_comainu_output-type_combobox"} = $combobox;
         $combobox->g_pack(-side => "left");
