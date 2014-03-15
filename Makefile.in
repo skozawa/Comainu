@@ -41,6 +41,7 @@ PP_OPTS=\
 -M File::Spec \
 -M Module::Load \
 -M File::Spec::Functions \
+-M File::Glob \
 -M threads \
 -M Thread::Queue \
 -M Time::HiRes \

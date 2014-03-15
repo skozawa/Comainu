@@ -5,6 +5,7 @@ package ComainuGetPath;
 use strict;
 use utf8;
 use Config;
+use File::Glob ':glob';
 
 sub new {
     my $proto = shift;
@@ -172,10 +173,10 @@ sub get_java_auto {
         if (!-f $path) {
             ($path) = (
                 glob("C:/jdk*/bin/java.exe"),
-                glob("C:/Program\ Files/Java/jdk*/bin/java.exe"),
-                glob("C:/Program\ Files/Java/jre*/bin/java.exe"),
-                glob("C:/Program\ Files\ (x86)/Java/jdk*/bin/java.exe"),
-                glob("C:/Program\ Files\ (x86)/Java/jre*/bin/java.exe"),
+                bsd_glob("C:/Program Files/Java/jdk*/bin/java.exe"),
+                bsd_glob("C:/Program Files/Java/jre*/bin/java.exe"),
+                bsd_glob("C:/Program Files (x86)/Java/jdk*/bin/java.exe"),
+                bsd_glob("C:/Program Files (x86)/Java/jre*/bin/java.exe"),
             );
         }
     }
