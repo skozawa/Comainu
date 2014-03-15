@@ -55,6 +55,7 @@ sub analyze {
     $self->output_result($buff, $save_dir, $basename . ".lout");
     undef $buff;
 
+    unlink $tmp_lout_file if !$self->{debug} && -f $tmp_lout_file;
     unlink $tmp_test_kc if !$self->{debug} &&
         -f $tmp_test_kc && $self->{bnst_process} ne 'with_luw';
 
@@ -159,6 +160,8 @@ sub post_process {
     my ($self, $tmp_test_kc, $tmp_lout_file, $kc2_file) = @_;
     print STDERR "# POST PROCESS\n" if $self->{debug};
 
+    return read_from_file($tmp_lout_file) if $self->{luwmrph} eq "without";
+
     my $train_name = basename($self->{luwmodel}, ".model");
     my $test_name = basename($tmp_test_kc);
 
@@ -171,7 +174,6 @@ sub post_process {
         train_name => $train_name,
         test_name  => $test_name,
     });
-    unlink $tmp_lout_file if !$self->{debug} && -f $tmp_lout_file;
 
     return $self->create_long_lemma($buff);
 }
