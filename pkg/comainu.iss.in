@@ -6,9 +6,9 @@ AppName=@APP_NAME@ @APP_VERSION@
 AppVersion=@APP_VERSION@
 AppVerName=@APP_NAME@ version @APP_VERSION@
 AppPublisher=The UniDic Consortium.
-AppPublisherURL=http://www.tokuteicorpus.jp/dist/
-AppSupportURL=http://www.tokuteicorpus.jp/dist/
-AppUpdatesURL=http://www.tokuteicorpus.jp/dist/
+AppPublisherURL=http://comainu.org/
+AppSupportURL=http://comainu.org/
+AppUpdatesURL=http://comainu.org/
 AppCopyright=Copyright (C) 2010-2014 The UniDic Consortium.
 ; WindowVisible=no
 ; WizardImageFile=img\comainu.bmp
@@ -77,7 +77,7 @@ Name: "{group}\1. {groupname}"; Filename: "{app}\bin\runcom.exe"; Parameters: ""
 ; Name: "{group}\2. {groupname} Help"; Filename: "{app}\@APP_NAME@.chm"
 Name: "{group}\2. {groupname} Manual"; Filename: "{app}\doc\manual.pdf"
 Name: "{group}\3. {groupname} License"; Filename: "{app}\License.txt"
-Name: "{group}\4. {groupname} Readme"; Filename: "{app}\README.txt"
+Name: "{group}\4. {groupname} Readme"; Filename: "{app}\README_GUI.txt"
 Name: "{group}\5. {groupname} Environment"; Filename: "{app}\Environment.txt"
 Name: "{group}\6. {groupname} Auto setup path"; Filename: "{app}\bin\runcom.exe"; Parameters: """{app}\script\comainu_setup.pl"""; WorkingDir: "{app}"; Flags: dontcloseonexit; Comment: "右クリック：「管理者として実行」して下さい。"
 Name: "{group}\7. Uninstall {groupname}"; Filename: "{uninstallexe}"
