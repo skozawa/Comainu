@@ -107,7 +107,7 @@ sub get_mecab_dic_dir_auto {
             "C:\\Program Files\\MeCab\\dic",  "C:\\Program Files (x86)\\MeCab\\dic",
             "C:\\Program Files\\unidic\\dic", "C:\\Program Files (x86)\\unidic\\dic",
            ) ) {
-            $path = $_ unless $path && $path . "\\unidic";
+            $path = $_ unless -d $path && -d $path . "\\unidic";
         }
 
         $path =~ s/\\/\//gs;
