@@ -234,7 +234,7 @@ while (<>) {
 	my @values = map { $input{$_} } @keyFields;
 
 	# consult the cache
-	if (defined(my $cached = $cache{join($;, @values)})) {
+	if (@values && defined(my $cached = $cache{join($;, @values)})) {
 	    # if cached, restore the cached result
 	    %output = split($;, $cached);
 	} else {
