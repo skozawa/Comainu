@@ -75,6 +75,8 @@ dist-src:
 	cp -pr ../../*_org.conf.in $${pkg_dir}/ && \
 	echo "  Copy text files ... " && \
 	cp -pr ../../*.txt $${pkg_dir}/ && \
+	echo "  Copy README.md ... " && \
+	cp -pr ../../README.md $${pkg_dir}/ && \
 	echo "  Copy doc files ... " && \
 	cp -pr ../../doc $${pkg_dir}/ && \
 	echo "  Copy script files ... " && \
@@ -152,6 +154,8 @@ build-package:
 	cp -pr ../../*_org.conf.in $(APP_NAME)/ && \
 	echo "  Copy text files ... " && \
 	cp -pr ../../*.txt $(APP_NAME)/ && \
+	echo "  Copy README.md ... " && \
+	cp -pr ../../README.md $${pkg_dir}/ && \
 	echo "  Copy doc files ... " && \
 	cp -pr ../../doc $(APP_NAME)/ && \
 	echo "  Copy script files ... " && \
