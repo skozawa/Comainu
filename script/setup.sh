@@ -126,20 +126,20 @@ if [ -z $NO_MECAB_DIC ]; then
 fi
 
 ## SQLITE3
-if [ -z $NO_SQLITE ]; then
-    if [ ! -x ${PREFIX}/bin/sqlite3 ]; then
-        echo "*** GET SQLITE3 ***"
-        wget "http://www.sqlite.org/2014/sqlite-autoconf-3080301.tar.gz" -O sqlite.tar.gz
-        tar -xzf sqlite.tar.gz
-        cd sqlite-autoconf-3080301
-        ./configure --prefix=${PREFIX}
-        make
-        make install
-        cd ..
-        rm -rf sqlite-autoconf-3080301
-        rm -f sqlite.tar.gz
-    fi
-fi
+# if [ -z $NO_SQLITE ]; then
+#     if [ ! -x ${PREFIX}/bin/sqlite3 ]; then
+#         echo "*** GET SQLITE3 ***"
+#         wget "http://www.sqlite.org/2014/sqlite-autoconf-3080301.tar.gz" -O sqlite.tar.gz
+#         tar -xzf sqlite.tar.gz
+#         cd sqlite-autoconf-3080301
+#         ./configure --prefix=${PREFIX}
+#         make
+#         make install
+#         cd ..
+#         rm -rf sqlite-autoconf-3080301
+#         rm -f sqlite.tar.gz
+#     fi
+# fi
 
 # PERL
 if [ -z $NO_PERL ]; then
