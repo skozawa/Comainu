@@ -105,6 +105,20 @@ $MSG = {
     "MSG_STR_NULL_OUTPUT" => "The output seems empty.\nDo you want to save it realy?",
     "MSG_CLEAR_CACHE" => "Do you want to clear chace?",
     "MSG_FINISHED_BATCH" => "The batch is finished.\nDo you want to restart again?"
+    ###
+    "MSG_STR_REQUIRE_CRF_MODEL" => "Require long-unit-word analysis model. Configure comainu-crf-model (ex. train/CRF/train.KC.model)",
+    "MSG_STR_REQUIRE_SVM_MODEL" => "Require long-unit-word analysis model. Configure comainu-svm-model (ex. train/SVM/train.KC.model)",
+    "MSG_STR_REQUIRE_BNST_MODEL" => "Require bnst analysis model. Configure comainu-bnst-svm-model (ex. train/bnst.model)",
+    "MSG_STR_REQUIRE_BI" => "Require part-of-speech analysis model for long-unit-word. Configure comainu-bi-model-dir (ex. train/BI_model)",
+    "MSG_STR_REQUIRE_MST_MODEL" => "Require middle-unit-word analysis model. Configure comainu-mst-model (ex. train/MST/train.KC.model)",
+    "MSG_STR_REQUIRE_MECAB" => "Require MeCab. Configure mecab-dir (ex. C:/Program Files (x86)/MeCab/bin)",
+    "MSG_STR_REQUIRE_MECAB_DIC" => "Require dictionary for MeCab. Configure mecab-dic-dir (ex. C:/Program Files (x86)/unidic/dic)",
+    "MSG_STR_REQUIRE_UNIDIC_MECAB" => "Require UniDic-MeCab. Configure mecab-dic-dir (ex. C:/Program Files (x86)/unidic/dic)",
+    "MSG_STR_REQUIRE_YAMCHA" => "Require Yamcha. Configure yamcha-dir (ex. C:/yamcha-0.33/bin)",
+    "MSG_STR_REQUIRE_SVM_TOOL" => "Require TinySVM or SVM-Light. Configure svm-tool-dir (ex. C:/TinySVM-0.09/bin)",
+    "MSG_STR_REQUIRE_CRF" => "Require CRF++. Configure crf-dir (ex. C:/CRF++-0.58/bin)",
+    "MSG_STR_REQUIRE_JAVA" => "Require Java. Configure java (ex. C:/Program Files (x86)/Java/jre6/bin/java.exe)",
+    "MSG_STR_REQUIRE_MSTPARSER" => "Require MST Parser. Configure mstparser-dir (ex. mstparser)",
 };
 
 #################### END OF FILE ####################

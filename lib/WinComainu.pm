@@ -1707,6 +1707,7 @@ sub execute_analysis_data {
     my $mecab_dir     = $app_conf->get("mecab-dir");
     my $mecab_dic_dir = $app_conf->get("mecab-dic-dir");
     my $unidic_db     = $app_conf->get("unidic-db");
+    my $svm_tool_dir  = $app_conf->get("svm-tool-dir");
     my $yamcha_dir    = $app_conf->get("yamcha-dir");
     my $crf_dir       = $app_conf->get("crf-dir");
     my $java          = $app_conf->get("java");
@@ -1734,6 +1735,7 @@ sub execute_analysis_data {
 
     # Comainu method
     my $comainu_method = sprintf("%s2%sout", $comainu_input_type, $comainu_output_type);
+    return unless $self->exist_require_tools($comainu_method);
 
     my $comainu_test = $tmp_dir."/foo.txt";
     if ($comainu_input_type eq "kc") {
@@ -1770,12 +1772,14 @@ sub execute_analysis_data {
     };
 
     $yamcha_dir         = File::Spec->rel2abs($yamcha_dir);
+    $svm_tool_dir       = File::Spec->rel2abs($svm_tool_dir);
     $mecab_dir          = File::Spec->rel2abs($mecab_dir);
     $mecab_dic_dir      = File::Spec->rel2abs($mecab_dic_dir);
     $unidic_db          = File::Spec->rel2abs($unidic_db);
     $comainu_home       = File::Spec->rel2abs($comainu_home);
     $comainu_long_model = File::Spec->rel2abs($comainu_long_model);
     $comainu_mid_model  = File::Spec->rel2abs($comainu_mid_model);
+    $comainu_bnst_model = File::Spec->rel2abs($comainu_bnst_model);
     $tmp_dir            = File::Spec->rel2abs($tmp_dir);
     $comainu_test       = File::Spec->rel2abs($comainu_test);
 
@@ -1789,6 +1793,7 @@ sub execute_analysis_data {
         "mecab-dir"            => $mecab_dir,
         "mecab-dic-dir"        => $mecab_dic_dir,
         "unidic-db"            => $unidic_db,
+        "svm-tool-dir"         => $svm_tool_dir,
         "yamcha-dir"           => $yamcha_dir,
         "crf-dir"              => $crf_dir,
         "java"                 => $java,
@@ -1875,6 +1880,106 @@ sub execute_analysis_data {
     return $out_data;
 }
 
+
+sub exist_require_tools {
+    my ($self, $comainu_method) = @_;
+    my $app_conf = $self->_data->{"app-conf"};
+
+    my $comainu_output_type = $app_conf->get("comainu-output-type");
+    my $comainu_long_model_type = uc($app_conf->get("comainu-model-type"));
+
+    # require yamcha and svm-tool
+    return 0 unless $self->exist_tool_path("yamcha-dir", "yamcha", "MSG_STR_REQUIRE_YAMCHA");
+    return 0 unless $self->exist_tool_path("svm-tool-dir", "svm_classify", "MSG_STR_REQUIRE_SVM_TOOL");
+
+    # check tool for bnst analaysis
+    if ( $comainu_method =~ /bnstout/ ) {
+        return 0 unless $self->exist_file("comainu-bnst-svm-model", "MSG_STR_REQUIRE_BNST_MODEL");
+    }
+
+    # check tool for long analysis
+    warn "****************";
+    warn $comainu_long_model_type;
+    if ( $comainu_method =~ /longout|longbnstout|midbnstout|bccwj2midout|plain2midout/ ) {
+        if ( $comainu_long_model_type eq "SVM" ) {
+            return 0 unless $self->exist_file("comainu-svm-model", "MSG_STR_REQUIRE_SVM_MODEL");
+        } elsif ( $comainu_long_model_type eq "CRF" ) {
+            return 0 unless $self->exist_file("comainu-crf-model", "MSG_STR_REQUIRE_CRF_MODEL");
+            return 0 unless $self->exist_tool_path("crf-dir", "crf_test", "MSG_STR_REQUIRE_CRF");
+        }
+        $self->exist_tool_dir("comainu-bi-model-dir", "MSG_STR_REQUIRE_BI");
+    }
+
+    # check tool for middle analysis
+    if ( $comainu_method =~ /midout|midbnstout/ ) {
+        return 0 unless $self->exist_tool_dir("mstparser-dir", "MSG_STR_REQUIRE_MSTPARSER");
+        return 0 unless $self->exist_file("comainu-mst-model", "MSG_STR_REQUIRE_MST_MODEL");
+        return 0 unless $self->exist_file("java", "MSG_STR_REQUIRE_JAVA");
+    }
+
+    # check tool for plain
+    if ( $comainu_method =~ /plain2/ ) {
+        return 0 unless $self->exist_tool_dir("mecab-dir", "MSG_STR_REQUIRE_MECAB");
+        # unidic-mecab
+        my $mecab_dic_dir = File::Spec->rel2abs($app_conf->get("mecab-dic-dir"));
+        unless ( -d $mecab_dic_dir ) {
+            $self->display_error_message("MSG_STR_REQUIRE_MECAB_DIC");
+            return 0;
+        }
+        if ( !-d $mecab_dic_dir . "/unidic" && !-d $mecab_dic_dir . "/unidic-mecab" ) {
+            $self->display_error_message("MSG_STR_REQUIRE_UNIDIC_MECAB");
+            return 0;
+        }
+        # unidic db
+    }
+
+    return 1;
+}
+
+sub exist_file {
+    my ($self, $file, $msg_name) = @_;
+    my $tool_file = $self->_data->{"app-conf"}->get($file);
+    $tool_file  = File::Spec->rel2abs($tool_file);
+    unless ( -f $tool_file ) {
+        $self->display_error_message($msg_name);
+        return 0;
+    }
+    return 1;
+}
+
+sub exist_tool_path {
+    my ($self, $tool_name, $tool_cmd, $msg_name) = @_;
+
+    my $tool_dir = $self->_data->{"app-conf"}->get($tool_name);
+    $tool_dir = File::Spec->rel2abs($tool_dir);
+
+    unless ( -f $tool_dir . "/" . $tool_cmd ||
+                 -f $tool_dir . "/" . $tool_cmd . ".exe" ) {
+        $self->display_error_message($msg_name);
+        return 0;
+    }
+    return 1;
+}
+
+sub exist_tool_dir {
+    my ($self, $tool_name, $msg_name) = @_;
+
+    my $tool_dir = File::Spec->rel2abs($self->_data->{"app-conf"}->get($tool_name));
+    unless ( -d $tool_dir ) {
+        $self->display_error_message($msg_name);
+        return 0;
+    }
+    return 1;
+}
+
+sub display_error_message {
+    my ($self, $msg_name) = @_;
+    Tkx::tk___messageBox(
+        -message => $self->_data->{msg}{$msg_name},
+        -icon    => "error",
+        -type    => "ok"
+    );
+}
 
 1;
 __END__

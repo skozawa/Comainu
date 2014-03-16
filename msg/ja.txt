@@ -104,7 +104,21 @@ $MSG = {
     "MSG_STR_NULL_INPUT" => "入力が空のようです。\n解析できません。",
     "MSG_STR_NULL_OUTPUT" => "出力が空のようです。\n本当に保存しますか？",
     "MSG_CLEAR_CACHE" => "キャッシュをクリアしますか？",
-    "MSG_FINISHED_BATCH" => "バッチは終了しています。\n再度実行しますか？"
+    "MSG_FINISHED_BATCH" => "バッチは終了しています。\n再度実行しますか？",
+    ###
+    "MSG_STR_REQUIRE_CRF_MODEL" => "解析には長単位解析モデルが必要です。ツール>設定からcomainu-crf-modelを設定してください。\n ex.) train/CRF/train.KC.model",
+    "MSG_STR_REQUIRE_SVM_MODEL" => "解析には長単位解析モデルが必要です。ツール>設定からcomainu-svm-modelを設定してください。\n ex.) train/SVM/train.KC.model",
+    "MSG_STR_REQUIRE_BNST_MODEL" => "解析には文節境界解析モデルが必要です。ツール>設定からcomain-bsnt-svm-modelを設定してください。\n ex.) train/bnst.model",
+    "MSG_STR_REQUIRE_BI" => "解析には長単位品詞推定モデルが必要です。ツール>設定からcomainu-bi-model-dirを設定してください。\n ex.) train/MST/train.KC.model",
+    "MSG_STR_REQUIRE_MST_MODEL" => "解析には中単位解析モデルが必要です。ツール>設定からcomainu-mst-modelを設定してください。\n ex.) train/BI_model",
+    "MSG_STR_REQUIRE_MECAB" => "解析にはMeCabが必要です。ツール>設定からmecab-dirを設定してください。\n ex.) C:/Program Files (x86)/MeCab/bin",
+    "MSG_STR_REQUIRE_MECAB_DIC" => "解析にはMeCab用辞書が必要です。ツール>設定からmecab-dic-dirを設定してください。\n ex.) C:/Program Files (x86)/unidic/dic",
+    "MSG_STR_REQUIRE_UNIDIC_MECAB" => "解析にはUniDic-MeCabが必要です。ツール>設定からmecab-dic-dirを設定してください。\n ex.) C:/Program Files (x86)/unidic/dic",
+    "MSG_STR_REQUIRE_YAMCHA" => "解析にはYamchaが必要です。ツール>設定からyamcha-dirを設定してください。\n ex.) C:/yamcha-0.33/bin",
+    "MSG_STR_REQUIRE_SVM_TOOL" => "解析にはTinySVMもしくはSVM-Lightが必要です。ツール>設定からsvm-tool-dirを設定してください。\n ex.) C:/TinySVM-0.09/bin",
+    "MSG_STR_REQUIRE_CRF" => "解析にはCRF++が必要です。ツール>設定からcrf-dirを設定してください。\n ex.) C:/CRF++-0.58/bin",
+    "MSG_STR_REQUIRE_JAVA" => "解析にはJavaが必要です。ツール>設定からjavaを設定してください。\n ex.) C:/Program Files (x86)/Java/jre6/bin/java.exe",
+    "MSG_STR_REQUIRE_MSTPARSER" => "解析にはMST Parserが必要です。ツール>設定からmstparser-dirを設定してください。\n ex.) mstparser",
 };
 
 #################### END OF FILE ####################
