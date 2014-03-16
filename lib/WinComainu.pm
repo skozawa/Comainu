@@ -1898,8 +1898,6 @@ sub exist_require_tools {
     }
 
     # check tool for long analysis
-    warn "****************";
-    warn $comainu_long_model_type;
     if ( $comainu_method =~ /longout|longbnstout|midbnstout|bccwj2midout|plain2midout/ ) {
         if ( $comainu_long_model_type eq "SVM" ) {
             return 0 unless $self->exist_file("comainu-svm-model", "MSG_STR_REQUIRE_SVM_MODEL");
