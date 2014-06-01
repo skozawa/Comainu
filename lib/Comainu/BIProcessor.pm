@@ -174,8 +174,6 @@ sub create_BI_data {
     my $comp = {};
     if ( $is_test ) {
         my %pos_label  = reverse %{$self->{pos_label}};
-        # delete particle and auxiliary
-        delete $pos_label{$_} for (@{$self->{aux_labels}}, @{$self->{part_labels}});
         $label_text = join " ", keys %pos_label;
         $comp = $self->load_comp_file;
     }
