@@ -73,6 +73,7 @@
 文語下二段-ヤ行	CTYPE_090	verb
 文語下二段-ラ行	CTYPE_091	verb
 文語下二段-ワ行	CTYPE_092	verb
+文語下二段-ザ行	CTYPE_093	verb
 文語上一段-カ行	CTYPE_100	verb
 文語上一段-ナ行	CTYPE_101	verb
 文語上一段-ハ行	CTYPE_102	verb

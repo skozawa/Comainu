@@ -33,6 +33,7 @@
 連体形-撥音便	CFORM_062
 連体形-省略	CFORM_063
 連体形-補助	CFORM_064
+連体形-イ音便	CFORM_065
 仮定形-一般	CFORM_070
 仮定形-融合	CFORM_071
 仮定形-キャ	CFORM_072
@@ -41,4 +42,5 @@
 已然形-補助	CFORM_081
 命令形	CFORM_090
 ク語法	CFORM_100
+ミ語法	CFORM_110
 *	CFORM_999
