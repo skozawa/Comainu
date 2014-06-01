@@ -456,15 +456,15 @@ sub merge_data {
         $first[14] = $pos_label{$pos[$i]};
 
         if ( any { $pos[$i] eq $_ } @{$self->{verb_labels}}, @{$self->{adj_labels}}, @{$self->{aux_labels}} ) {
-            for my $j ( 0 .. $#{$l_term} ) {
-                my @items = split(/ /, $l_term->[$#{$l_term}-$j]);
-                $first[15] = $items[5];
-                $first[16] = $items[6];
-                last if $first[15] ne "*" && $first[16] ne "*";
-            }
-            if ( $first[15] eq "*" && $first[16] eq "*" ) {
-                $first[15] = $cType_label{$cType[$i]};
-                $first[16] = $cForm_label{$cForm[$i]};
+            $first[15] = $cType_label{$cType[$i]} || '*';
+            $first[16] = $cForm_label{$cForm[$i]} || '*';
+            if ( $first[15] eq '*' || $first[16] eq '*' ) {
+                for my $j ( 0 .. $#{$l_term} ) {
+                    my @items = split(/ /, $l_term->[$#{$l_term}-$j]);
+                    $first[15] = $items[5];
+                    $first[16] = $items[6];
+                    last if $first[15] ne "*" && $first[16] ne "*";
+                }
             }
         }else{
             $first[15] = "*";
