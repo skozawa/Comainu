@@ -104,8 +104,7 @@ sub get_mecab_dic_dir_auto {
             }
         }
         for ( (
-            "C:\\Program Files\\MeCab\\dic",  "C:\\Program Files (x86)\\MeCab\\dic",
-            "C:\\Program Files\\unidic\\dic", "C:\\Program Files (x86)\\unidic\\dic",
+            "C:\\Program Files\\Unidic-EMJ\\dic", "C:\\Program Files (x86)\\Unidic-EMJ\\dic",
            ) ) {
             $path = $_ unless -d $path && -d $path . "\\unidic";
         }
