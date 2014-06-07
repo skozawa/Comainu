@@ -87,7 +87,6 @@ my $CONFIGURATION_VIEW = [
         "options" => [
             ["mecab-dir", "dirname"],
             ["mecab-dic-dir", "dirname"],
-            ["unidic-db", "pathname"],
             ["yamcha-dir", "dirname"],
             ["svm-tool-dir", "dirname"],
             ["crf-dir", "dirname"],

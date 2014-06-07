@@ -93,38 +93,10 @@ sub plain2mecab_file {
 # add form, formBase, formOrthBase, formOrth by using extcorpus.pl
 sub mecab2kc_file {
     my ($self, $mecab_file, $kc_file) = @_;
-    my $mecab_ext_file = $mecab_file."_ext";
-    my $ext_def_file   = $self->{"comainu-temp"}."/mecab_ext.def";
-
-    # Not found unidic db
-    unless ( -f $self->{"unidic-db"} ) {
-        my $buff = read_from_file($mecab_file);
-        $buff = $self->mecab2kc($buff);
-        write_to_file($kc_file, $buff);
-        undef $buff;
-        return;
-    }
-
-    my $def_buff = "";
-    $def_buff .= "dbfile:".$self->{"unidic-db"}."\n";
-    $def_buff .= "table:lex\n";
-    $def_buff .= "input:sLabel,orth,pron,lForm,lemma,pos,cType?,cForm?\n";
-    $def_buff .= "output:sLabel,orth,pron,lForm,lemma,pos,cType?,cForm?,goshu,form,formBase,formOrthBase,formOrth\n";
-    $def_buff .= "key:lForm,lemma,pos,cType,cForm,orth,pron\n";
-    write_to_file($ext_def_file, $def_buff);
-    undef $def_buff;
-
-    my $com = sprintf("\"%s\" \"%s/script/extcorpus.pl\" -C \"%s\"",
-                      $self->{perl}, $self->{"comainu-home"}, $ext_def_file);
-    print STDERR "# COM: ", $com if $self->{debug};
-    proc_file2file($com, $mecab_file, $mecab_ext_file);
-
-    my $buff = read_from_file($mecab_ext_file);
+    # Do not use unidic db
+    my $buff = read_from_file($mecab_file);
     $buff = $self->mecab2kc($buff);
     write_to_file($kc_file, $buff);
-
-    unlink $mecab_ext_file if !$self->{debug} && -f $mecab_ext_file;
-
     undef $buff;
 }
 
