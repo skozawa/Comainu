@@ -98,8 +98,6 @@ dist-src:
 	cp -p ../../pkg/*.iss.in $${pkg_dir}/pkg/ && \
 	echo "  Copy sample data files ... " && \
 	cp -pr ../../sample $${pkg_dir}/ && \
-	echo "  Copy mstparser files ... " && \
-	cp -pr ../../mstparser $${pkg_dir}/ && \
 	mkdir $${pkg_dir}/tmp && \
 	tar -zcf ./$(PACKAGE_SRC_NAME) $${pkg_dir} && \
 	cd $${top_dir} && \
@@ -176,8 +174,6 @@ build-package:
 	cp -p ../../pkg/*.iss.in $(APP_NAME)/pkg/ && \
 	echo "  Copy sample data files ... " && \
 	cp -pr ../../sample $(APP_NAME)/ && \
-	echo "  Copy mstparser files ... " && \
-	cp -pr ../../mstparser $(APP_NAME)/ && \
 	echo "  Generating exe files ... " && \
 	echo "current_dir: "$$(pwd) && \
 	echo "command: "$(PP) $(PP_OPTS) -i $(APP_NAME)/$(ICON_FILE) -o $(APP_NAME)/bin/runcom.exe ../../script/runcom.pl && \
