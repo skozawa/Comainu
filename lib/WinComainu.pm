@@ -79,7 +79,6 @@ my $CONFIGURATION_VIEW = [
             ["comainu-svm-model", "pathname"],
             ["comainu-bnst-svm-model", "pathname"],
             ["comainu-bi-model-dir", "dirname"],
-            ["comainu-mst-model", "pathname"],
         ],
     },
     {
@@ -90,8 +89,6 @@ my $CONFIGURATION_VIEW = [
             ["yamcha-dir", "dirname"],
             ["svm-tool-dir", "dirname"],
             ["crf-dir", "dirname"],
-            ["java", "pathname"],
-            ["mstparser-dir", "dirname"],
         ],
     },
     {
