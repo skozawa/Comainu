@@ -3,7 +3,7 @@ Comainu is middle-unit-word and long-unit-word analyzer.
 
 ## Download and Install (Linux)
 1. Download source or git clone
-  - [Download source file](http://sourceforge.jp/projects/comainu/) and Extract
+  - [Download source file](http://sourceforge.jp/projects/comainu-emj/) and Extract
   ```
   tar -xzf Comainu-historical-0.70-src.tgz
   ```
@@ -13,7 +13,7 @@ Comainu is middle-unit-word and long-unit-word analyzer.
   git checkout origin/historical
   ```
 
-2. [Download model file](http://sourceforge.jp/projects/comainu/)
+2. [Download model file](http://sourceforge.jp/projects/comainu-emj/)
 
   *The unarchieved model size is about 1.2 GB.
   ```
