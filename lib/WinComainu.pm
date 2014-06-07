@@ -771,14 +771,13 @@ sub bind_wheel {
 sub get_comainu_type_list {
     my ($self, $type) = @_;
 
-    return ["plain", "bccwj", "bccwjlong", "kc", "kclong"] if $type eq "input-type";
+    return ["plain", "bccwj", "kc"] if $type eq "input-type";
 
     if ($type eq "output-type") {
         my $input_type = $self->get_comainu_type_by_name("input-type", $self->_data->{"_comainu_input-type_name"});
         return ["bnst", "long"] if $input_type eq "kc";
-        return ["mid"] if $input_type eq "bccwjlong" || $input_type eq "kclong";
-        return ["bnst", "long", "longbnst", "mid", "midbnst"] if $input_type eq "plain";
-        return ["bnst", "long_only_boundary", "long", "longbnst", "mid", "midbnst"];
+        return ["bnst", "long", "longbnst"] if $input_type eq "plain";
+        return ["bnst", "long_only_boundary", "long", "longbnst"];
     }
 
     return ["svm", "crf"]       if $type eq "model-type";
@@ -787,8 +786,7 @@ sub get_comainu_type_list {
     if ( $type eq "boundary-type" ) {
         my $input_type = $self->get_comainu_type_by_name("input-type", $self->_data->{"_comainu_input-type_name"});
         my $output_type = $self->get_comainu_type_by_name("output-type", $self->_data->{"_comainu_output-type_name"});
-        return ["sentence"] if $input_type eq "plain" || $input_type eq "bccwjlong" ||
-            $input_type eq "kclong" || $output_type eq "bnst";
+        return ["sentence"] if $input_type eq "plain" || $output_type eq "bnst";
         return ["sentence", "word"];
     }
 }
