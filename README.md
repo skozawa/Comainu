@@ -9,7 +9,7 @@ Comainu is middle-unit-word and long-unit-word analyzer.
   ```
   - git clone
   ```
-  git clone https://github.com/skozawa/Comainu.git Comainu-0.70
+  git clone https://github.com/skozawa/Comainu.git Comainu-0.70-historical
   git checkout origin/historical
   ```
 
