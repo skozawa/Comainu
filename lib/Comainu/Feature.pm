@@ -115,8 +115,8 @@ sub pp_partial {
     my ($prev, $curr, $next) = (0, 1, 2);
     my $buff_list = [undef, undef];
 
-    my $B_label  = $args->{is_bnst} ? "B" : "B Ba";
-    my $BI_label = $args->{is_bnst} ? "B I" :
+    my $B_label  = $args->{is_bnst} ? "B U" : "B Ba";
+    my $BI_label = $args->{is_bnst} ? "B I L U" :
         $args->{boundary} ne "word" ? "B Ba I Ia" : "I Ia";
 
     foreach my $line ((split(/\r?\n/, $data), undef, undef)) {
@@ -187,8 +187,15 @@ sub create_bnstmodel_feature {
         } elsif ( $buff_list->[$curr] =~ /^EOS/ ) {
             $buff .= "\n";
         } else {
-            my $mark = !defined $buff_list->[$prev] ? 'B' :
-                $buff_list->[$prev] =~ /^\*B/ ? "B" : "I";
+            my $mark = do {
+                if ( !defined $buff_list->[$prev] ) {
+                    'B';
+                } elsif ( $buff_list->[$prev] =~ /^\*B/ ) {
+                    $buff_list->[$next] =~ /^\*B|^EOS/ ? 'U' : 'B';
+                } else {
+                    $buff_list->[$next] =~ /^\*B|^EOS/ ? 'L' : 'I';
+                }
+            };
             $buff .= $class->_bnst_feature_from_line($buff_list->[$curr], \$parenthetic) . ' ' . $mark . "\n";
         }
 

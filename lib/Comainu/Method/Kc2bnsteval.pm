@@ -88,7 +88,8 @@ sub short2bnst {
         if ( $morph[0] =~ /^\*B|^EOS/ ) {
             $BOB = "B";
             next;
-        } elsif ( $morph[0] eq "B" || $morph[0] eq "I" ) {
+        } elsif ( $morph[0] eq "B" || $morph[0] eq "I" ||
+                  $morph[0] eq "L" || $morph[0] eq "U" ) {
             $BOB = shift(@morph);
         }
         if ( $BOB eq "B" ) {
