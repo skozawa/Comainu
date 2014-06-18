@@ -92,7 +92,7 @@ sub short2bnst {
                   $morph[0] eq "L" || $morph[0] eq "U" ) {
             $BOB = shift(@morph);
         }
-        if ( $BOB eq "B" ) {
+        if ( $BOB eq "B" || $BOB eq "U") {
             $BOB = "I";
             $res .= "\n" if $res ne "";
         }
