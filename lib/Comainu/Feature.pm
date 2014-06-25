@@ -186,6 +186,7 @@ sub create_bnstmodel_feature {
             # no operation
         } elsif ( $buff_list->[$curr] =~ /^EOS/ ) {
             $buff .= "\n";
+            $parenthetic = 0;
         } else {
             my $mark = !defined $buff_list->[$prev] ? 'B' :
                 $buff_list->[$prev] =~ /^\*B/ ? "B" : "I";
@@ -227,7 +228,7 @@ sub _bnst_feature_from_line {
     if ( $items[3] eq '補助記号-括弧開' ) {
         push @features, $$parenthetic ? 'I' : 'B';
         $$parenthetic++;
-    } elsif ( $items[3] eq '補助記号-括弧閉' ) {
+    } elsif ( $items[3] eq '補助記号-括弧閉' && $$parenthetic > 0 ) {
         push @features, 'I';
         $$parenthetic--;
     } elsif ( $$parenthetic ) {
