@@ -17,6 +17,7 @@ PACKAGE_SRC_NAME=$(PACKAGE_NAME)-src.tgz
 PACKAGE_MODEL_NAME=$(PACKAGE_NAME)-model.tgz
 PACKAGE_WIN32_NAME=$(PACKAGE_NAME)-win32.exe
 PACKAGE_MODEL_WIN32_NAME=$(PACKAGE_NAME)-model-win32.exe
+PACKAGE_UNIDIC2_NAME=@APP_UNIDIC2_NAME@-@APP_UNIDIC2_VERSION@.tgz
 SCRIPT_DIR=script
 PACKAGE_DIR=pkg
 ICON_FILE=img/wincomainu.ico
@@ -55,7 +56,7 @@ PP_OPTS=\
 
 all:
 
-dist: dist-src dist-model dist-win32 dist-model-win32
+dist: dist-src dist-model dist-unidic2 dist-win32 dist-model-win32
 dist-src:
 	@echo "####################"
 	@echo "# dist-src"
@@ -122,6 +123,26 @@ dist-model:
 	tar -zcf ./$(PACKAGE_MODEL_NAME) $${pkg_dir}/train && \
 	cd $${top_dir} && \
 	src_tgz_file=$(PACKAGE_DIR)/dist/$(PACKAGE_MODEL_NAME) && \
+	echo "Generated "$${src_tgz_file} && \
+	echo
+
+dist-unidic2:
+	@echo "####################"
+	@echo "# dist-unidic2"
+	@echo "####################"
+	@top_dir=$$(pwd) && pkg_dir=$(APP_NAME) && \
+	cd $(PACKAGE_DIR) && \
+	if test ! -d dist; then mkdir dist; fi && \
+	cd dist && \
+	if test -d $${pkg_dir}; then rm -fr $${pkg_dir}; fi && \
+	mkdir $${pkg_dir} && \
+	if test -d $${pkg_dir}/local; then rm -fr $${pkg_dir}/local; fi && \
+	mkdir $${pkg_dir}/local && \
+	echo "  Copy unidic.db ... " && \
+	cp -pr ../../local/unidic2 $${pkg_dir}/local/ && \
+	tar -zcf ./$(PACKAGE_UNIDIC2_NAME) $${pkg_dir}/local/unidic2 && \
+	cd $${top_dir} && \
+	src_tgz_file=$(PACKAGE_DIR)/dist/$(PACKAGE_UNIDIC2_NAME) && \
 	echo "Generated "$${src_tgz_file} && \
 	echo
 
