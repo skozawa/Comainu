@@ -80,6 +80,7 @@ dist-src:
 	cp -pr ../../README.md $${pkg_dir}/ && \
 	echo "  Copy doc files ... " && \
 	cp -pr ../../doc $${pkg_dir}/ && \
+	rm -rf $${pkg_dir}/doc/tex && \
 	echo "  Copy script files ... " && \
 	cp -pr ../../script $${pkg_dir}/ && \
 	rm -f  $${pkg_dir}/script/wincomainu.pl && \
@@ -179,6 +180,7 @@ build-package:
 	cp -pr ../../README.md $${pkg_dir}/ && \
 	echo "  Copy doc files ... " && \
 	cp -pr ../../doc $(APP_NAME)/ && \
+	rm -rf $(APP_NAME)/doc/tex && \
 	echo "  Copy script files ... " && \
 	cp -pr ../../script $(APP_NAME)/ && \
 	rm -f  $(APP_NAME)/script/wincomainu.pl && \
