@@ -1,5 +1,5 @@
 
-	Comainu version 0.70
+	Comainu version 0.71
 
 ０．動作環境
 MS-Windows:
@@ -24,7 +24,7 @@ UNIX:
     unidic-mecab-2.1.2 以上
 
   Unidic2:
-    unidic-2.1.0 以上
+    unidic-2.1.0 以上（同梱）
 
   CRF++
     CRF++-0.58 以上
