@@ -119,12 +119,7 @@ sub get_unidic_db_auto {
     my $self = shift;
     my $path = "";
     if ($Config{"osname"} eq "MSWin32") {
-        $path = "local\\unidic2\\unidic.db";
-        $path = "C:\\Program Files\\unidic2\\share\\unidic.db"       if !-f $path;
-        $path = "C:\\Program Files (x86)\\unidic2\\share\\unidic.db" if !-f $path;
-        $path = "C:\\unidic2\\share\\unidic.db"                      if !-f $path;
-
-        $path =~ s/\\/\//gs;
+        $path = "local/unidic2/unidic.db";
     }
     return $path;
 }
