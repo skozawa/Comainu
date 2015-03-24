@@ -192,6 +192,9 @@ build-package:
 	cp -pr ../../msg $(APP_NAME)/ && \
 	echo "  Copy img files ... " && \
 	cp -pr ../../img $(APP_NAME)/ && \
+	echo "  Copy unidic.db ... " && \
+	if test ! -d $${pkg_dir}/local; then mkdir $${pkg_dig}/local; fi && \
+	cp -pr ../../local/unidic2 $(APP_NAME)/local/ && \
 	echo "  Copy pkg files ... " && \
 	mkdir $(APP_NAME)/pkg && \
 	cp -p ../../pkg/*.iss.in $(APP_NAME)/pkg/ && \
