@@ -1,0 +1,871 @@
+\documentclass[titlepage]{jarticle}
+
+\usepackage{graphicx}
+\usepackage{fancybox} 
+\usepackage{ascmac}
+\usepackage{comment}
+\newcommand{\commentout}[1]{}
+
+\setlength{\textwidth}{125mm}
+
+\title{中・長単位解析ツール Comainu ver. 0.7\\ ユーザーズマニュアル}
+\author{
+% 小澤 俊介 \and
+% 内元 清貴 \and
+% 伝 康晴
+}
+\date{}
+%\西暦
+
+
+
+\begin{document}
+\begin{table}[!b]
+\flushright
+\small
+\begin{tabular}{r}
+Copyright \copyright 2013-2014 The UniDic consortium. All rights reserved.
+\end{tabular}
+\end{table}
+\maketitle
+
+\tableofcontents
+\thispagestyle{empty}
+\clearpage
+
+\setcounter{page}{1}
+\pagestyle{plain}
+
+
+\section{Comainuとは}
+Comainuは，音声研究に適した中単位，及び，構文・意味研究に適した長単位を自動構成するツールです．
+本ツールは以下の機能を持ちます．
+\begin{description}
+\item[長単位解析] 
+平文または短単位列を入力すると，長単位を付与した短単位列を出力することができる．
+\item[中単位境界解析]
+平文または短単位列もしくは長単位情報を付与された短単位列を入力すると，中・長単位を付与した短単位列を出力することができる．
+\item[文節境界解析]
+平文または短単位列を入力すると，文節境界を付与した短単位列を出力することができる．
+\end{description}
+本文書では，中・長単位解析ツール Comainuについて説明します．
+
+\section{インストール}
+\subsection{動作環境}
+Comainuは以下の環境を必要とします．
+\begin{itemize}
+\item MS-Windows: \\
+  OS: MS-Windows NT5.0以上(Windows 7 で動作確認)
+\item UNIX: \\
+  OS: Linux \\
+  Perl: 5.10.1 以上\\
+  Perl/Tk: 804.028 以上\\
+\end{itemize}
+長単位解析には以下が必要です．
+このうち，CRF++については必要に応じてインストールしてください．
+\begin{itemize}
+\item YamCha: 0.33 以上
+\begin{itemize}
+\item TinySVM: 0.09 以上 もしくは SVM light
+\end{itemize}
+\item CRF++: 0.58 以上
+\end{itemize}
+形態素解析を利用する場合は以下も必要となります．
+\begin{itemize}
+\item MeCab: 0.98 以上
+\item UniDic-MeCab: 2.1.2 以上
+\item UniDic: 2.1.0 以上
+\begin{itemize}
+\item SQLite: 3.8 以上
+\end{itemize}
+\end{itemize}
+また，中単位解析をする場合は以下も必要となります．
+\begin{itemize}
+\item Java runtime: Java 1.6.0 以上
+\item MSTParser: 0.5.0 以上\\
+MSTParserはComainuのパッケージに同梱されています．
+\end{itemize}
+
+\subsection{インストール手順（MS-Windows）}
+Comainu-X\_XX-win32.exe 及び Comainu-X\_XX-model-win32.exe を
+それぞれダブルクリックしてインストールプログラムを起動し，指示に従ってプログラムとモデルのインストールを行います．
+
+\begin{figure}[!ht]
+\begin{center}
+\includegraphics[width=80mm]{images/setup_win.eps}
+\caption{セットアップ画面(MS-Windows版)}
+\label{method_flow}
+\end{center}
+\end{figure}
+
+\subsection{インストール手順（Unix）}
+まず，Comainu-X$\_$XX-src.tgz，Comainu-X$\_$XX-model.tgzを展開する．
+\begin{screen}
+tar zxf Comainu-X\_XX-src.tgz \\
+tar zxf Comainu-X\_XX-model.tgz
+\end{screen}
+次に，トップディレクトリに移動し，以下のいずれかを実行．
+\begin{itemize}
+\item setup.shを実行．\\
+setup.shでは関連するツールをダウンロードし，Comainu-X$\_$XX/localにインストールしたのち，実行環境を設定します．
+\begin{screen}
+./script/setup.sh
+\end{screen}
+\item configureを実行\\
+関連ツールがインストール済みであれば，configureで実行環境を設定する．
+\begin{screen}
+./configure
+\end{screen}
+configureでは表\ref{setup_unix}の項目を設定してください．
+\end{itemize}
+
+\begin{table}[!ht]
+\small
+\begin{center}
+\caption{設定項目（Unix）.}
+\begin{tabular}{|l|l|l|}
+\hline
+\multicolumn{1}{|c|}{項目} & \multicolumn{1}{c}{概要} & \multicolumn{1}{|c|}{デフォルト} \\ \hline
+perl & Perlのパス & /usr/bin/perl \\ \hline
+java & Javaのパス & /uar/bin/java \\ \hline
+yamcha-dir & Yamchaのパス & /usr/local/bin \\ \hline
+mecab-dir & MeCabのパス & /usr/local/bin \\ \hline
+mecab-dic-dir & MeCab-dicのパス & /usr/local/lib/mecab/dic \\ \hline
+unidic-db & Unidic2のデータベースのパス & /usr/local/unidic2/share/unidic.db \\ \hline
+svm-tool-dir & TinySVMのパス & /usr/local/bin \\ \hline
+crf-dir & CRF++のパス & /usr/local/bin \\ \hline
+mstparser-dir & MST Parserのパス & mstparser \\ \hline
+\end{tabular}
+\label{setup_unix}
+\end{center}
+\end{table}
+
+Unix/Linux環境の場合，以下のように設定します．
+\begin{screen}
+./configure {-}{-}perl "/usr/bin/perl" $\backslash$ \\
+\hspace{5mm} {-}{-}java "/usr/bin/java" $\backslash$ \\
+\hspace{5mm} {-}{-}yamcha-dir "/usr/local/bin" $\backslash$ \\
+\hspace{5mm} {-}{-}mecab-dir "/usr/local/bin" $\backslash$ \\
+\hspace{5mm} {-}{-}mecab-dic-dir "/usr/local/lib/mecab/dic" $\backslash$ \\
+\hspace{5mm} {-}{-}svm-tool-dir "/usr/local/bin" $\backslash$ \\
+\hspace{5mm} {-}{-}unidic-db "/usr/local/unidic2/share/unidib.db" \\
+\hspace{5mm} {-}{-}crf-dir "/usr/local/bin"
+\end{screen}
+\clearpage
+CygwinもしくはMSYS/MinGW環境の場合は以下のように設定します．
+\begin{screen}
+./configure {-}{-}perl "c:/Perl/bin/perl" $\backslash$ \\ 
+\hspace{5mm} {-}{-}java "c:/usr/bin/java" $\backslash$ \\
+\hspace{5mm} {-}{-}yamcha-dir "c:/yamcha-0.33/bin" $\backslash$ \\
+\hspace{5mm} {-}{-}mecab-dir "c:/Program Files/MeCab/bin" $\backslash$ \\
+\hspace{5mm} {-}{-}mecab-dic-dir "c:/Program Files/MeCab/dic" $\backslash$ \\
+\hspace{5mm} {-}{-}unidic-db "c:/Program Files/unidic2/share/unidic.db" $\backslash$ \\
+\hspace{5mm} {-}{-}svm-tool-dir "c:/TinySVM-0.09/bin" $\backslash$ \\
+\hspace{5mm} {-}{-}crf-dir "c:/CRF++-0.54"
+\end{screen}
+
+
+
+
+\section{解析(GUI版)}
+\subsection{メニュー}
+
+\begin{figure}[!ht]
+\begin{center}
+\includegraphics[width=90mm]{images/top.eps}
+\caption{Comainu(GUI版)}
+\label{top}
+\end{center}
+\end{figure}
+
+\textbf{ファイルメニュー：}
+\begin{itemize}
+\item (F) ファイル
+\begin{itemize}
+\item (N) 新しいウィンドウ [Ctrl+N] \\
+新しいウィンドウを開きます．
+\item (O) 開く [Ctrl+O] \\
+入力ファイルを開いて入力テキストに設定します．
+\item (S) 名前を付けて保存 ... [Ctrl+S] \\
+出力テキストを指定した出力ファイルに保存します．
+\item (C) 閉じる [Ctrl+W] \\
+ウィンドウを閉じます．
+\item (X) 終了 [Ctrl+Q] \\
+終了します．
+\end{itemize}
+\item (F) 編集
+\begin{itemize}
+\item (U) 元に戻す [Ctrl+Z] \\
+テキストエリアの変更を元に戻します．
+\item (R) やり直す [Ctrl+Y] \\
+テキストエリアの変更を元に戻します．
+\item (X) 切り取り [Ctrl+X] \\
+テキストエリアの選択範囲を切り取ります．
+\item (C) コピー [Ctrl+C] \\
+テキストエリアの選択範囲をコピーします．
+\item (V) 貼り付け [Ctrl+V] \\
+テキストエリアにコピーを貼り付けます．
+\item (A) すべて選択 [Ctrl+A] \\
+テキストエリアの内容をすべて選択します．
+\end{itemize}
+\item (T) ツール
+\begin{itemize}
+\item (I) 入力 \\
+入力種別を選択します．
+\item (O) 出力 \\
+出力種別を選択します．
+\item (M) モデル \\
+モデル種別を選択します．
+\item (T) 形態素解析 \\
+形態素解析種別を選択します．
+\item (K) 境界 \\
+境界を選択します．（文または単語）
+\item (A) 解析 [Alt+A] \\
+入力テキストを解析し，出力テキストに結果を表示します．
+\item (B) バッチ解析 [Alt+B] \\
+バッチ解析ダイアログを開きます．
+\item (C) 入力クリア [Alt+C] \\
+入力テキスト，出力テキストをクリアします．
+\item (D) キャッシュクリア [Alt+D] \\
+キャッシュをクリアします．
+\item (O) 設定 [Alt+O] \\
+設定ダイアログを開きます．
+\end{itemize}
+\item (H)ヘルプ
+\begin{itemize}
+\item (H) ヘルプ [F1] \\
+ヘルプを表示します．
+\item (A) WinComainuについて \\
+WinComainuの情報を表示します．
+\end{itemize}
+\end{itemize}
+
+\textbf{ツールバー：}
+\begin{itemize}
+\item  $[$入力$]$コンボボックス \\
+入力種別を選択します．
+\item $[$出力$]$コンボボックス \\
+出力種別を選択します．
+\item $[$モデル$]$コンボボックス \\
+モデル種別を選択します．
+\item $[$形態素解析$]$コンボボックス \\
+形態素解析種別を選択します．
+\item $[$境界$]$コンボボックス \\
+文境界または単語境界を選択します．
+\item $[$解析$]$ボタン \\
+入力テキストを解析し，出力テキストに結果を表示します．
+\item $[$バッチ解析$]$ボタン
+バッチ解析ダイアログを開きます．
+\item $[$入力クリア$]$ボタン \\
+入力テキスト，出力テキストをクリアします．
+\item $[$キャッシュクリア$]$ボタン \\
+キャッシュをクリアします．
+\end{itemize}
+
+\textbf{入力テキストペイン：}
+入力ファイルと入力テキストを表示します．
+\begin{itemize}
+\item $[$開く$]$ボタン \\
+入力ファイルを開いて入力テキストに設定します．
+\item $[$折り返し$]$チェックボタン \\
+入力テキストエリアを折り返します．
+\item $[$変更不可$]$チェックボタン \\
+入力テキストエリアを変更不可にします．
+\end{itemize}
+
+\textbf{出力テキストペイン：}
+出力ファイルと出力テキストを表示します．
+\begin{itemize}
+\item $[$保存$]$ボタン \\
+出力テキストを指定したファイルに保存します．
+\item $[$折り返し$]$チェックボタン \\
+出力テキストエリアを折り返します．
+\item $[$変更不可$]$チェックボタン \\
+出力テキストエリアを変更不可にします．
+\end{itemize}
+
+\subsection{設定}
+\begin{itemize}
+\item 入出力\\
+入出力に関する設定をします。
+\begin{itemize}
+\item in-dirname: $[$開く$]$ボタンで開くデフォルトのディレクトリ名
+\item in-filename $[$開く$]$ボタンで開くデフォルトのファイル名
+\item out-dirname: $[$保存$]$ボタンで開くデフォルトのディレクトリ名
+\item out-filename: $[$保存$]$ボタンで開くデフォルトのファイル名
+\item tmp-dir: 一時ファイルを保存するディレクトリ名
+\end{itemize}
+\begin{figure}[!h]
+\begin{center}
+\includegraphics[width=70mm]{images/configuration_io.eps}
+\caption{設定画面(入出力)}
+\vspace{-5mm}
+\label{configuration_io}
+\end{center}
+\end{figure}
+
+\item Comainu\\
+解析に用いるモデルなどの設定をします。
+\begin{itemize}
+\item comainu-home: Comainuをインストールしたディレクトリ名
+\item comainu-crf-model: 長単位解析に用いるモデルファイル(CRF)
+\item comainu-svm-model: 長単位解析に用いるモデルファイル(SVM)
+\item comainu-bnst-svm-model: 文節境界解析に用いるモデルファイル
+\item comainu-bi-svm-model: 長単位解析に用いるモデルファイル
+\item comainu-mst-model: 中単位解析に用いるモデルファイル
+\end{itemize}
+\begin{figure}[!h]
+\begin{center}
+\includegraphics[width=70mm]{images/configuration_comainu.eps}
+\caption{設定画面(Comainu)}
+\vspace{-5mm}
+\label{configuration_comainu}
+\end{center}
+\end{figure}
+
+\item ツール\\
+解析に用いる外部ツールの設定をします。
+\begin{itemize}
+\item mecab-dir: MeCabのパス
+\item mecab-dic-dir: MeCabで用いる辞書
+\item unidic-db: unidic2のデータベース
+\item yamcha-dir: Yamchaのパス
+\item svm-tool-dir: TinySVMのパス
+\item crf-dir: CRF++のパス
+\item java: Javaのパス
+\item mstparser-dir: MST Parserのパス
+\end{itemize}
+\begin{figure}[!h]
+\begin{center}
+\includegraphics[width=70mm]{images/configuration_tool.eps}
+\caption{設定画面(ツール)}
+\vspace{-5mm}
+\label{configuration_tool}
+\end{center}
+\end{figure}
+
+\item その他
+\begin{itemize}
+\item msg-file: 表示テキスト用ファイル
+\item pathname-encoding: パスの文字コード定
+\item font-family: フォント
+\item font-size: フォントサイズ
+\item font-style: フォントスタイル
+\item max-display-line-number: 入力テキストペイン、及び、出力テキストペインに表示する最大の行数。
+行数が大きい場合、動作が重くなる可能性があるので、ご注意ください。
+\end{itemize}
+\begin{figure}[!h]
+\begin{center}
+\includegraphics[width=70mm]{images/configuration_other.eps}
+\caption{設定画面(その他)}
+\vspace{-5mm}
+\label{configuration_other}
+\end{center}
+\end{figure}
+
+\end{itemize}
+
+
+\subsection{解析手順}
+解析手順は以下の通りである．
+\begin{enumerate}
+\item 下記の中から入力形式を選択する．([入力]コンボボックス)　\\
+\textbf{平文}，\textbf{BCCWJ}，\textbf{BCCWJ (長単位情報付き)}，\textbf{KC}，\textbf{KC (長単位情報付き)}\\
+ファイルの形式については\ref{sec:file_format}章を参照．
+\item 下記の中からを解析タイプを選択する．([出力]コンボボックス)
+\begin{description}
+\item[文節：] 文節境界解析を行う．
+\item[長単位(境界のみ)：] 長単位解析(境界のみ)を行う．
+\item[長単位：] 長単位解析を行う．
+\item[長単位・文節：] 長単位解析を行い，その解析結果に基づき文節解析を行う\footnotemark[1]．
+\footnotetext[1]{長単位の自動解析結果に基づいて文節境界解析を行うため，
+「\textbf{文節}」を選択した場合の文節境界解析とは結果が異なります．}
+\item[中単位：] 中単位解析を行う．入力形式が「平文」「BCCWJ」の場合は長単位解析を行った後，長単位解析をする．
+\item[長単位・中単位・文節：] 中・長単位解析，及び，文節境界解析を行う\footnotemark[1]．
+\end{description}
+\item 長単位解析モデル(SVM, CRF)を選択する． ([モデル]コンボボックス)
+\item 解析タイプに「長単位」を選択した場合，境界(文，単語)を選択する． ([境界]コンボボックス) \\
+「単語」を選択した場合，入力中の長単位境界情報を利用して，長単位解析を行う．
+「単語」は長単位境界情報が既知である場合に利用できる．
+ただし，入力形式が「BCCWJ」，長単位解析モデルが「SVM」のときのみ利用可能．
+\item 解析するファイルを入力する，もしくは，入力テキストペインに直接入力する．
+\item $[$解析$]$ボタンを押して，解析を開始する．\\
+$[$バッチ解析$]$ボタンを押した場合，指定したディレクトリ以下に含まれる入力ファイルを全て解析する
+\footnote{入力形式が「KC」もしくは「KC(長単位情報付き)」の場合は拡張子が``.KC''のファイル，
+それ以外の場合は拡張子が``.txt''のファイルを解析する．}．
+
+\item 解析終了後，図\ref{gui_example}のように，出力テキストペインに出力結果が出力される．\\
+$[$保存$]$ボタンを押すことにより，出力をファイルに保存できる．
+画面には初期状態では1000行までしか表示されません。
+1000行以上表示する場合は、設定画面（その他）のmax-display-line-numberを設定してください。
+ただし、行数が大きい場合、動作が重くなるため、ファイルに保存して参照することを推奨します。
+「バッチ解析」の場合は自動的にファイルに出力されます．
+\end{enumerate}
+
+\begin{figure}[!ht]
+\begin{center}
+\includegraphics[width=120mm]{images/out_example.eps}
+\caption{出力例(GUI版)}
+\label{gui_example}
+\end{center}
+\end{figure}
+
+\clearpage
+
+\section{解析(CUI版)}
+
+\subsection{長単位解析}\label{long_cui}
+長単位解析モデル$\langle$luwmodel$\rangle$を用いて
+標準入力，もしくは，解析ファイル$\langle$input$\rangle$を長単位解析し，
+その結果を標準出力，もしくは，ディレクトリ$\langle$output-dir$\rangle$に出力します．
+解析ファイルの形式には平文，BCCWJ，KCの3種類があります．
+ファイル形式については\ref{sec:file_format}章を参照してください．
+\begin{itembox}[l]{入力が平文の場合}
+./script/comainu.pl plain2longout [options] \\
+ex.) ./script/comainu.pl plain2longout $\backslash$ \\
+\hspace{10mm} {-}{-}input sample/plain/sample.txt
+\end{itembox}
+\begin{itembox}[l]{入力がBCCWJ形式の場合}
+./script/comainu.pl bccwj2longout [options] \\
+ex.) ./script/comainu.pl bccwj2longout $\backslash$ \\
+\hspace{10mm} {-}{-}input sample/sample.bccwj.txt {-}{-}output-dir out
+\end{itembox}
+\begin{itembox}[l]{入力がKC形式の場合}
+./script/comainu.pl kc2longout [options] \\
+ex.) ./script/comainu.pl kc2longout {-}{-}input sample/sample.KC $\backslash$ \\
+\hspace{10mm} {-}{-}output-dir out {-}{-}luwmodel train/CRF/train.KC.model
+\end{itembox}
+
+
+長単位解析モデルはデフォルトではCRFを利用します．
+SVMを利用する場合は以下のように {-}{-}luwmodel，及び，{-}{-}luwmodel-type で指定してください．
+\begin{screen}
+./script/comainu.pl plain2longout $\backslash$ \\
+\hspace{5mm} \textbf{{-}{-}luwmodel train/SVM/train.KC.model {-}{-}luwmodel-type SVM}
+\end{screen}
+
+長単位境界が既知で，長単位品詞情報のみを解析したい場合は，
+以下のように {-}{-}boundary で word を指定します．
+ただし，解析ファイルの形式はBCCWJ，長単位解析モデルはSVMにする必要があります．
+\begin{screen}
+./script/comainu.pl bccwj2longout \textbf{{-}{-}boundary word}
+\end{screen}
+また，長単位の境界情報のみを出力したい場合は，
+以下のように {-}{-}luwmrph で without を指定します．
+\begin{screen}
+./script/comainu.pl bccwj2longout \textbf{{-}{-}luwmrph without}
+\end{screen}
+
+
+\subsection{文節解析}\label{bnst_cui}
+文節境界解析モデル$\langle$bnstmodel$\rangle$を用いて
+標準入力，もしくは，解析ファイル$\langle$input$\rangle$を文節境界解析し，
+その結果を標準出力，もしくは，ディレクトリ$\langle$output-dir$\rangle$に出力します．
+解析ファイルの形式には平文，BCCWJ，KCの3種類があります．
+
+\begin{itembox}[l]{入力が平文の場合}
+./script/comainu.pl plain2bnstout [options] \\
+  ex.) ./script/comainu.pl plain2bnstout $\backslash$ \\
+\hspace{10mm} {-}{-}input sample/sample.bccwj.txt
+\end{itembox}
+
+\begin{itembox}[l]{入力がBCCWJ形式の場合}
+./script/comainu.pl bccwj2bnstout [options] \\
+ex.) ./script/comainu.pl bccwj2bnstout {-}{-}bnstmodel train/bnst.model $\backslash$ \\
+\hspace{10mm} {-}{-}input sample/sample.bccwj.txt {-}{-}output-dir out
+\end{itembox}
+ 
+ \begin{itembox}[l]{入力がKC形式の場合}
+./script/comainu.pl kc2bnstout [options] \\
+  ex.) ./script/comainu.pl kc2bnstout $\backslash$ \\
+\hspace{10mm} {-}{-}input sample/sample.bccwj.txt {-}{-}output-dir out
+\end{itembox}
+ 
+
+\subsection{中単位解析}\label{mid_cui}
+中単位解析モデル$\langle$muwmodel$\rangle$を用いて
+標準入力，もしくは，解析ファイル$\langle$input$\rangle$を
+中単位解析し，その結果を標準出力，もしくは，ディレクトリ$\langle$output-dir$\rangle$に出力します．
+解析ファイルの形式はBCCWJ(長単位情報付き)もしくはKC(長単位情報付き)の2種類です．
+
+\begin{itembox}[l]{入力がBCCWJ(長単位情報付き)形式の場合}
+./script/comainu.pl bccwjlong2midout [options] \\
+ex.) ./script/comainu.pl bccwjlong2midout $\backslash$ \\
+\hspace{10mm} {-}{-}input sample/sample.bccwj.txt {-}{-}output-dir out
+\end{itembox}
+ 
+ \begin{itembox}[l]{入力がKC(長単位情報付き)形式の場合}
+./script/comainu.pl kclong2midout [options] \\
+ex.) ./script/comainu.pl kclong2midout $\backslash$ \\
+\hspace{10mm} {-}{-}input sample/sample.KC {-}{-}output-dir out
+\end{itembox}
+ 
+
+\subsection{長単位・文節境界解析}\label{long_bnst_cui}
+長単位解析モデル$\langle$luwmodel$\rangle$と
+文節境界解析モデル$\langle$bnstmodel$\rangle$を用いて
+標準入力，もしくは，解析ファイル$\langle$input$\rangle$を長単位・文節境界解析し，
+その結果を標準出力，もしくは，ディレクトリ$\langle$output-dir$\rangle$に出力します
+\footnote{
+文節境界は長単位の自動解析結果に基づいて解析されるため，
+\ref{bnst_cui}節の文節境界解析の結果とは異なる場合があります．
+}．
+解析ファイルの形式は平文もしくはBCCWJの2種類です．
+
+ 
+\begin{itembox}[l]{入力が平文の場合}
+./script/comainu.pl plain2longbnstout [options] \\
+ex.) ./script/comainu.pl plain2longbnstout $\backslash$ \\
+\hspace{10mm} {-}{-}input sample/plain/sample.txt {-}{-}output-dir out
+\end{itembox}
+
+\begin{itembox}[l]{入力がBCCWJ形式の場合}
+./script/comainu.pl bccwj2longbnstout [options] \\
+ex.) ./script/comainu.pl bccwj2longbnstout $\backslash$ \\
+\hspace{10mm} {-}{-}input sample/sample.bccwj.txt {-}{-}output-dir out $\backslash$ \\
+\hspace{10mm} {-}{-}luwmodel train/CRF/train.KC.model {-}{-}bnstmodel train/bnst.model
+\end{itembox}
+
+
+\subsection{中・長単位解析}\label{mid_long_cui}
+長単位解析モデル$\langle$luwmodel$\rangle$と
+中単位解析モデル$\langle$muwmodel$\rangle$を用いて
+標準入力，もしくは，解析ファイル$\langle$input$\rangle$を中・長単位解析し，
+その結果を標準出力，もしくは，ディレクトリ$\langle$output-dir$\rangle$に出力します．
+解析ファイルの形式には平文，BCCWJ，KCの3種類があります．
+ 
+\begin{itembox}[l]{入力が平文の場合}
+./script/comainu.pl plain2midout [options] \\
+ex.) ./script/comainu.pl plain2midout $\backslash$ \\
+\hspace{10mm} {-}{-}input sample/plain/sample.txt
+\end{itembox}
+
+\begin{itembox}[l]{入力がBCCWJ形式の場合}
+./script/comainu.pl bccwj2midout [options] \\
+ex.) ./script/comainu.pl bccwj2midout $\backslash$ \\
+\hspace{10mm} {-}{-}input sample/sample.bccwj.txt {-}{-}output-dir out
+\end{itembox}
+ 
+\begin{itembox}[l]{入力がKC形式の場合}
+./script/comainu.pl kc2midout[options] \\
+ex.) ./script/comainu.pl kc2midout {-}{-}input sample/sample.KC $\backslash$ \\
+\hspace{10mm} {-}{-}output-dir out {-}{-}luwmodel train/CRF/train.KC.model $\backslash$ \\
+\hspace{10mm} {-}{-}muwmodel train/MST/train.KC.model 
+\end{itembox}
+
+
+\subsection{中・長単位・文節境界解析}\label{mid_long_bnst_cui}
+長単位解析モデル$\langle$luwmodel$\rangle$と
+中単位解析モデル$\langle$muwmodel$\rangle$，文節境界解析モデル$\langle$bnstmodel$\rangle$を用いて
+標準入力，もしくは，解析ファイル$\langle$input$\rangle$を中・長単位・文節境界解析し，
+その結果を標準出力，もしくは，ディレクトリ$\langle$output-dir$\rangle$に出力します\footnote{
+文節境界は長単位の自動解析結果に基づいて解析されるため，
+\ref{bnst_cui}節の文節境界解析の結果とは異なる場合があります．
+}．
+解析ファイルの形式は平文もしくはBCCWJの2種類があります．
+
+ 
+ \begin{itembox}[l]{入力が平文の場合}
+./script/comainu.pl plain2midbnstout [options] \\
+ex.) ./script/comainu.pl plain2midbnstout $\backslash$ \\
+\hspace{10mm} {-}{-}input sample/plain/sample.txt {-}{-}output-dir out
+\end{itembox}
+
+\begin{itembox}[l]{入力がBCCWJ形式の場合}
+./script/comainu.pl bccwj2midbnstout [options] \\
+ex.) ./script/comainu.pl bccwj2midbnstout $\backslash$ \\
+\hspace{10mm} {-}{-}input sample/sample.bccwj.txt  {-}{-}output-dir out $\backslash$ \\
+\hspace{10mm} {-}{-}luwmodel train/CRF/train.KC.model $\backslash$ \\
+\hspace{10mm} {-}{-}muwmodel train/MST/train.KC.model $\backslash$ \\
+\hspace{10mm} {-}{-}bnstmodel train/bnst.model 
+\end{itembox}
+\clearpage
+
+
+
+\section{モデルの学習}\label{sec:learn_model}
+解析に用いるモデルを学習データから学習します．
+学習はCUI版のみで利用できます．
+また，学習ファイルの形式はKCもしくはKC(長単位情報付き)のみとなります．
+
+\subsection{長単位解析モデルの学習}\label{learn_long}
+長単位学習ファイル$\langle$long-train-kc$\rangle$を学習し，
+モデルをディレクトリ$\langle$out-dir$\rangle$に出力します．
+\begin{screen}
+./script/comainu.pl kc2longmodel $\langle$long-train-kc$\rangle$ $\langle$out-dir$\rangle$ \\
+ex.) ./script/comainu.pl kc2longmodel sample/sample.KC trainCRF
+\end{screen}
+長単位解析モデルとしてSVMを利用する場合は以下のように {-}{-}luwmodel-type にて指定します．
+\begin{screen}
+./script/comainu.pl kc2longmodel $\backslash$ \\
+\hspace{5mm} \textbf{{-}{-}luwmodel-type SVM} $\langle$long-train-kc$\rangle$ $\langle$out-dir$\rangle$
+\end{screen}
+
+
+\subsection{文節解析モデルの学習}\label{learn_bnst}
+文節境界学習ファイル$\langle$bnst-train-kc$\rangle$を学習し，
+モデルをディレクトリ$\langle$out-dir$\rangle$に出力します．
+\begin{screen}
+./script/comainu.pl kc2bnstmodel $\langle$bnst-train-kc$\rangle$ $\langle$out-dir$\rangle$ \\
+ex.) ./script/comainu.pl kc2bnstmodel sample/sample.KC trainBnst
+\end{screen}
+
+
+\subsection{中単位解析モデルの学習}
+中単位学習ファイル$\langle$mid-train-kc$\rangle$を学習し，
+モデルをディレクトリ$\langle$out-dir$\rangle$に出力します．
+\begin{screen}
+./script/comainu.pl kclong2midmodel $\langle$mid-train-kc$\rangle$ $\langle$out-dir$\rangle$ \\
+ex.) ./script/comainu.pl kc2midmodel sample/sample.KC trainMST
+\end{screen}
+
+\clearpage
+
+\section{評価}
+解析結果を参照データと比較することにより評価します．
+評価はCUI版のみで利用できます．
+ファイル形式はKCもしくはKC(長単位情報付き)のみとなります．
+
+\subsection{長単位解析結果の評価}\label{eval_long}
+正解データ$\langle$ref-kc$\rangle$と長単位解析結果$\langle$kc-lout$\rangle$を
+比較し，その結果をディレクトリ$\langle$out-dir$\rangle$に出力する
+\begin{screen}
+./script/comainu.pl kc2longeval $\langle$ref-kc$\rangle$ $\langle$kc-lout$\rangle$ $\langle$out-dir$\rangle$ \\
+ex.) ./script/comainu.pl kc2longeval $\backslash$ \\
+\hspace{10mm} sample/sample.KC out/sample.KC.lout out
+\end{screen}
+
+
+\subsection{文節解析結果の評価}\label{eval_bnst}
+正解データ$\langle$ref-kc$\rangle$と文節境界解析結果$\langle$kc-bout$\rangle$を
+比較し，その結果をディレクトリ$\langle$out-dir$\rangle$に出力する
+\begin{screen}
+./script/comainu.pl kc2bnsteval $\langle$ref-kc$\rangle$ $\langle$kc-bout$\rangle$ $\langle$out-dir$\rangle$ \\
+ex.) ./script/comainu.pl kc2bnsteval $\backslash$ \\
+\hspace{10mm} sample/sample.KC out/sample.KC.bout out
+\end{screen}
+
+
+\subsection{中単位解析結果の評価}\label{eval_mid}
+正解データ$\langle$ref-kc$\rangle$と中単位解析結果$\langle$kc-mout$\rangle$を
+比較し，その結果をディレクトリ$\langle$out-dir$\rangle$に出力する
+\begin{screen}
+./script/comainu.pl kclong2mideval $\langle$ref-kc$\rangle$ $\langle$kc-mout$\rangle$ $\langle$out-dir$\rangle$ \\
+ex.) ./script/comainu.pl kc2mideval $\backslash$ \\
+\hspace{10mm} sample/sample.KC out/sample.KC.mout out
+\end{screen}
+
+
+\clearpage
+
+
+\section{ファイル形式}\label{sec:file_format}
+
+Comainuの入出力に用いる項目の一覧を表\ref{item_list}に示す．
+以降では，この項目番号を利用して入出力形式を説明する．
+
+\begin{table}[!ht]
+\small
+\begin{center}
+\caption{入出力項目一覧.}
+\begin{tabular}{|l|l|l|}
+\hline
+\multicolumn{1}{|c|}{項目番号} & \multicolumn{1}{c}{項目名} & \multicolumn{1}{|c|}{概要} \\ \hline
+1 & file & ファイル名 \\ \hline
+2 & start & 短単位start \\ \hline
+3 & end & 短単位end \\ \hline
+4 & BOS & 文境界 \\ \hline
+5 & orthToken & 短単位書字形 \\ \hline
+6 & reading & 短単位語彙素読み \\ \hline
+7 & lemma & 短単位語彙素 \\ \hline
+8 & meaning & 短単位語義 \\ \hline
+9 & pos & 短単位品詞 \\ \hline
+10 & cType & 短単位活用型 \\ \hline
+11 & cForm & 短単位活用形 \\ \hline
+12 & usage & 短単位用法 \\ \hline
+13 & pronToken & 短単位発音形 \\ \hline
+14 & pronBase & 短単位発音形基本形 \\ \hline
+15 & kana & 短単位仮名形 \\ \hline
+16 & kanaBase & 短単位仮名形基本形 \\ \hline
+17 & form & 語形 \\ \hline
+18 & formBase & 語形基本形 \\ \hline
+19 & formOrthBase & 語形代表表記 \\ \hline
+20 & formOrth & 語形代表表記出現形 \\ \hline
+21 & orthBase & 出現形終止形 \\ \hline
+22 & wType & 短単位語種 \\ \hline
+23 & charEncloserOpen & 丸付き数字１ \\ \hline
+24 & charEncloserClose & 丸付き数字２ \\ \hline
+25 & originalText & 短単位オリジナルテキスト \\ \hline
+26 & order & 長単位order \\ \hline
+27 & BOB & 文節境界 \\ \hline
+28 & LUW & 長単位境界 \\ \hline
+29 & l\_orthToken & 長単位書字形 \\ \hline
+30 & l\_reading & 長単位語彙素読み \\ \hline
+31 & l\_lemma & 長単位語彙素 \\ \hline
+32 & l\_pos & 長単位品詞 \\ \hline
+33 & l\_cType & 長単位活用型 \\ \hline
+34 & l\_cForm & 長単位活用形 \\ \hline
+35 & depend & 短単位間の係り受け情報 \\ \hline
+36 & MID & 中単位ID \\ \hline
+37 & m\_orthToken & 中単位書字形 \\ \hline
+\end{tabular}
+\label{item_list}
+\end{center}
+\end{table}
+
+
+\subsection{BCCWJ}
+BCCWJ形式では，表\ref{item_list}の1～25までの項目を入力とし，1～34までの項目を出力する．
+以下の項目を\textbf{タブ}区切りしたものが入出力形式となる(入力例ではスペース区切りになっています)．
+\begin{description}
+\item[入力] 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25
+\item[出力] 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 26 27 28 29 30 31 32 33 34
+\end{description}
+\begin{itembox}[l]{入力例(BCCWJ)}
+\small
+OC01\_00001\_c 10 30 B 詰め ツメル 詰める * 動詞-一般 下一段-マ行 連用形-一般 * $\backslash$ \\ 
+ツメ ツメル ツメ ツメル ツメ ツメル 詰める 詰め 詰める 和 * * 詰め\\
+OC01\_00001\_c 30 50 * 将棋 ショウギ 将棋 * 名詞-普通名詞-一般 * * * $\backslash$ \\
+ショーギ ショーギ ショウギ ショウギ ショウギ ショウギ 将棋 将棋 将棋 漢 * * 将棋
+\end{itembox}
+
+ただし，長単位境界情報を利用して長単位解析をする場合は1～28までの項目を入力とする．
+
+
+\subsection{BCCWJ(長単位情報付き)}
+BCCWJ(長単位情報付き)形式では，表\ref{item_list}の1～34までの項目を入力とし，1～37までの項目を出力する．
+以下の項目を\textbf{タブ}区切りしたものが入出力形式となる．
+\begin{description}
+\item[入力] 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 26 27 28 29 30 31 32 33 34
+\item[出力] 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 26 27 28 29 30 31 32 33 34 35 36 37
+\end{description}
+
+
+\subsection{KC}
+KC形式では，以下の項目を\textbf{スペース}区切りしたものが入出力となる．
+ただし，評価を行う場合は，入力形式を出力形式と同じものにする．
+また，文境界は「EOS」，文節境界は「*B」で表現する．
+\begin{description}
+\item[入力] 5 6 7 9 10 11 17 18 19 20 21 23 24 22
+\item[出力] 27/28 5 6 7 9 10 11 17 18 19 20 21 23 24 22 32 33 34 30 31 29
+\end{description}
+\begin{itembox}[l]{入力例(KC)}
+\small
+$*$B\\
+詰め ツメル 詰める 動詞-一般 下一段-マ行 連用形-一般 ツメ ツメル 詰める 詰め * * 和\\
+将棋 ショウギ 将棋 名詞-普通名詞-一般 * * ショウギ ショウギ 将棋 将棋 * * 漢\\
+の ノ の 助詞-格助詞 * * ノ ノ の の * * 和\\
+$*$B\\
+本 ホン 本 名詞-普通名詞-一般 * * ホン ホン 本 本 * * 漢\\
+を ヲ を 助詞-格助詞 * * ヲ ヲ を を * * 和\\
+$*$B\\
+買っ カウ 買う 動詞-一般 五段-ワア行-一般 連用形-促音便 カッ カウ 買う 買っ * * 和\\
+て テ て 助詞-接続助詞 * * テ テ て て * * 和\\
+$*$B\\
+き クル 来る 動詞-非自立可能 カ行変格 連用形-一般 キ クル 来る 来 * * 和\\
+まし マス ます 助動詞 助動詞-マス 連用形-一般 マシ マス ます まし * * 和\\
+た タ た 助動詞 助動詞-タ 終止形-一般 タ タ た た * * 和\\
+。 * 。 補助記号-句点 * * * * 。 。 * * 記号\\
+EOS
+\end{itembox}
+
+
+
+\subsection{KC(長単位情報付き)}
+KC(長単位情報付き)形式では，以下の項目を\textbf{スペース}区切りしたものが入出力となる．
+ただし，評価を行う場合は，入力形式を出力形式と同じものにする．
+また，文境界は「EOS」，文節境界は「*B」で表現する．
+\begin{description}
+\item[入力] 5 6 7 9 10 11 17 18 19 20 21 23 24 22 32 33 34 30 31 29
+\item[出力] 5 6 7 9 10 11 17 18 19 20 21 23 24 22 32 33 34 30 31 29 35 36 37
+\end{description}
+
+
+\subsection{平文}
+平文を入力して解析を行うと，以下の形式(\textbf{タブ}区切り)で出力される．
+文節境界解析の場合，文節境界に「*B」が付与される．
+\begin{description}
+\item[出力(長単位解析)] 4 5 13 6 7 9 10 11 22 32 33 34 30 31 29
+\item[出力(文節境界解析)] 4 5 13 6 7 9 10 11
+\item[出力(中単位解析)] 4 5 13 6 7 9 10 11 22 32 33 34 30 31 29 35 36 37
+\end{description}
+
+
+\subsection{設定ファイル}
+設定ファイル (インストールディレクトリ/etc/data\_format.conf) を編集することにより，
+入力形式を変更することができます\footnote{出力形式の変更はできません}．
+
+
+\clearpage
+\appendix
+\section{コマンドラインの関数・引数一覧}
+
+\begin{table}[!ht]
+\footnotesize
+\begin{center}
+\caption{関数一覧.}
+\begin{tabular}{|l|l|l|}
+\hline
+\multicolumn{1}{|c|}{関数名} & \multicolumn{1}{c}{入力} & \multicolumn{1}{|c|}{出力} \\ \hline
+plain2bnstout & 平文 & 文節 \\ \hline
+plain2longout & 平文 & 長単位/長単位境界 \\ \hline
+plain2longbnstout & 平文 & 長単位/長単位境界，文節 \\ \hline
+plain2midout & 平文 & 長単位/長単位境界，中単位 \\ \hline
+plain2midbnstout & 平文 & 長単位/長単位境界，中単位，文節 \\ \hline
+bccwj2bnstout & BCCWJ & 文節 \\ \hline
+bccwj2longout & BCCWJ & 長単位/長単位境界 \\ \hline
+bccwj2longbnstout & BCCWJ & 長単位/長単位境界，文節 \\ \hline
+bccwj2midout & BCCWJ & 長単位/長単位境界，中単位 \\ \hline
+bccwj2midbnstout & BCCWJ & 長単位/長単位境界，中単位，文節 \\ \hline
+bccwjlong2midout & BCCWJ(長単位情報付き) & 中単位 \\ \hline
+kc2bnstmodel & KC & 文節解析モデル \\ \hline
+kc2bnstout & KC & 文節 \\ \hline
+kc2bnsteval & KC & 文節解析の評価結果 \\ \hline
+kc2longmodel & KC & 長単位解析モデル \\ \hline
+kc2longout & KC & 長単位/長単位境界 \\ \hline
+kc2longeval & KC & 長単位解析の評価結果 \\ \hline
+kclong2midmodel & KC(長単位情報付き) & 中単位解析モデル \\ \hline
+kclong2midout & KC(長単位情報付き) & 中単位 \\ \hline
+kclong2mideval & KC(長単位情報付き) & 中単位解析の評価結果 \\ \hline
+\end{tabular}
+\label{func_list}
+
+\caption{引数一覧.}
+\begin{tabular}{|l|l|l|}
+\hline
+\multicolumn{1}{|c|}{引数名} & \multicolumn{1}{c|}{概要} \\ \hline
+help & ヘルプを表示します \\ \hline
+debug & デバッグモードで実行します \\ \hline
+version & Comainuのバージョン情報を表示します \\ \hline
+help-method & Comainuの関数のヘルプを表示します \\ \hline
+list-method & Comainuの関数リストを表示します \\ \hline
+force & ツールのパスをチェックせずに実行します \\ \hline
+perl & perlのパスを指定します． \\ \hline
+java & javaのパスを指定します． \\ \hline
+comainu-home & Comainuのディレクトリのパスを指定します． \\ \hline
+yamcha-dir & Yamchaのパスを指定します． \\ \hline
+mecab-dir & MeCabのパスを指定します． \\ \hline
+mecab-dic-dir & MeCab用辞書ディレクトリのパスを指定します． \\ \hline
+unidic-db & Unidic2のデータベースファイルのパスを指定します． \\ \hline
+svm-tool-dir & TinySVMのパスを指定します． \\ \hline
+crf-dir & CRF++のパスを指定します． \\ \hline
+mstparser-dir & MSTParserのパスを指定します． \\ \hline
+comainu-temp & 一時ファイルの保存先ディレクトリのパスを指定します． \\ \hline \hline
+
+intput & 入力ファイル，もしくは，ディレクトリを指定します． \\ \hline
+output-dir & 出力ディレクトリを指定します． \\ \hline
+luwmodel & 長単位境界解析モデルを指定します． \\ \hline
+luwmodel-type & 長単位解析モデルのタイプ(CRF, SVM)を指定します． \\ \hline
+boundary & wordを指定すると，長単位境界情報を用いて解析します． \\ \hline
+luwmrph & 長単位解析時に長単位品詞情報を出力するかを指定します．\\
+& 出力する場合はwith(default)，しない場合はwithout \\ \hline
+comainu-bi-model-dir & 長単位品詞解析モデルのパスを指定します． \\ \hline
+muwmodel & 中単位解析モデルを指定します． \\ \hline
+bnstmodel & 文節境界解析モデルを指定します． \\ \hline
+
+\end{tabular}
+\label{func_list}
+\end{center}
+\end{table}
+
+\end{document}
