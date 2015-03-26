@@ -204,6 +204,8 @@ build-package:
 	cp -pr ../../sample $(APP_NAME)/ && \
 	echo "  Copy mstparser files ... " && \
 	cp -pr ../../mstparser $(APP_NAME)/ && \
+	echo "  Copy train files ... " && \
+	cp -pr ../../train $(APP_NAME)/ && \
 	echo "  Generating exe files ... " && \
 	echo "current_dir: "$$(pwd) && \
 	echo "command: "$(PP) $(PP_OPTS) -i $(APP_NAME)/$(ICON_FILE) -o $(APP_NAME)/bin/runcom.exe ../../script/runcom.pl && \
