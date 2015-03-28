@@ -92,7 +92,7 @@ if [ -z $NO_MECAB ]; then
     MECAB=${PREFIX}/bin
     if [ ! -x ${PREFIX}/bin/mecab ]; then
         echo "*** GET MeCab ***"
-        wget "https://mecab.googlecode.com/files/mecab-0.996.tar.gz" -O mecab.tar.gz
+        wget "https://googledrive.com/host/0B4y35FiV1wh7fjQ5SkJETEJEYzlqcUY4WUlpZmR4dDlJMWI5ZUlXN2xZN2s2b0pqT3hMbTQ/mecab-0.996.tar.gz" -O mecab.tar.gz
         echo "*** INSTALL MeCab ***"
         tar -xzf mecab.tar.gz
         cd mecab-0.996
