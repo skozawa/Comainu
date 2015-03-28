@@ -25,7 +25,7 @@ Comainu is middle-unit-word and long-unit-word analyzer.
   - Configuration including related tools install
     - CRF++, TinySVM, Yamcha, MeCab, unidic-mecab, sqlite3, unidic2, and perl will be installed
     - *This script takes about one hour
-    - This script require gcc, wget, tar, patch, unzip and sed commands
+    - This script require gcc, wget, tar, bzip2, patch, unzip and sed commands
   ```
   ./script/setup.sh
   ```
