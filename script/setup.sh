@@ -24,7 +24,7 @@ if [ -z $NO_CRF ]; then
     CRF=${PREFIX}/bin
     if [ ! -x ${PREFIX}/bin/crf_test ]; then
         echo "*** GET CRF++ ***"
-        wget "https://crfpp.googlecode.com/files/CRF%2B%2B-0.58.tar.gz" -O CRF++.tar.gz
+        wget "https://googledrive.com/host/0B4y35FiV1wh7fngteFhHQUN2Y1B5eUJBNHZUemJYQV9VWlBUb3JlX0xBdWVZTWtSbVBneU0/CRF++-0.58.tar.gz" -O CRF++.tar.gz
         echo "*** INSTALL CRF++ ***"
         tar -xzf CRF++.tar.gz
         cd CRF++-0.58
