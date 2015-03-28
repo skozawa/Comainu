@@ -131,17 +131,13 @@ dist-unidic2:
 	@echo "####################"
 	@echo "# dist-unidic2"
 	@echo "####################"
-	@top_dir=$$(pwd) && pkg_dir=$(APP_NAME) && \
+	@top_dir=$$(pwd) && \
 	cd $(PACKAGE_DIR) && \
 	if test ! -d dist; then mkdir dist; fi && \
 	cd dist && \
-	if test -d $${pkg_dir}; then rm -fr $${pkg_dir}; fi && \
-	mkdir $${pkg_dir} && \
-	if test -d $${pkg_dir}/local; then rm -fr $${pkg_dir}/local; fi && \
-	mkdir $${pkg_dir}/local && \
 	echo "  Copy unidic.db ... " && \
-	cp -pr ../../local/unidic2 $${pkg_dir}/local/ && \
-	tar -zcf ./$(PACKAGE_UNIDIC2_NAME) $${pkg_dir}/local/unidic2 && \
+	cp -pr ../../local/unidic2 . && \
+	tar -zcf ./$(PACKAGE_UNIDIC2_NAME) unidic2 && \
 	cd $${top_dir} && \
 	src_tgz_file=$(PACKAGE_DIR)/dist/$(PACKAGE_UNIDIC2_NAME) && \
 	echo "Generated "$${src_tgz_file} && \
