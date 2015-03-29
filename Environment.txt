@@ -46,4 +46,4 @@ ComainuÀsŠÂ‹«
   Java 1.6.0
   http://www.java.com
 
-Copyright (C) 2010-2014 The UniDic Consortium. All rights reserved.
+Copyright (C) 2010-2015 The UniDic Consortium. All rights reserved.
