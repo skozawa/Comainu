@@ -30,7 +30,7 @@ Comainu is middle-unit-word and long-unit-word analyzer.
   ./script/setup.sh
   ```
   - only configuration
-    - Already installed CRF++, TinySVM, Yamcha, MeCab, unidic-mecab, sqlite3, unidic2, and perl
+    - Already installed required tools (CRF++, Yamcha, MeCab, etc.)
   ```
   ./configure
   ```
@@ -39,20 +39,20 @@ Comainu is middle-unit-word and long-unit-word analyzer.
 - UNIX:
   - OS: Linux
   - Perl: 5.10.1 or later
-  - YamCha: 0.33 or later
-    - TinySVM 0.09 or later OR SVM-Light 6.02 or later 
-  - CRF++: 0.58 or later
+  - [YamCha](http://chasen.org/~taku/software/yamcha/): 0.33 or later
+    - [TinySVM](http://chasen.org/~taku/software/TinySVM/) 0.09 or later OR [SVM-Light](http://svmlight.joachims.org/) 6.02 or later
+  - [CRF++](http://taku910.github.io/crfpp/): 0.58 or later
 
 - Require for morphological analysis
-  - MeCab: mecab-0.98 or later
-  - UniDic-MeCab: unidic-mecab-2.1.1 or later
+  - [MeCab](http://taku910.github.io/mecab/): mecab-0.98 or later
+  - [UniDic-MeCab](https://sourceforge.jp/projects/unidic/): unidic-mecab-2.1.1 or later
   - Unidic2: unidic-2.1.0 or later
-    - SQLite: 3.8 or later
+    - [SQLite](https://www.sqlite.org/cli.html): 3.8 or later
     - perl-DBI, perl-DBD-SQLite
 
 - Require for middle-word analysis
   - Java runtime: Java 1.6.0 or later
-  - MSTParser: MSTParser 0.5.0 or later (bundled)
+  - [MSTParser](http://www.seas.upenn.edu/~strctlrn/MSTParser/MSTParser.html): MSTParser 0.5.0 or later (bundled)
 
 ## Usage
 
