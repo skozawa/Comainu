@@ -3,20 +3,20 @@ Comainu is middle-unit-word and long-unit-word analyzer.
 
 ## Download and Install (Linux)
 1. Download source or git clone
-  - [Download source file](http://sourceforge.jp/projects/comainu/) and Extract
+  - [Download source file](http://sourceforge.jp/projects/comainu/releases/) and Extract
   ```
-  tar -xzf Comainu-0.70-src.tgz
+  tar -xzf Comainu-0.71-src.tgz
   ```
   - git clone
   ```
-  git clone https://github.com/skozawa/Comainu.git Comainu-0.70
+  git clone https://github.com/skozawa/Comainu.git Comainu-0.71
   ```
 
-2. [Download model file](http://sourceforge.jp/projects/comainu/)
+2. [Download model file](http://sourceforge.jp/projects/comainu/releases/)
 
   *The unarchieved model size is about 1.2 GB.
   ```
-  tar -xzf Comainu-0.70-model.tgz
+  tar -xzf Comainu-0.71-model.tgz
   ```
 
 3. Install
@@ -24,12 +24,13 @@ Comainu is middle-unit-word and long-unit-word analyzer.
   Run either one of the following two ways to configure
   - Configuration including related tools install
     - CRF++, TinySVM, Yamcha, MeCab, unidic-mecab, sqlite3, unidic2, and perl will be installed
-    - *This script takes about one hour
-    - This script require gcc, wget, tar, patch, unzip and sed commands
+    - Note: This script takes about one hour
+    - This script require gcc, wget, curl, tar, bzip2, patch, unzip and sed commands
   ```
   ./script/setup.sh
   ```
   - only configuration
+    - Already installed required tools (CRF++, Yamcha, MeCab, etc.)
   ```
   ./configure
   ```
@@ -38,20 +39,20 @@ Comainu is middle-unit-word and long-unit-word analyzer.
 - UNIX:
   - OS: Linux
   - Perl: 5.10.1 or later
-  - YamCha: 0.33 or later
-    - TinySVM 0.09 or later OR SVM-Light 6.02 or later 
-  - CRF++: 0.58 or later
+  - [YamCha](http://chasen.org/~taku/software/yamcha/): 0.33 or later
+    - [TinySVM](http://chasen.org/~taku/software/TinySVM/) 0.09 or later OR [SVM-Light](http://svmlight.joachims.org/) 6.02 or later
+  - [CRF++](http://taku910.github.io/crfpp/): 0.58 or later
 
 - Require for morphological analysis
-  - MeCab: mecab-0.98 or later
-  - UniDic-MeCab: unidic-mecab-2.1.1 or later
+  - [MeCab](http://taku910.github.io/mecab/): mecab-0.98 or later
+  - [UniDic-MeCab](https://sourceforge.jp/projects/unidic/): unidic-mecab-2.1.1 or later
   - Unidic2: unidic-2.1.0 or later
-    - SQLite: 3.8 or later
+    - [SQLite](https://www.sqlite.org/cli.html): 3.8 or later
     - perl-DBI, perl-DBD-SQLite
 
 - Require for middle-word analysis
   - Java runtime: Java 1.6.0 or later
-  - MSTParser: MSTParser 0.5.0 or later (bundled)
+  - [MSTParser](http://www.seas.upenn.edu/~strctlrn/MSTParser/MSTParser.html): MSTParser 0.5.0 or later (bundled)
 
 ## Usage
 

@@ -17,6 +17,7 @@ PACKAGE_SRC_NAME=$(PACKAGE_NAME)-src.tgz
 PACKAGE_MODEL_NAME=$(PACKAGE_NAME)-model.tgz
 PACKAGE_WIN32_NAME=$(PACKAGE_NAME)-win32.exe
 PACKAGE_MODEL_WIN32_NAME=$(PACKAGE_NAME)-model-win32.exe
+PACKAGE_UNIDIC2_NAME=@APP_UNIDIC2_NAME@-@APP_UNIDIC2_VERSION@.tgz
 SCRIPT_DIR=script
 PACKAGE_DIR=pkg
 ICON_FILE=img/wincomainu.ico
@@ -55,7 +56,7 @@ PP_OPTS=\
 
 all:
 
-dist: dist-src dist-model dist-win32 dist-model-win32
+dist: dist-src dist-model dist-unidic2 dist-win32 dist-model-win32
 dist-src:
 	@echo "####################"
 	@echo "# dist-src"
@@ -79,6 +80,7 @@ dist-src:
 	cp -pr ../../README.md $${pkg_dir}/ && \
 	echo "  Copy doc files ... " && \
 	cp -pr ../../doc $${pkg_dir}/ && \
+	rm -rf $${pkg_dir}/doc/tex && \
 	echo "  Copy script files ... " && \
 	cp -pr ../../script $${pkg_dir}/ && \
 	rm -f  $${pkg_dir}/script/wincomainu.pl && \
@@ -125,6 +127,22 @@ dist-model:
 	echo "Generated "$${src_tgz_file} && \
 	echo
 
+dist-unidic2:
+	@echo "####################"
+	@echo "# dist-unidic2"
+	@echo "####################"
+	@top_dir=$$(pwd) && \
+	cd $(PACKAGE_DIR) && \
+	if test ! -d dist; then mkdir dist; fi && \
+	cd dist && \
+	echo "  Copy unidic.db ... " && \
+	cp -pr ../../local/unidic2 . && \
+	tar -zcf ./$(PACKAGE_UNIDIC2_NAME) unidic2 && \
+	cd $${top_dir} && \
+	src_tgz_file=$(PACKAGE_DIR)/dist/$(PACKAGE_UNIDIC2_NAME) && \
+	echo "Generated "$${src_tgz_file} && \
+	echo
+
 dist-win32:
 	@echo "####################"
 	@echo "# dist-win32"
@@ -158,11 +176,12 @@ build-package:
 	cp -pr ../../README.md $${pkg_dir}/ && \
 	echo "  Copy doc files ... " && \
 	cp -pr ../../doc $(APP_NAME)/ && \
+	rm -rf $(APP_NAME)/doc/tex && \
 	echo "  Copy script files ... " && \
 	cp -pr ../../script $(APP_NAME)/ && \
 	rm -f  $(APP_NAME)/script/wincomainu.pl && \
 	rm -f  $(APP_NAME)/script/comainu.pl && \
-	if test -d $${pkg_dir}/script/tools; then rm -rf $${pkg_dir}/script/tools; fi && \
+	if test -d $(APP_NAME)/script/tools; then rm -rf $(APP_NAME)/script/tools; fi && \
 	echo "  Copy lib files ... " && \
 	cp -pr ../../lib $(APP_NAME)/ && \
 	echo "  Copy etc files ... " && \
@@ -171,6 +190,9 @@ build-package:
 	cp -pr ../../msg $(APP_NAME)/ && \
 	echo "  Copy img files ... " && \
 	cp -pr ../../img $(APP_NAME)/ && \
+	echo "  Copy unidic.db ... " && \
+	if test ! -d $(APP_NAME)/local; then mkdir $(APP_NAME)/local; fi && \
+	cp -pr ../../local/unidic2 $(APP_NAME)/local/ && \
 	echo "  Copy pkg files ... " && \
 	mkdir $(APP_NAME)/pkg && \
 	cp -p ../../pkg/*.iss.in $(APP_NAME)/pkg/ && \
@@ -178,6 +200,8 @@ build-package:
 	cp -pr ../../sample $(APP_NAME)/ && \
 	echo "  Copy mstparser files ... " && \
 	cp -pr ../../mstparser $(APP_NAME)/ && \
+	echo "  Copy train files ... " && \
+	cp -pr ../../train $(APP_NAME)/ && \
 	echo "  Generating exe files ... " && \
 	echo "current_dir: "$$(pwd) && \
 	echo "command: "$(PP) $(PP_OPTS) -i $(APP_NAME)/$(ICON_FILE) -o $(APP_NAME)/bin/runcom.exe ../../script/runcom.pl && \

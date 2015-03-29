@@ -34,5 +34,5 @@ Comainu使用許諾書
 　直接的、又は間接的に生じたいかなる損害についても、The UniDic Consortium 
 　はこれを賠償する一切の責任を負いません。 
 
-Copyright (C) 2010-2014 The UniDic Consortium (UCHIMOTO Kiyotaka, KOZAWA Shunsuke, DEN Yasuharu). All rights reserved.
+Copyright (C) 2010-2015 The UniDic Consortium (UCHIMOTO Kiyotaka, KOZAWA Shunsuke, DEN Yasuharu). All rights reserved.
 

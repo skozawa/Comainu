@@ -6,7 +6,7 @@ fi
 
 # The tools are not installed if you use the following variables
 # NO_PERL=1, NO_CRF=1, NO_SVM_TOOL=1, NO_YAMCHA=1
-# NO_MECAB=1, NO_MECAB_DIC=1, NO_SQLITE=1, NO_UNIDIC_DB=1
+# NO_MECAB=1, NO_MECAB_DIC=1, NO_UNIDIC_DB=1
 
 ## Default Path
 PERL=$(which perl)
@@ -24,7 +24,7 @@ if [ -z $NO_CRF ]; then
     CRF=${PREFIX}/bin
     if [ ! -x ${PREFIX}/bin/crf_test ]; then
         echo "*** GET CRF++ ***"
-        wget "https://crfpp.googlecode.com/files/CRF%2B%2B-0.58.tar.gz" -O CRF++.tar.gz
+        wget "https://googledrive.com/host/0B4y35FiV1wh7fngteFhHQUN2Y1B5eUJBNHZUemJYQV9VWlBUb3JlX0xBdWVZTWtSbVBneU0/CRF++-0.58.tar.gz" -O CRF++.tar.gz
         echo "*** INSTALL CRF++ ***"
         tar -xzf CRF++.tar.gz
         cd CRF++-0.58
@@ -92,7 +92,7 @@ if [ -z $NO_MECAB ]; then
     MECAB=${PREFIX}/bin
     if [ ! -x ${PREFIX}/bin/mecab ]; then
         echo "*** GET MeCab ***"
-        wget "https://mecab.googlecode.com/files/mecab-0.996.tar.gz" -O mecab.tar.gz
+        wget "https://googledrive.com/host/0B4y35FiV1wh7fjQ5SkJETEJEYzlqcUY4WUlpZmR4dDlJMWI5ZUlXN2xZN2s2b0pqT3hMbTQ/mecab-0.996.tar.gz" -O mecab.tar.gz
         echo "*** INSTALL MeCab ***"
         tar -xzf mecab.tar.gz
         cd mecab-0.996
@@ -125,21 +125,20 @@ if [ -z $NO_MECAB_DIC ]; then
     fi
 fi
 
-## SQLITE3
-# if [ -z $NO_SQLITE ]; then
-#     if [ ! -x ${PREFIX}/bin/sqlite3 ]; then
-#         echo "*** GET SQLITE3 ***"
-#         wget "http://www.sqlite.org/2014/sqlite-autoconf-3080301.tar.gz" -O sqlite.tar.gz
-#         tar -xzf sqlite.tar.gz
-#         cd sqlite-autoconf-3080301
-#         ./configure --prefix=${PREFIX}
-#         make
-#         make install
-#         cd ..
-#         rm -rf sqlite-autoconf-3080301
-#         rm -f sqlite.tar.gz
-#     fi
-# fi
+# UNIDIC_DB
+if [ -z $NO_UNIDIC_DB ]; then
+    UNIDIC_DB=${PREFIX}/unidic2/unidic.db
+    if [ ! -f ${PREFIX}/unidic2/unidic.db ]; then
+        echo "*** GET UNIDIC_DB ***"
+        cd ${PREFIX}
+        wget "http://sourceforge.jp/frs/redir.php?m=iij&f=%2Fcomainu%2F63044%2FComainu-unidic2-0.10.tgz" -O unidic2.tar.gz
+        echo "*** DECOMPRESS UNIDIC_DB ***"
+        tar -xzf unidic2.tar.gz
+        rm -f unidic2.tar.gz
+        cd ..
+        echo "*** INSTALL DONE UNIDIC_DB ***"
+    fi
+fi
 
 # PERL
 if [ -z $NO_PERL ]; then
