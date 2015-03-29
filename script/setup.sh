@@ -6,7 +6,7 @@ fi
 
 # The tools are not installed if you use the following variables
 # NO_PERL=1, NO_CRF=1, NO_SVM_TOOL=1, NO_YAMCHA=1
-# NO_MECAB=1, NO_MECAB_DIC=1, NO_SQLITE=1, NO_UNIDIC_DB=1
+# NO_MECAB=1, NO_MECAB_DIC=1, NO_UNIDIC_DB=1
 
 ## Default Path
 PERL=$(which perl)
@@ -125,21 +125,20 @@ if [ -z $NO_MECAB_DIC ]; then
     fi
 fi
 
-## SQLITE3
-# if [ -z $NO_SQLITE ]; then
-#     if [ ! -x ${PREFIX}/bin/sqlite3 ]; then
-#         echo "*** GET SQLITE3 ***"
-#         wget "http://www.sqlite.org/2014/sqlite-autoconf-3080301.tar.gz" -O sqlite.tar.gz
-#         tar -xzf sqlite.tar.gz
-#         cd sqlite-autoconf-3080301
-#         ./configure --prefix=${PREFIX}
-#         make
-#         make install
-#         cd ..
-#         rm -rf sqlite-autoconf-3080301
-#         rm -f sqlite.tar.gz
-#     fi
-# fi
+# UNIDIC_DB
+if [ -z $NO_UNIDIC_DB ]; then
+    UNIDIC_DB=${PREFIX}/unidic2/unidic.db
+    if [ ! -f ${PREFIX}/unidic2/unidic.db ]; then
+        echo "*** GET UNIDIC_DB ***"
+        cd ${PREFIX}
+        wget "http://sourceforge.jp/frs/redir.php?m=iij&f=%2Fcomainu%2F63044%2FComainu-unidic2-0.10.tgz" -O unidic2.tar.gz
+        echo "*** DECOMPRESS UNIDIC_DB ***"
+        tar -xzf unidic2.tar.gz
+        rm -f unidic2.tar.gz
+        cd ..
+        echo "*** INSTALL DONE UNIDIC_DB ***"
+    fi
+fi
 
 # PERL
 if [ -z $NO_PERL ]; then
