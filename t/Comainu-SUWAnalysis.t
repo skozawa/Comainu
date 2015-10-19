@@ -17,7 +17,25 @@ sub _use_ok : Test(startup => 1) {
 }
 
 # sub plain2mecab_file : Tests {};
-# sub mecab2kc_file : Tests {};
+
+sub mecab2kc_file : Tests {
+    my $comainu = Comainu::Method->new(
+        "mecab-dir"     => "local/bin",
+        "mecab-dic-dir" => "local/lib/mecab/dic",
+        "unidic-db"     => "local/unidic2/unidic.db",
+    );
+    my $suwanalysis = Comainu::SUWAnalysis->new(%$comainu);
+
+    for my $i ( 1 .. 30 ) {
+        my $input_file  = sprintf 't/sample/extcorpus/input%02d', $i;
+        my $output_file = sprintf 't/sample/extcorpus/output%02d', $i;
+        my ($tmp_file, $tmp_fh) = create_tmp_file("");
+
+        $suwanalysis->mecab2kc_file($input_file, $tmp_file);
+
+        is read_from_file($tmp_file), $suwanalysis->mecab2kc(read_from_file($output_file));
+    }
+};
 
 sub mecab2kc : Test(1) {
     my $data = <<MECAB_EXT;
