@@ -19,7 +19,10 @@ sub _use_ok : Test(startup => 1) {
 
 sub format_bnstdata : Test(2) {
     subtest 'boundary sentence' => sub {
-        my $kc2bnstout = Comainu::Method::Kc2bnstout->new(boundary => "sentence");
+        my $kc2bnstout = Comainu::Method::Kc2bnstout->new(
+            boundary => "sentence",
+            'yamcha-dir' => 'local/bin',
+        );
 
         my $svmdata = "";
         my $g = guard_write_to_file('Comainu::Method::Kc2bnstout', \$svmdata);
@@ -35,6 +38,7 @@ sub format_bnstdata : Test(2) {
             bnst_process => 'with_luw',
             "comainu-temp" => 't/sample/kc2bnstout',
             debug => 1,
+            'yamcha-dir' => 'local/bin',
         );
 
         my $svmdata = "";
@@ -50,6 +54,7 @@ sub chunk_bnst : Test(1) {
     my $kc2bnstout = Comainu::Method::Kc2bnstout->new(
         boundary => 'sentence',
         debug    => 1,
+        'yamcha-dir' => 'local/bin',
     );
 
     my $bout_data = "";
