@@ -1,5 +1,5 @@
 
-                    Comainu 0.71
+                    Comainu 0.72
 
 0. Requirements
   Common:
@@ -102,7 +102,7 @@ Usage : ./script/comainu.pl [options] <COMAINU-METHOD>  [<arg> ...]
 Preset Environments :
   PERL=/usr/bin/perl
   JAVA=/usr/bin/java
-  COMAINU_HOME=/usr/local/Comainu-0.71
+  COMAINU_HOME=/usr/local/Comainu-0.72
   YAMCHA_DIR=/usr/local/bin
   MECAB_DIR=/usr/local/bin
   MECAB_DIC_DIR=/usr/local/lib/mecab/dic

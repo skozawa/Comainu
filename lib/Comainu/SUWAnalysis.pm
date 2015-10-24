@@ -6,6 +6,7 @@ use utf8;
 use Config;
 
 use Comainu::Util qw(read_from_file write_to_file proc_stdin2stdout proc_file2file);
+use Comainu::Extcorpus;
 
 use constant {
     KC_MECAB_TABLE_FOR_UNIDIC => {
@@ -105,21 +106,8 @@ sub mecab2kc_file {
         return;
     }
 
-    my $def_buff = "";
-    $def_buff .= "dbfile:".$self->{"unidic-db"}."\n";
-    $def_buff .= "table:lex\n";
-    $def_buff .= "input:sLabel,orth,pron,lForm,lemma,pos,cType?,cForm?\n";
-    $def_buff .= "output:sLabel,orth,pron,lForm,lemma,pos,cType?,cForm?,goshu,form,formBase,formOrthBase,formOrth\n";
-    $def_buff .= "key:lForm,lemma,pos,cType,cForm,orth,pron\n";
-    write_to_file($ext_def_file, $def_buff);
-    undef $def_buff;
-
-    my $com = sprintf("\"%s\" \"%s/script/extcorpus.pl\" -C \"%s\"",
-                      $self->{perl}, $self->{"comainu-home"}, $ext_def_file);
-    print STDERR "# COM: ", $com if $self->{debug};
-    proc_file2file($com, $mecab_file, $mecab_ext_file);
-
-    my $buff = read_from_file($mecab_ext_file);
+    my $extcorpus = Comainu::Extcorpus->new(%$self);
+    my $buff = $extcorpus->run($mecab_file);
     $buff = $self->mecab2kc($buff);
     write_to_file($kc_file, $buff);
 

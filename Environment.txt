@@ -14,13 +14,13 @@ Comainu実行環境
 ・UniDic2
 
   形態素解析辞書UniDic2
-  http://sourceforge.jp/projects/unidic/
+  http://osdn.jp/projects/unidic/
   UniDic-2.1.0
 
 ・MeCab
 
   MeCab: Yet Another Part-of-Speech and Morphological Analyzer
-  http://mecab.sourceforge.net/
+  http://taku910.github.io/mecab/
   MeCab-0.98
 
 ・YamCha
@@ -38,7 +38,7 @@ Comainu実行環境
 ・CRF
 
   CRF++: Yet Another CRF toolkit
-  http://crfpp.sourceforge.net/
+  https://taku910.github.io/crfpp/
   CRF++-0.58
 
 ・Java

@@ -111,7 +111,7 @@ if [ -z $NO_MECAB_DIC ]; then
     MECAB_DIC=${PREFIX}/lib/mecab/dic
     if [ ! -d ${PREFIX}/lib/mecab/dic ]; then
         echo "*** GET MeCab-UniDic ***"
-        wget "http://sourceforge.jp/frs/redir.php?m=jaist&f=%2Funidic%2F58338%2Funidic-mecab-2.1.2_src.zip" -O unidic-mecab.zip
+        wget "http://osdn.jp/frs/redir.php?m=jaist&f=%2Funidic%2F58338%2Funidic-mecab-2.1.2_src.zip" -O unidic-mecab.zip
         echo "*** INSTALL MeCab-UniDic ***"
         unzip unidic-mecab.zip
         cd unidic-mecab-2.1.2_src
@@ -131,7 +131,7 @@ if [ -z $NO_UNIDIC_DB ]; then
     if [ ! -f ${PREFIX}/unidic2/unidic.db ]; then
         echo "*** GET UNIDIC_DB ***"
         cd ${PREFIX}
-        wget "http://sourceforge.jp/frs/redir.php?m=iij&f=%2Fcomainu%2F63044%2FComainu-unidic2-0.10.tgz" -O unidic2.tar.gz
+        wget "http://osdn.jp/frs/redir.php?m=iij&f=%2Fcomainu%2F63044%2FComainu-unidic2-0.10.tgz" -O unidic2.tar.gz
         echo "*** DECOMPRESS UNIDIC_DB ***"
         tar -xzf unidic2.tar.gz
         rm -f unidic2.tar.gz

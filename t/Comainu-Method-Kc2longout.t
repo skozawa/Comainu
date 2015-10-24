@@ -21,6 +21,8 @@ sub create_features : Test(6) {
     subtest "sentence boundary (CRF)" => sub {
         my $kc2longout = Comainu::Method::Kc2longout->new(
             boundary => "sentence",
+            'crf-dir' => 'local/bin',
+            'yamcha-dir' => 'local/bin',
         );
         $kc2longout->create_features("t/sample/kc2longout/test.KC", "t/sample/kc2longout/test.Kc2");
         is $kc2_data, read_from_file('t/sample/kc2longout/test.KC2.crf_boundary');
@@ -29,6 +31,8 @@ sub create_features : Test(6) {
     subtest "word boundary (CRF)" => sub {
         my $kc2longout = Comainu::Method::Kc2longout->new(
             boundary => "word",
+            'crf-dir' => 'local/bin',
+            'yamcha-dir' => 'local/bin',
         );
         $kc2longout->create_features("t/sample/kc2longout/test.KC", "t/sample/kc2longout/test.KC2");
         is $kc2_data, read_from_file('t/sample/kc2longout/test.KC2.crf_word');
@@ -37,6 +41,8 @@ sub create_features : Test(6) {
     subtest "none boundary (CRF)" => sub {
         my $kc2longout = Comainu::Method::Kc2longout->new(
             boundary => "none",
+            'crf-dir' => 'local/bin',
+            'yamcha-dir' => 'local/bin',
         );
         $kc2longout->create_features("t/sample/kc2longout/test.KC", "t/sample/kc2longout/test.KC2");
         is $kc2_data, read_from_file('t/sample/kc2longout/test.KC2.crf_none');
@@ -46,6 +52,7 @@ sub create_features : Test(6) {
         my $kc2longout = Comainu::Method::Kc2longout->new(
             "boundary"      => "sentence",
             "luwmodel-type" => 'SVM',
+            'yamcha-dir'    => 'local/bin',
         );
         $kc2longout->create_features("t/sample/kc2longout/test.KC", "t/sample/kc2longout/test.Kc2");
         is $kc2_data, read_from_file('t/sample/kc2longout/test.KC2.svm_boundary');
@@ -55,6 +62,7 @@ sub create_features : Test(6) {
         my $kc2longout = Comainu::Method::Kc2longout->new(
             "boundary"      => "word",
             "luwmodel-type" => 'SVM',
+            'yamcha-dir'    => 'local/bin',
         );
         $kc2longout->create_features("t/sample/kc2longout/test.KC", "t/sample/kc2longout/test.KC2");
         is $kc2_data, read_from_file('t/sample/kc2longout/test.KC2.svm_word');
@@ -64,6 +72,7 @@ sub create_features : Test(6) {
         my $kc2longout = Comainu::Method::Kc2longout->new(
             "boundary"      => "none",
             "luwmodel-type" => 'SVM',
+            'yamcha-dir'    => 'local/bin',
         );
         $kc2longout->create_features("t/sample/kc2longout/test.KC", "t/sample/kc2longout/test.KC2");
         is $kc2_data, read_from_file('t/sample/kc2longout/test.KC2.svm_none');
@@ -74,6 +83,8 @@ sub chunk_luw : Test(1) {
     my $kc2longout = Comainu::Method::Kc2longout->new(
         boundary => "sentence",
         "comainu-temp" => "t/sample/kc2longout",
+        'crf-dir' => 'local/bin',
+        'yamcha-dir' => 'local/bin',
     );
 
     my $svmout_data = "";

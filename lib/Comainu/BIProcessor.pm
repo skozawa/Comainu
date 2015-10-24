@@ -176,7 +176,7 @@ sub create_BI_data {
         my %pos_label  = reverse %{$self->{pos_label}};
         # delete particle and auxiliary
         delete $pos_label{$_} for (@{$self->{aux_labels}}, @{$self->{part_labels}});
-        $label_text = join " ", keys %pos_label;
+        $label_text = join " ", sort keys %pos_label;
         $comp = $self->load_comp_file;
     }
 
@@ -411,7 +411,7 @@ sub create_cForm_dat {
 
     my %labels  = reverse %{$self->{cForm_label}};
     delete $labels{$self->{cForm_asterisk_label}};
-    my $label_text = join " ", keys %labels;
+    my $label_text = join " ", sort keys %labels;
 
     my $buff = "";
     open(my $fh, $out) or die "Cannot open '$file'";
