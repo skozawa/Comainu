@@ -73,6 +73,9 @@ sub get_dir_files {
         }
         closedir($dh);
         return $files;
+    } else {
+        printf(STDERR "Error: '%s' not Found.\n", $target);
+        die;
     }
 }
 
