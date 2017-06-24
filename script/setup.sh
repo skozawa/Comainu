@@ -24,7 +24,7 @@ if [ -z $NO_CRF ]; then
     CRF=${PREFIX}/bin
     if [ ! -x ${PREFIX}/bin/crf_test ]; then
         echo "*** GET CRF++ ***"
-        wget "https://googledrive.com/host/0B4y35FiV1wh7fngteFhHQUN2Y1B5eUJBNHZUemJYQV9VWlBUb3JlX0xBdWVZTWtSbVBneU0/CRF++-0.58.tar.gz" -O CRF++.tar.gz
+        wget "https://drive.google.com/uc?export=download&id=0B4y35FiV1wh7QVR6VXJ5dWExSTQ" -O CRF++.tar.gz
         echo "*** INSTALL CRF++ ***"
         tar -xzf CRF++.tar.gz
         cd CRF++-0.58
@@ -92,7 +92,7 @@ if [ -z $NO_MECAB ]; then
     MECAB=${PREFIX}/bin
     if [ ! -x ${PREFIX}/bin/mecab ]; then
         echo "*** GET MeCab ***"
-        wget "https://googledrive.com/host/0B4y35FiV1wh7fjQ5SkJETEJEYzlqcUY4WUlpZmR4dDlJMWI5ZUlXN2xZN2s2b0pqT3hMbTQ/mecab-0.996.tar.gz" -O mecab.tar.gz
+        wget "https://drive.google.com/uc?export=download&id=0B4y35FiV1wh7cENtOXlicTFaRUE" -O mecab.tar.gz
         echo "*** INSTALL MeCab ***"
         tar -xzf mecab.tar.gz
         cd mecab-0.996
