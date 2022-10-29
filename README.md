@@ -143,7 +143,7 @@ $ ./script/comainu.pl bccwj2midbnstout --input sample/sample.bccwj.txt --output-
 ```
 - bccwjlong2midout
 ```
-$ ./script/comainu.pl bccwj2midout --input sample/sample.bccwj.txt --output-dir out
+$ ./script/comainu.pl bccwjlong2midout --input sample/sample.bccwj.txt --output-dir out
 ```
 
 ### Analyze KC text
@@ -203,3 +203,18 @@ $ ./script/comainu.pl kc2bnsteval sample/sample.KC out/sample.KC.bout out
 
 ## Input/Output format
 Under construction
+
+
+## For Developer
+- Add test module
+```
+$ ./local/opt/perl-${PERL_VERSION}/bin/cpanm install Test::Mock::Guard Test::Class
+```
+- Test
+```
+$ ./local/opt/perl-${PERL_VERSION}/bin/prove t/
+```
+- Run samples
+```
+sh t/sample-exec.sh
+```
