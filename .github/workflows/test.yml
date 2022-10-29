@@ -16,5 +16,5 @@ jobs:
         with:
           perl-version: ${{ matrix.perl }}
       - run: perl -V
-      - run: cpanm --installdeps .
+      - run: cpanm install DBI DBD::SQLite Test::Class Test::Mock::Guard
       - run: prove -lv t
