@@ -153,11 +153,11 @@ fi
 
 # PERL
 if [ -z $NO_PERL ]; then
-    PERL_VERSION=5.18.2
+    PERL_VERSION=5.34.1
     PERL=${PREFIX}/opt/perl-${PERL_VERSION}/bin/perl
     if [ ! -f ${PERL} ]; then
         echo "*** INSTALL PERL ***"
-        curl https://raw.githubusercontent.com/tokuhirom/Perl-Build/master/perl-build | perl - ${PERL_VERSION} ${PREFIX}/opt/perl-${PERL_VERSION}/
+        curl https://raw.githubusercontent.com/tokuhirom/Perl-Build/master/perl-build | perl - --noman ${PERL_VERSION} ${PREFIX}/opt/perl-${PERL_VERSION}/
         echo "*** INSTALL CPANM ***"
         curl -L http://cpanmin.us | ${PREFIX}/opt/perl-${PERL_VERSION}/bin/perl - App::cpanminus
         echo "*** INSTALL PERL MODULE ***"
