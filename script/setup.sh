@@ -71,7 +71,7 @@ if [ -z $NO_YAMCHA ]; then
         make install
         cd ..
         if [ ! -x ${PREFIX}/bin/yamcha ]; then
-            echo "*** APPLY Yamcha Patch for INSTALL Error ***"
+            echo "*** APPLY Yamcha Patch(1) for INSTALL Error ***"
             wget "https://gist.githubusercontent.com/skozawa/89024693963fd0adfa6d/raw/00ffa28de5ef11b902b4f35cbf3f3217bc62de3e/yamcha.patch"
             patch -p0 < yamcha.patch
             cd yamcha-0.33
@@ -80,6 +80,17 @@ if [ -z $NO_YAMCHA ]; then
             make install
             cd ..
             rm yamcha.patch
+        fi
+        if [ ! -x ${PREFIX}/bin/yamcha ]; then
+            echo "*** APPLY Yamcha Patch(2) for INSTALL Error ***"
+            cd yamcha-0.33
+            wget "https://sources.debian.org/data/main/y/yamcha/0.33-2/debian/patches/1011_fix_gcc7_compilation.patch"
+            patch -p1 < 1011_fix_gcc7_compilation.patch
+            ./configure --prefix=${PREFIX} --with-svm-learn=${PREFIX}
+            make
+            make install
+            cd ..
+            rm 1011_fix_gcc7_compilation.patch
         fi
         rm -rf yamcha-0.33
         rm -f yamcha.tar.gz
