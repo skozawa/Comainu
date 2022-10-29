@@ -7,8 +7,7 @@ jobs:
     name: Run Test
     runs-on: ubuntu-latest
     strategy:
-      matrix:
-        - '5.34'
+      matrix: ['5.34']
     steps:
       - uses: actions/checkout@v2
       - name: Setup perl
