@@ -1,3 +1,7 @@
+name: test
+
+on: [push]
+
 jobs:
   build:
     name: Run Test
