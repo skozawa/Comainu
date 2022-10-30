@@ -206,6 +206,7 @@ Under construction
 
 
 ## For Developer
+### Test
 - Add test module
 ```
 $ ./local/opt/perl-${PERL_VERSION}/bin/cpanm install Test::Mock::Guard Test::Class
@@ -217,4 +218,17 @@ $ ./local/opt/perl-${PERL_VERSION}/bin/prove t/
 - Run samples
 ```
 sh t/sample-exec.sh
+```
+
+### Packaging
+- upgrade versions
+- configure or setup
+- make destribution for Linux (on Linux)
+```
+$ make dist-src
+$ make dist-model
+```
+- make destribution for Windows (on Windows)
+```
+$ make dist
 ```
