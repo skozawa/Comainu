@@ -5,18 +5,18 @@ Comainu is middle-unit-word and long-unit-word analyzer.
 1. Download source or git clone
   - [Download source file](http://osdn.jp/projects/comainu/releases/) and Extract
   ```
-  tar -xzf Comainu-0.72-src.tgz
+  tar -xzf Comainu-0.80-src.tgz
   ```
   - git clone
   ```
-  git clone https://github.com/skozawa/Comainu.git Comainu-0.72
+  git clone https://github.com/skozawa/Comainu.git Comainu-0.80
   ```
 
 2. [Download model file](http://osdn.jp/projects/comainu/releases/)
 
   *The unarchieved model size is about 1.2 GB.
   ```
-  tar -xzf Comainu-0.72-model.tgz
+  tar -xzf Comainu-0.80-model.tgz
   ```
 
 3. Install
@@ -206,6 +206,7 @@ Under construction
 
 
 ## For Developer
+### Test
 - Add test module
 ```
 $ ./local/opt/perl-${PERL_VERSION}/bin/cpanm install Test::Mock::Guard Test::Class
@@ -217,4 +218,17 @@ $ ./local/opt/perl-${PERL_VERSION}/bin/prove t/
 - Run samples
 ```
 sh t/sample-exec.sh
+```
+
+### Packaging
+- upgrade versions
+- configure or setup
+- make destribution for Linux (on Linux)
+```
+$ make dist-src
+$ make dist-model
+```
+- make destribution for Windows (on Windows)
+```
+$ make dist
 ```
