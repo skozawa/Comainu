@@ -24,7 +24,7 @@ if [ -z $NO_CRF ]; then
     CRF=${PREFIX}/bin
     if [ ! -x ${PREFIX}/bin/crf_test ]; then
         echo "*** GET CRF++ ***"
-        wget "https://drive.google.com/uc?export=download&id=0B4y35FiV1wh7QVR6VXJ5dWExSTQ" -O CRF++.tar.gz
+        wget "https://drive.google.com/uc?export=download&id=1lEwSRLAXpPnlPMPv8fx48y13Xy5eHNU9" -O CRF++.tar.gz
         echo "*** INSTALL CRF++ ***"
         tar -xzf CRF++.tar.gz
         cd CRF++-0.58
@@ -103,7 +103,7 @@ if [ -z $NO_MECAB ]; then
     MECAB=${PREFIX}/bin
     if [ ! -x ${PREFIX}/bin/mecab ]; then
         echo "*** GET MeCab ***"
-        wget "https://drive.google.com/uc?export=download&id=0B4y35FiV1wh7cENtOXlicTFaRUE" -O mecab.tar.gz
+        wget "https://drive.google.com/uc?export=download&id=1SJjk4IylQaO2yGc0vMtx5MHhZcjaeMLZ" -O mecab.tar.gz
         echo "*** INSTALL MeCab ***"
         tar -xzf mecab.tar.gz
         cd mecab-0.996
@@ -122,7 +122,7 @@ if [ -z $NO_MECAB_DIC ]; then
     MECAB_DIC=${PREFIX}/lib/mecab/dic
     if [ ! -d ${PREFIX}/lib/mecab/dic ]; then
         echo "*** GET MeCab-UniDic ***"
-        wget "http://osdn.jp/frs/redir.php?m=jaist&f=%2Funidic%2F58338%2Funidic-mecab-2.1.2_src.zip" -O unidic-mecab.zip
+        wget "https://clrd.ninjal.ac.jp/unidic_archive/cwj/2.1.2/unidic-mecab-2.1.2_src.zip" -O unidic-mecab.zip
         echo "*** INSTALL MeCab-UniDic ***"
         unzip unidic-mecab.zip
         cd unidic-mecab-2.1.2_src
@@ -142,7 +142,7 @@ if [ -z $NO_UNIDIC_DB ]; then
     if [ ! -f ${PREFIX}/unidic2/unidic.db ]; then
         echo "*** GET UNIDIC_DB ***"
         cd ${PREFIX}
-        wget "http://osdn.jp/frs/redir.php?m=iij&f=%2Fcomainu%2F63044%2FComainu-unidic2-0.10.tgz" -O unidic2.tar.gz
+        wget "https://drive.google.com/uc?export=download&id=1pg7ChaqOn9T2n9NjqjgF0iSM58ubK_kg" -O unidic2.tar.gz
         echo "*** DECOMPRESS UNIDIC_DB ***"
         tar -xzf unidic2.tar.gz
         rm -f unidic2.tar.gz

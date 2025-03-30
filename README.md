@@ -3,7 +3,7 @@ Comainu is middle-unit-word and long-unit-word analyzer.
 
 ## Download and Install (Linux)
 1. Download source or git clone
-  - [Download source file](http://osdn.jp/projects/comainu/releases/) and Extract
+  - [Download source file](https://drive.google.com/drive/u/2/folders/19XT6NhY4jvT0Eyu7lzH-V4u9vbmB1vDQ) and Extract
   ```
   tar -xzf Comainu-0.80-src.tgz
   ```
@@ -12,7 +12,7 @@ Comainu is middle-unit-word and long-unit-word analyzer.
   git clone https://github.com/skozawa/Comainu.git Comainu-0.80
   ```
 
-2. [Download model file](http://osdn.jp/projects/comainu/releases/)
+2. [Download model file](https://drive.google.com/drive/u/2/folders/19XT6NhY4jvT0Eyu7lzH-V4u9vbmB1vDQ)
 
   *The unarchieved model size is about 1.2 GB.
   ```
@@ -45,7 +45,7 @@ Comainu is middle-unit-word and long-unit-word analyzer.
 
 - Require for morphological analysis
   - [MeCab](http://taku910.github.io/mecab/): mecab-0.98 or later
-  - [UniDic-MeCab](https://osdn.jp/projects/unidic/): unidic-mecab-2.1.1 or later
+  - [UniDic-MeCab](https://clrd.ninjal.ac.jp/unidic/back_number.html): unidic-mecab-2.1.1 or later
   - Unidic2: unidic-2.1.0 or later
     - [SQLite](https://www.sqlite.org/cli.html): 3.8 or later
     - perl-DBI, perl-DBD-SQLite
